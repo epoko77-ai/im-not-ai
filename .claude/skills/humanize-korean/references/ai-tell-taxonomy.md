@@ -1,4 +1,4 @@
-# AI 한글 티 분류 체계 v1.2 (Korean AI-Tell Taxonomy)
+# AI 한글 티 분류 체계 v1.3 (Korean AI-Tell Taxonomy)
 
 LLM(ChatGPT·Claude·Gemini 등)이 생성한 한글 글에서 반복적으로 관찰되는 "AI 티" 패턴을 10개 대분류 × 서브 패턴으로 정리한다. 탐지기·윤문가·리뷰어가 공유하는 단일 진실 원천(SSOT). 각 패턴마다 (1) 정의, (2) 시그니처 예문, (3) 심각도(S1 결정적 / S2 강함 / S3 약함), (4) 윤문 처방을 제공한다.
 
@@ -422,6 +422,12 @@ J. 시각 장식 남용
   - `D-6` 완결 공식형 결말 "~할 때입니다 / 시점입니다"
   - `F-5` "~적 N" 복합 추상어 체인 (에이전트적 자율성·기술적 토대)
   - `H-4` 재정의 접속사 "즉" 남발
+- **v1.3** (2026-04-25): 패턴 신설 0건. **서브 패턴 발굴 운영 체계 도입** — 본진 변경 없음, 운영 인프라만 확장:
+  - **candidate 풀 신설** (`references/pattern-candidates.md`) — detector·rewriter·naturalness-reviewer가 미분류 의심 패턴을 단일 그릇에 누적. 임시 ID(`cand-{대분류}-{YYYY}-{NNN}`)·4상태(pending/promoted/rejected/merged)·기각 사유 5종 라벨·90일 미재현 자동 만료 정책
+  - **3개 에이전트 적재 채널 명문화** — detector(미분류 span)·rewriter(윤문 저항·반복 잔존)·naturalness-reviewer(외부 시각, voice profile 미주입)에 풀 적재 트리거·절차 추가. 적재 실패는 메인 파이프라인 막지 않음
+  - **taxonomist 풀 운영자 역할 추가** — 4가지 trigger(사용자 명시 / pending 10건 / 단일 후보 occurrences ≥ 3 / 외부 PR) 기반 점검. 점검 6단계 절차와 changelog 표준 형식 명문화
+  - **외부 샘플 수집 파이프라인** (`references/sample-collection.md`) — 4축 다양성 매트릭스(모델·장르·길이·작가), 4종 채널(사용자 자발·합성 샘플·공개 데이터·외부 contributor), 익명화·저작권 5대 정책
+  - **승격 자동 검증 체크리스트** (`references/promotion-checklist.md`) — 6개 게이트(사전 점검·재현·본진 중복·분류 적합성·처방 적합성·본진 위계). 일부 게이트(0.2·0.3·1.1·1.2·5.2)는 향후 스크립트 자동화 가능
 - **v1.2** (2026-04-25): Issue #1(simonsez9510) 후속 — 패턴 신설 0건, **권한 위계와 운영 체계 추가**:
   - **권한 위계 §1~§6 신설** — 객관 분류 vs 작가 voice profile의 권한 경계 명문화. opt-in 명시 주입, 패턴 ID 단위 무력화만 허용, 자유 텍스트 mandate 금지, A-8·C-5·D-1~D-6 무력화 불가, naturalness-reviewer 분리 검증층 보존, 회귀 게이트 정책
   - **임계 완화 multiplier 캡표** — 일반 ≤ 2.0, D-1~D-6 ≤ 1.5, A-8·C-5 = 1.0 고정 (임계 우회를 통한 사실상 무력화 방지)
