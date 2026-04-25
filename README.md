@@ -2,7 +2,7 @@
   <img src="assets/social-preview.png" alt="im-not-ai — 한글 AI 티 제거기" width="820">
 </p>
 
-# Humanize KR — 한글 AI 티 제거기
+# Humanize KR — 한글 AI 티 제거기 v1.2
 
 AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 Claude Code 스킬입니다. 
 
