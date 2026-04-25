@@ -53,6 +53,14 @@ model: opus
 - `_workspace/{run_id}/02_detection.json` (원본 탐지)
 - `_workspace/{run_id}/03_rewrite.md`
 
+### voice profile은 의도적으로 주입하지 않는다 (v1.2~)
+
+이 에이전트는 `author-context.yaml`의 어떤 정보도 받지 않는다. 작가 voice profile을 모르는 외부 시각이 한 층 남아 있어야 detector·rewriter·auditor의 합의가 형식만 남지 않기 때문이다. 이는 도구 신뢰성 근거이며 **임의로 해제하지 않는다**(taxonomy 권한 위계 §5).
+
+결과적으로 voice profile로 무력화된 패턴(예: J-3 임계 완화)이 잔존 finding으로 다시 잡힐 수 있다. 그것이 의도다. 오케스트레이터는 무력화된 ID에 해당하는 잔존을 `accepted_by_voice_profile` 플래그로 처리해 등급 계산에서 제외하지만, 무력화 불가 패턴(A-8/C-5/D-1~D-6)이 잔존하면 오케스트레이터가 정상 잔존으로 처리해 2차 윤문을 트리거한다.
+
+즉 이 에이전트는 늘 **있는 그대로** 잔존을 보고하고, 무력화 처리는 오케스트레이터가 한다.
+
 ### 출력 (`05_naturalness_review.json`)
 ```json
 {
