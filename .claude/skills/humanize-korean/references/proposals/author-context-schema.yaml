@@ -1,0 +1,117 @@
+# author-context.yaml — schema proposal for humanize-korean v1.2
+#
+# Strawman schema implementing the v1.2 권한 위계 (Authority Hierarchy)
+# defined in references/ai-tell-taxonomy.md (commit bfcf676, 2026-04-25).
+# Submitted as a downstream-caller's reference; the maintainer's own SSOT
+# schema takes precedence if they differ.
+#
+# Compliance with v1.2 권한 위계:
+#   §1 default-on ........... voice profile is opt-in, never auto-loaded
+#   §2 explicit yaml ........ this file is the only injection vector
+#   §3 allowed mechanisms ... pattern_id on/off, threshold relaxation,
+#                             Do-NOT 키워드 화이트리스트 (no free-text)
+#   §4 forbidden patterns ... A-8, C-5, and D-1..D-6 cannot be disabled
+#                             (D-1..D-6 may have threshold relaxation only)
+#   §5 분리 검증 ............ this file MUST NOT reach naturalness-reviewer
+#   §6 회귀 테스트 게이트 ... new fields require external regression cases
+
+schema_version: "1.0"
+
+# ---------------------------------------------------------------------------
+# author — display + voice anchors
+# ---------------------------------------------------------------------------
+author:
+  display_name: string            # used only in human-facing reports;
+                                  # NOT interpolated into model prompts
+  voice_anchors:                  # short declarative phrases (max 6).
+                                  # Advisory framing for the rewriter; cannot
+                                  # disable a pattern. Carrying intent here
+                                  # means callers don't need a genre-level
+                                  # off-switch (which v1.2 §3 forbids).
+    - string                      # e.g. "single sentence per thought"
+    - string                      # e.g. "concrete example over abstraction"
+
+# ---------------------------------------------------------------------------
+# pattern_overrides — the ONLY structured override surface (§3)
+# ---------------------------------------------------------------------------
+pattern_overrides:
+
+  # §3 allowed: pattern_id on/off
+  disabled_pattern_ids:
+    - string                      # e.g. "J-3", "E-2"
+                                  #
+                                  # Schema validator MUST reject any of:
+                                  #   - "A-8"      (이중 피동)
+                                  #   - "C-5"      (이모지 남발)
+                                  #   - "D-1".."D-6" (AI 특유 관용구)
+                                  #   - any future pattern marked
+                                  #     "permanent default-on" in v1.2+
+                                  # per v1.2 권한 위계 §4.
+
+  # §3 allowed: threshold relaxation
+  threshold_relaxations:
+    - pattern_id: string          # e.g. "J-3"
+      multiplier: number          # range [0.5, 2.0]; out-of-range rejected.
+                                  #
+                                  # D-1..D-6 ARE allowed here (single-use
+                                  # leniency per §4 final clause), but
+                                  # multiplier is hard-capped at 2.0 to
+                                  # prevent effective disable via threshold.
+
+  # §3 allowed: Do-NOT 키워드 화이트리스트
+  do_not_keywords:                # exact phrases the rewriter must not edit.
+                                  # This is humanize-korean's standard Do-NOT
+                                  # mechanism extended with author-specific
+                                  # protected phrases.
+    - phrase: string              # exact string match
+      kind: enum                  # one of:
+                                  #   metaphor          — protected imagery
+                                  #   signature_phrase  — author's recurring
+                                  #                       first-person line
+                                  #   structural_block  — section/chapter
+                                  #                       structural marker
+                                  #   citation          — fixed quote that
+                                  #                       must not be edited
+
+# ---------------------------------------------------------------------------
+# hard_blocks — paths where the upstream caller (adapter) refuses to invoke
+# humanize-korean at all. NOT enforced by humanize-korean itself; this is a
+# convention for adapters and orchestrators.
+# ---------------------------------------------------------------------------
+hard_blocks:
+  paths:                          # globs. Caller rejects before invoking.
+    - string                      # e.g. "**/fiction/**"
+    - string                      # e.g. "**/legal-filings/**"
+    - string                      # e.g. "**/received-from-others/**"
+
+# ---------------------------------------------------------------------------
+# reviewer_contract — invariant the loader MUST honor (§5)
+# ---------------------------------------------------------------------------
+reviewer_contract:
+  naturalness_reviewer_voice_blind: true
+                                  # Schema validator rejects this file if
+                                  # set to false. The naturalness-reviewer
+                                  # agent must NOT receive this file's
+                                  # contents per v1.2 권한 위계 §5.
+
+# ---------------------------------------------------------------------------
+# Implementer notes
+# ---------------------------------------------------------------------------
+# 1. All string fields are interpolated into model prompts verbatim. Treat
+#    this file as untrusted input. The schema validator must reject any
+#    field containing characters that could escape prompt context (triple
+#    backticks, role-prefix tokens like "system:" / "assistant:", etc.).
+#    Maintain a denylist; do not rely on regex-only sanitization.
+#
+# 2. Validation runs BEFORE prompt construction. A malformed file aborts the
+#    run; it does NOT silently fall back to humanize-korean default. Silent
+#    degradation hides production bugs.
+#
+# 3. Telemetry: the loader should record which pattern_ids were disabled,
+#    which thresholds were relaxed, and which keywords triggered Do-NOT
+#    suppression — per call. This is what makes the §6 regression gate
+#    measurable.
+#
+# 4. The maintainer's authoritative schema (planned per the v1.2 commit
+#    message: "v1.2 후속 작업(author-context.yaml 스키마, 에이전트 주입 분리)")
+#    takes precedence over this strawman.
