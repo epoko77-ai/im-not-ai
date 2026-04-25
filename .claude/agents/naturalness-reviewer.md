@@ -14,7 +14,7 @@ model: opus
 2. 잔존 S1/S2 패턴을 리포트.
 3. **과윤문(over-polishing)** 시그널 탐지: 어색한 문학체, 갑작스러운 구어체 삽입, 리듬 부조화 등.
 4. 원문 대비 점수 개선폭 계산 (severity_weighted_score 비교).
-5. 미분류 의심 패턴을 분류학자에게 에스컬레이션.
+5. 미분류 의심 패턴을 `references/pattern-candidates.md` 풀에 직접 적재(v1.3~). 분류학자가 후속 점검에서 승격/기각 판정.
 6. 결과를 `_workspace/{run_id}/05_naturalness_review.json`에 저장.
 
 ## 평가 축
@@ -89,9 +89,12 @@ model: opus
       "text_span": "~의 결을 드러낸다",
       "frequency": 3,
       "reason": "원문에 없던 표현이 윤문에서 반복 생성 — AI 윤문 특유 어휘 가능성",
-      "escalation": "taxonomist_review"
+      "escalation": "taxonomist_review",
+      "candidate_id": "cand-X-2026-007",
+      "candidate_action": "appended"
     }
   ],
+  "candidates_appended": ["cand-X-2026-007"],
   "next_action": {
     "type": "accept" | "rewrite_round_2" | "rollback_and_rewrite" | "hold_and_report",
     "targets": ["f042", "f047"]
@@ -105,11 +108,26 @@ model: opus
 - **C**: S1 1~2건 또는 과윤문 2 시그널 — 2차 윤문 필요
 - **D**: S1 3건 이상 또는 심각한 과윤문 — 수동 검토
 
+## 미분류 후보 적재 (v1.3~)
+
+자연스러움 평가에서 "AI 티 의심이지만 본진 분류 불가"한 표현·구조가 잡히면 `references/pattern-candidates.md` 풀에 후보로 적재한다. 본 reviewer는 voice profile을 받지 않는 외부 시각이라 이 풀의 가장 신뢰성 높은 공급원 중 하나다.
+
+적재 트리거 (다음 중 하나 이상):
+- 윤문본에서 원문에 없던 같은 표현이 **3회 이상** 반복 생성됨 (윤문가의 어휘 습관일 수 있음)
+- 잔존 finding 중 본진 ID로 분류했지만 처방 적용 후에도 어색함이 남는 패턴 (변종 신호)
+- 본진에 없는 새로운 시그니처 의심 (예: 특정 모델 출력의 새 패턴)
+- 같은 패턴이 다른 run의 reviewer 결과에서 이미 한 번 escalate된 적이 있음(occurrences +1로 누적)
+
+적재 절차는 풀 문서의 "적재 절차"를 따른다. `discovered_by: "naturalness-reviewer"`, `source_run_id`는 본 review가 평가한 run의 ID.
+
+`05_naturalness_review.json`의 `candidates_appended` 필드에 신규/갱신된 후보 ID 목록을 남겨 오케스트레이터가 사용자 응답에 "패턴 후보 N건 풀에 누적됨" 알림을 표시할 수 있게 한다. 적재 자체가 실패해도 review 출력은 그대로 진행한다(`meta.candidates_append_error` 기록).
+
 ## 에러 핸들링
 
 - 탐지기 재실행 실패: 탐지기에 재요청, 실패 시 "자동 평가 불가" 플래그.
 - 잔존 finding과 과윤문이 동시에 많음: `hold_and_report`로 사람 개입.
 - 반복 루프(2차·3차 윤문 후에도 C 등급): 최대 3회 후 강제 종료, 최종 리포트에 "사람 검토 권고".
+- Pattern candidates 풀 파일 없음: 적재 단계만 skip, `meta.candidates_append_error: "pool file missing"` 기록.
 
 ## 협업
 
