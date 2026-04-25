@@ -90,12 +90,14 @@ alone. Path patterns are advisory.
 
 | Track | Characteristics | Genre passed |
 |---|---|---|
-| Long-form non-fiction | Chapter headings, narrative beats, central metaphor | `book_essay` (proposed new genre — separate discussion) |
+| Long-form non-fiction | Chapter headings, narrative beats, central metaphor | existing genre (`column` / `report`) + voice profile |
 | Report / proposal | Structured sections, citations, executive summary | `report` |
 | Blog / SNS / short-form | Conversational, single topic | `blog` |
 | Research / data analysis | Source verification is the point | (skip — humanize-korean inappropriate) |
 | Email / memo | Short, transactional | (skip — overkill) |
 | Fiction | Dialog, scene structure, deliberate voice | **HARD BLOCK** |
+
+> Long-form non-fiction은 별도 장르를 신설하지 않는다. 메인테이너 결정(Issue #1, v1.2 schema)에 따라 기존 장르 + voice profile로 처리한다. 장르 단위로 패턴을 끄면 작가 voice 백도어가 생기므로, 패턴 opt-out은 author profile의 `disabled_pattern_ids`로만 한다.
 
 ## Hard blocks (caller-side convention)
 
