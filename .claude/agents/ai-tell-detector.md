@@ -47,10 +47,10 @@ model: opus
 
 1. **`pattern_overrides` 적용**:
    - `action: "disable"` → 해당 ID의 finding을 출력에서 제외
-   - `action: "relax"` + `threshold: N` → 단락당 N회 이하 등장은 finding 제외, N+1회부터 finding 포함
+   - `action: "relax"` + `multiplier: M` → 적용 임계 = (taxonomy 기본 임계 × M). 단락당 적용 임계 이하 등장은 finding 제외. multiplier 캡(일반 ≤ 2.0, D-1~D-6 ≤ 1.5, A-8·C-5 = 1.0)은 schema validator가 사전 검증 후 거부하므로 detector는 검증된 값만 받는다.
 2. **`do_not_extra` 키워드 보호**: 키워드를 포함하는 span은 어떤 카테고리로도 탐지하지 않는다(기존 do-not list 위에 추가).
-3. **무력화 불가 패턴 무시**: `pattern_overrides`에 A-8, C-5, D-1~D-6 항목이 들어와도 무시. 출력 finding에 `voice_profile_override_attempted: true` 플래그를 달아 오케스트레이터가 사용자에게 경고할 수 있게 한다.
-4. **출력 메타에 추적 정보 기록**: `meta.author_context_applied: true`, `meta.overrides_applied: ["J-3:relax", "A-10:disable"]`, `meta.overrides_ignored: ["A-8:disable_attempted"]`.
+3. **무력화 불가 패턴 disable 거부**: `pattern_overrides`에 A-8, C-5, D-1~D-6의 disable이 등재된 파일은 schema validator가 사전에 reject하므로 detector에는 도달하지 않는다. 만약 schema validator를 우회한 입력이 들어오면 detector는 즉시 에러 반환(silent ignore 금지).
+4. **출력 메타에 추적 정보 기록**: `meta.author_context_applied: true`, `meta.overrides_applied: ["J-3:relax:2.0", "A-10:disable"]`, `meta.do_not_extra_triggered: [...]`. 이 정보는 오케스트레이터가 `_workspace/{run_id}/voice_profile_log.json`에 추가 기록.
 
 voice profile이 미주입(null)이면 v1.1과 동일하게 동작한다.
 
