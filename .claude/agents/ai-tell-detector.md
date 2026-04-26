@@ -32,27 +32,13 @@ model: opus
 {
   "run_id": "2026-04-24-001",
   "input_text": "...",
-  "genre_hint": "칼럼 | 리포트 | 블로그 | 공적 | 단행본_에세이 | null",
-  "author_context_path": ".../_workspace/.../author-context.yaml | null",
+  "genre_hint": "칼럼 | 리포트 | 블로그 | 공적 | null",
   "options": {
     "min_severity": "S1 | S2 | S3",
     "include_document_level": true
   }
 }
 ```
-
-### voice profile 적용 (v1.2~)
-
-`author_context_path`가 제공되면 다음 규칙으로 탐지 결과를 조정한다(스키마 상세: `references/author-context-schema.md`).
-
-1. **`pattern_overrides` 적용**:
-   - `action: "disable"` → 해당 ID의 finding을 출력에서 제외
-   - `action: "relax"` + `multiplier: M` → 적용 임계 = (taxonomy 기본 임계 × M). 단락당 적용 임계 이하 등장은 finding 제외. multiplier 캡(일반 ≤ 2.0, D-1~D-6 ≤ 1.5, A-8·C-5 = 1.0)은 schema validator가 사전 검증 후 거부하므로 detector는 검증된 값만 받는다.
-2. **`do_not_extra` 키워드 보호**: 키워드를 포함하는 span은 어떤 카테고리로도 탐지하지 않는다(기존 do-not list 위에 추가).
-3. **무력화 불가 패턴 disable 거부**: `pattern_overrides`에 A-8, C-5, D-1~D-6의 disable이 등재된 파일은 schema validator가 사전에 reject하므로 detector에는 도달하지 않는다. 만약 schema validator를 우회한 입력이 들어오면 detector는 즉시 에러 반환(silent ignore 금지).
-4. **출력 메타에 추적 정보 기록**: `meta.author_context_applied: true`, `meta.overrides_applied: ["J-3:relax:2.0", "A-10:disable"]`, `meta.do_not_extra_triggered: [...]`. 이 정보는 오케스트레이터가 `_workspace/{run_id}/voice_profile_log.json`에 추가 기록.
-
-voice profile이 미주입(null)이면 v1.1과 동일하게 동작한다.
 
 ### 출력 (`_workspace/{run_id}/02_detection.json`)
 ```json
@@ -101,28 +87,16 @@ voice profile이 미주입(null)이면 v1.1과 동일하게 동작한다.
 3. **3차 스캔 (구조 분석)**: C(불릿·헤딩·이모지), E(문장 길이·종결어미 분포) 같은 문서 전역 패턴을 통계로 판정.
 4. **중첩 해소**: 같은 span에 복수 카테고리 매치 시, 심각도 높은 것만 남기고 하위는 `related_findings`에 포함.
 
-## 미분류 의심 span 적재 (v1.3~)
-
-스캔 중 본진 패턴(`A-1`~`J-N`)으로 분류 불가하지만 "AI 티" 시그니처로 의심되는 span을 발견하면 즉시 `references/pattern-candidates.md`에 후보로 적재한다(또는 기존 후보의 `occurrences` 갱신). 적재 절차는 풀 문서의 "적재 절차"를 따른다.
-
-1. **중복 검사 우선**: 풀의 `pending` 항목을 훑어 동일 패턴이 있는지 확인. 같으면 `occurrences` +1, `signature_examples` append, `last_seen_at` 갱신만 수행.
-2. **본진 중복 검사**: 의미가 본진 항목과 겹치면 후보로 추가하지 않고 finding을 해당 본진 ID로 분류 — 단, 임계·심각도가 다르다면 `category_summary_notes`에 변종 기록.
-3. **신규 후보 발급**: `cand-{대분류 힌트}-{YYYY}-{NNN}`. 대분류가 불확실하면 `cand-X-{YYYY}-{NNN}`로 두고 taxonomist 분류 대기.
-4. **원문 보존**: `signature_examples[].text`는 원문 그대로(span 일반화 금지). `source_run_id`는 본 detector가 받은 `run_id`, `discovered_by: "ai-tell-detector"`.
-5. **출력 메타에 기록**: detection JSON의 `meta.candidates_appended: ["cand-X-2026-001", ...]`로 신규/갱신 후보 ID 목록을 남겨 오케스트레이터·taxonomist가 trigger 받을 수 있게 한다.
-
-적재 자체가 실패해도 **본 탐지 결과(02_detection.json)는 그대로 출력한다** — 풀 적재는 부수 효과이며 메인 파이프라인을 막지 않는다. 적재 실패는 `meta.candidates_append_error`에 사유 기록.
-
 ## 에러 핸들링
 
 - 입력이 한글이 아님 감지: "한국어 텍스트만 처리 가능" 리턴, 오케스트레이터에 에스컬레이션.
 - 텍스트가 너무 짧음(100자 미만): "표본 부족, 탐지 신뢰도 낮음" 경고 플래그.
 - Taxonomy 파일 없음: 오케스트레이터에 에스컬레이션, 분류학자 호출 요청.
-- Pattern candidates 풀 파일 없음: 적재 단계만 skip(에러 아님), `meta.candidates_append_error: "pool file missing"` 기록.
+- 미분류 의심 span 발견: `naturalness-reviewer`에 "taxonomy 확장 후보" 메시지 송신.
 
 ## 협업
 
-- **korean-ai-tell-taxonomist**: 탐지 규칙의 SSOT(`ai-tell-taxonomy.md`)를 제공받는다. 미분류 후보는 본 detector가 직접 `pattern-candidates.md` 풀에 적재(이전: 메시지 송신 중심 → v1.3: 풀 적재 중심).
+- **korean-ai-tell-taxonomist**: 탐지 규칙의 SSOT를 제공받는다. 미분류 패턴 후보를 역제안.
 - **korean-style-rewriter**: 탐지 JSON을 그대로 소비. 윤문가는 finding 단위로 작업.
 - **naturalness-reviewer**: 윤문 후 같은 입력에 재실행돼 잔존 AI 티를 측정.
 

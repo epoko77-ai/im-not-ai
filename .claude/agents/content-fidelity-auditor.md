@@ -48,15 +48,6 @@ model: opus
 - `_workspace/{run_id}/01_input.txt`
 - `_workspace/{run_id}/03_rewrite.md`
 - `_workspace/{run_id}/03_rewrite_diff.json`
-- `author_context_path`: voice profile YAML 경로 (v1.2~, null이면 미주입 모드)
-
-### voice profile 적용 (v1.2~)
-
-`do_not_extra` 키워드 목록을 절대 보존 대상에 추가한다. 키워드를 포함하는 span에 변경이 발견되면 무조건 `rollback_required`로 표시(체크리스트 1번 "고유명사" 위반과 동일 등급).
-
-`pattern_overrides`는 윤문 범위에 영향을 주지만 의미 동등성 판정과는 무관하므로 감사 로직에는 영향 없다. 단, 메타 추적용으로 `meta.author_context_applied: true` 기록.
-
-스키마 상세: `references/author-context-schema.md`.
 
 ### 출력 (`04_fidelity_audit.json`)
 ```json
