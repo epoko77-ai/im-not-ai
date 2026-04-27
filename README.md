@@ -130,7 +130,7 @@ claude
 
 ### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
 
-세 가지 방법 중 편한 쪽으로 사용합니다.
+Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Codex 사용자는 아래 **방법 D**의 community port를 참고하세요.
 
 **방법 A — 자연어 한 문장 (가장 쉬움)**
 
@@ -160,6 +160,16 @@ claude
 **방법 C — Plugin / 자동 설치기** *(@gaebalai 포크)*
 
 [`gaebalai/im-not-ai`](https://github.com/gaebalai/im-not-ai) 포크가 Claude Code Plugin/Marketplace 규격으로 패키징되어 있습니다. `/plugin install humanize-korean@epoko77-ai-plugins` 또는 `./scripts/install.sh --target ~/my-project` 한 줄로 설치 가능합니다. 본체 정식 Plugin 지원은 v1.6 검토 중입니다 ([Issue 추적 예정](https://github.com/epoko77-ai/im-not-ai/issues)).
+
+**방법 D — Codex Plugin (community)**
+
+[`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)에서 Codex Desktop/CLI용 community plugin 포트를 제공합니다. 원본 taxonomy/playbook을 유지하고 Codex plugin/skill 구조에 맞게 어댑터화한 별도 배포판이며, 공식 Claude Code 버전과 분리되어 관리됩니다.
+
+설치:
+
+```bash
+codex plugin marketplace add Squirbie/im-not-ai-codex
+```
 
 ### 4. 결과 확인
 
