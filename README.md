@@ -171,6 +171,16 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 codex plugin marketplace add Poo-Squirry/im-not-ai-codex
 ```
 
+**방법 D — Codex Plugin (community)**
+
+[`Poo-Squirry/im-not-ai-codex`](https://github.com/Poo-Squirry/im-not-ai-codex)에서 Codex Desktop/CLI용 community plugin 포트를 제공합니다. 원본 taxonomy/playbook을 유지하고 Codex plugin/skill 구조에 맞게 어댑터화한 별도 배포판이며, 공식 Claude Code 버전과 분리되어 관리됩니다.
+
+설치:
+
+```bash
+codex plugin marketplace add Poo-Squirry/im-not-ai-codex
+```
+
 ### 4. 결과 확인
 
 Claude Code가 입력 길이·옵션에 따라 두 모드 중 하나로 처리합니다.
