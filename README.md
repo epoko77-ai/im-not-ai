@@ -171,6 +171,12 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 codex plugin marketplace add Squirbie/im-not-ai-codex
 ```
 
+**방법 E — Web UI (비공식)**
+
+Claude Code 설치 없이 웹에서 바로 윤문을 체험해볼 수 있는 커뮤니티 제작 포트입니다.
+- 접속: [im-not-ai-ocx.illuwa.click](https://im-not-ai-ocx.illuwa.click/)
+- 비고: 터미널 환경이 낯설거나 즉석에서 간단한 테스트가 필요할 때 권장합니다. (제작: [@illuwa](https://github.com/illuwa))
+
 ### 4. 결과 확인
 
 Claude Code가 입력 길이·옵션에 따라 두 모드 중 하나로 처리합니다.
