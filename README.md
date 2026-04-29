@@ -173,7 +173,7 @@ codex plugin marketplace add Squirbie/im-not-ai-codex
 
 **방법 E — Web UI (비공식)**
 
-Claude Code 설치 없이 웹에서 바로 윤문을 체험해볼 수 있는 커뮤니티 제작 포트입니다.
+opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 - 접속: [im-not-ai-ocx.illuwa.click](https://im-not-ai-ocx.illuwa.click/)
 
 ### 4. 결과 확인
