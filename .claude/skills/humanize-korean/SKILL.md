@@ -28,7 +28,12 @@ humanize-korean v1.5 — {fast|strict} 모드 / run_id: {YYYY-MM-DD-NNN}
 - 그 외 모두 → **fast (디폴트)**
 
 ### run_id 결정
-- cwd 기준 `_workspace/{YYYY-MM-DD-NNN}/` 새로 생성 (NNN은 그날의 시퀀스).
+- 모든 경로는 **cwd 기준**. 새 폴더 생성도 cwd 기준 `_workspace/{YYYY-MM-DD-NNN}/`에 만든다.
+- 기존 시퀀스 확인은 **`Glob` 도구**로 표지 파일을 매칭해 간접 조회.
+  올바른 사용법: `Glob(pattern="_workspace/YYYY-MM-DD-*/01_input.txt")` → 결과에서 폴더명 추출 후 NNN 최댓값 + 1.
+  주의: Glob은 디렉토리 자체는 매칭하지 못한다. 반드시 그 안의 표지 파일(`01_input.txt`)을 매칭할 것.
+  `Bash ls`는 OS·셸 환경에 따라 경로 해석이 달라지므로 사용 금지.
+- 당일 폴더가 없으면 NNN = 001. 있으면 마지막 NNN + 1.
 - 부분 재실행 신호("이 카테고리만 다시"·"2차 윤문")일 경우 기존 run_id 재사용 + strict 모드로 자동 승급.
 
 ## Fast 모드 (디폴트)
