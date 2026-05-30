@@ -1,0 +1,102 @@
+{
+  "version": "v1.6-2026-05-06",
+  "source": "KatFish (Park et al., 인간 470 vs LLM 1,624편 / 에세이 771·시 945·초록 378) + LREAD 인간 판독 실험",
+  "notes": "metric-engineer는 이 baseline을 그대로 import해 z-score 계산에 사용한다. 미공개 셀은 null. 사용자 코퍼스로 보강 시 source에 ',user-corpus-{date}' 추가.",
+  "genres": {
+    "essay": {
+      "comma_inclusion_rate": {"human": 26.31, "ai": 61.03, "ratio": 2.32, "unit": "percent"},
+      "comma_usage_rate": {"human": 1.13, "ai": 2.56, "ratio": 2.27, "unit": "per_sentence"},
+      "comma_relative_position": {"human": 0.10, "ai": 0.20, "ratio": 2.00, "unit": "normalized_0to1"},
+      "comma_segment_length": {"human": 4.35, "ai": 8.56, "ratio": 1.97, "unit": "eojeol_per_segment"},
+      "comma_pos_diversity": {"human": 24.38, "ai": 59.39, "ratio": 2.44, "unit": "pos_count"},
+      "ending_comma_rate": {"human": 4.10, "ai": 19.83, "ratio": 4.84, "unit": "percent"}
+    },
+    "poetry": {
+      "comma_inclusion_rate": {"human": 27.01, "ai": 42.90, "ratio": 1.59, "unit": "percent"},
+      "comma_usage_rate": {"human": 2.61, "ai": 4.84, "ratio": 1.85, "unit": "per_sentence"},
+      "comma_relative_position": {"human": 0.18, "ai": 0.27, "ratio": 1.50, "unit": "normalized_0to1"},
+      "comma_segment_length": null,
+      "comma_pos_diversity": {"human": 23.13, "ai": 23.86, "ratio": 1.03, "unit": "pos_count", "note": "시 장르는 분리도 약함 — 장르 가드 필요"},
+      "ending_comma_rate": {"human": 4.68, "ai": 15.57, "ratio": 3.33, "unit": "percent"}
+    },
+    "abstract": {
+      "comma_inclusion_rate": {"human": 47.48, "ai": 65.21, "ratio": 1.37, "unit": "percent"},
+      "comma_usage_rate": {"human": 1.73, "ai": 2.40, "ratio": 1.39, "unit": "per_sentence"},
+      "comma_relative_position": {"human": 0.15, "ai": 0.24, "ratio": 1.60, "unit": "normalized_0to1", "note": "보고서 본문 추정치(상세 셀 미공개)"},
+      "comma_segment_length": null,
+      "comma_pos_diversity": null,
+      "ending_comma_rate": {"human": 13.27, "ai": 28.01, "ratio": 2.11, "unit": "percent"}
+    },
+    "news": null,
+    "qa": null,
+    "blog": null
+  },
+  "global_average": {
+    "comma_inclusion_rate": {"human": 33.60, "ai": 56.38, "ratio": 1.68, "unit": "percent"},
+    "comma_usage_rate": {"human": 1.82, "ai": 3.27, "ratio": 1.79, "unit": "per_sentence"},
+    "comma_relative_position": {"human": 0.14, "ai": 0.24, "ratio": 1.65, "unit": "normalized_0to1"},
+    "comma_segment_length": {"human": 5.13, "ai": 7.41, "ratio": 1.45, "unit": "eojeol_per_segment"},
+    "comma_pos_diversity": {"human": 30.12, "ai": 48.40, "ratio": 1.61, "unit": "pos_count"}
+  },
+  "z_score_thresholds": {
+    "high_risk": 1.0,
+    "comments": "보고서 §탐지 알고리즘에서 z>1.0 시 가산. 문서별 측정값을 장르 baseline과 비교한 z-score가 1.0 초과면 해당 지표 가산. news/qa/blog는 사용자 코퍼스로 보강 필요. 시 장르는 comma_pos_diversity 분리도가 약하므로 (genre=='poetry') 가드 권장."
+  },
+  "lexicons": {
+    "conclusion_pivot": [
+      "결론적으로",
+      "따라서",
+      "이를 통해",
+      "그러므로"
+    ],
+    "safe_balance": [
+      "양쪽 모두",
+      "두 가지 모두",
+      "장점도 있지만",
+      "신중하게",
+      "균형"
+    ],
+    "hanja_nominalizers": [
+      "성",
+      "적",
+      "화"
+    ],
+    "lexicon_thresholds": {
+      "conclusion_pivot": {"per_doc_count": 3, "severity": "S1", "merges_into": "D-1"},
+      "safe_balance": {"per_doc_count": 4, "severity": "S2", "new_code": "G-3"},
+      "hanja_nominalizers": {"per_doc_density": 12, "severity": "S2", "merges_into": "F-4", "unit": "occurrences_per_doc"}
+    }
+  },
+  "lread_calibration": {
+    "human_intuition_acc": 0.60,
+    "human_intuition_p_value": 0.362,
+    "human_intuition_chance_diff": "no statistical difference",
+    "rubric_acc": 0.90,
+    "rubric_fisher_p": 0.015,
+    "rubric_cohens_h": 0.73,
+    "ai_essay_false_negative_drop": {
+      "before": 0.500,
+      "after": 0.083,
+      "fisher_p": 0.003
+    },
+    "zero_shot_llm_majority_acc": 0.9667,
+    "comments": "Phase 1 직관 60%는 chance와 통계적 차이 없음(p=.362) — 일반 독자는 AI 한글 식별 어려움. Phase 2 루브릭(쉼표·연결어미·결산·균형 어휘 등 우리 분류 체계와 정렬)을 제공하면 90%로 급상승. v1.6 detector는 LREAD 루브릭의 측정 지표를 그대로 흡수해 인간 판독 90% 수준 도달이 1차 KPI."
+  },
+  "v1_6_promotion_targets": {
+    "promote": [
+      {"cand_id": "cand-v16-001", "new_code": "C-11", "name": "ending_comma_rate", "severity": "S1", "primary_metric": "ending_comma_rate"},
+      {"cand_id": "cand-v16-002", "new_code": "C-12", "name": "comma_inclusion_rate", "severity": "S2", "primary_metric": "comma_inclusion_rate"},
+      {"cand_id": "cand-v16-003", "new_code": "E-5", "name": "comma_segment_length", "severity": "S2", "primary_metric": "comma_segment_length"},
+      {"cand_id": "cand-v16-004", "new_code": "E-6", "name": "comma_pos_diversity", "severity": "S2", "primary_metric": "comma_pos_diversity", "genre_guard": ["poetry"]},
+      {"cand_id": "cand-v16-007", "new_code": "G-3", "name": "safe_balance_lexicon", "severity": "S2", "primary_metric": "safe_balance"}
+    ],
+    "merge": [
+      {"cand_id": "cand-v16-006", "into": ["D-1", "H-1", "A-2"], "patch": "lexicon 4종 정식 인용 + 임계"},
+      {"cand_id": "cand-v16-008", "into": ["F-4"], "patch": "hanja_nominalizers 3종 명시 + 한 문서 12회 초과 S2 강화 임계"}
+    ],
+    "hold": [
+      {"cand_id": "cand-v16-005", "name": "spacing_regularness", "reason": "보고서 본문에 정량 셀 미공개. 사용자 코퍼스 baseline 확보 후 v1.7 검토. 탐지 전용 신호로만 채용 가능, 윤문 처방 없음(맞춤법 일부러 틀리게 만들지 않음)"},
+      {"cand_id": "cand-v16-009", "name": "persona_register_mismatch", "reason": "v1.5 monolith fast + author-context 미주입과 충돌. 메타 부스터로만 작동하는 옵트인 설계가 정리되면 v1.7+ 검토"}
+    ]
+  }
+}

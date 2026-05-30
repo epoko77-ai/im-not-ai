@@ -1,6 +1,7 @@
 # Runtime artifacts (per-run outputs)
 _workspace/
 _workspace_prev/
+dist/
 
 # macOS
 .DS_Store

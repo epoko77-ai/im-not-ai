@@ -1,0 +1,6 @@
+interface:
+  display_name: "Im Not AI"
+  short_description: "한글 AI 티를 탐지하고 자연스럽게 윤문하는 스킬"
+  default_prompt: "Use $im-not-ai to make this Korean draft sound less AI-written while preserving every fact."
+policy:
+  allow_implicit_invocation: true
