@@ -3,7 +3,6 @@ _workspace/
 _workspace_prev/
 
 # Claude.ai 스킬 빌드 산출물 (build-claude-ai-zip.sh 가 SSOT에서 복사·생성)
-dist/humanize-korean-claude-ai.zip
 dist/claude-ai/humanize-korean/references/ai-tell-taxonomy.md
 dist/claude-ai/humanize-korean/references/rewriting-playbook.md
 
