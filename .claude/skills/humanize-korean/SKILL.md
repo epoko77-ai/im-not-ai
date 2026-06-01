@@ -49,7 +49,7 @@ humanize-korean v1.5 — {fast|strict} 모드 / run_id: {YYYY-MM-DD-NNN}
 입력:
 ```
 input_path: <abs path>/_workspace/{run_id}/01_input.txt
-quick_rules_path: <abs path>/.claude/skills/humanize-korean/references/quick-rules.md
+quick_rules_path: ${CLAUDE_SKILL_DIR}/references/quick-rules.md
 genre_hint: 칼럼 | 리포트 | 블로그 | 공적 | null
 ```
 
