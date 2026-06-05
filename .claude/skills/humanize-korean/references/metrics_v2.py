@@ -618,7 +618,7 @@ def interference_index(text: str) -> dict[str, Any]:
 
 
 def _default_baseline_v2_path() -> str:
-    return os.path.join(_HERE, "baseline_v2_diff.json")
+    return os.path.join(_HERE, "baseline_v2.json")
 
 
 def _load_baseline_v2(path: str | None) -> dict[str, Any]:

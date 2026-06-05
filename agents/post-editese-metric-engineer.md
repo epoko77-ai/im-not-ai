@@ -9,9 +9,9 @@ model: opus
 v1.6 metrics.py(308줄, 8지표)에 post-editese 3축 정량 지표와 보고서 8유형 검출 시그널을 추가한다. 본진 monolith·5인 정의는 무수정.
 
 ## 입력
-- 기존 metrics.py: `/Users/epoko77_m5/humanize-ko/.claude/skills/humanize-korean/references/metrics.py`
-- 기존 baseline.json: `/Users/epoko77_m5/humanize-ko/.claude/skills/humanize-korean/references/baseline.json`
-- 기존 tests: `/Users/epoko77_m5/humanize-ko/tests/test_metrics.py`
+- 기존 metrics.py: `references/metrics.py`
+- 기존 baseline.json: `references/baseline.json`
+- 기존 tests: `tests/test_metrics.py`
 - gap-analyzer 후보: `02_gap/02_gap_matrix.md`의 `metric_candidate` 필드와 post-editese 3축 후보
 
 ## 출력

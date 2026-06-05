@@ -60,8 +60,8 @@ cd im-not-ai
 입력 텍스트
     ↓
 [humanize-monolith]   ── 한 콜 안에서 탐지 → 윤문 → 자체검증 일괄
-    ↓                     (도구 호출 4~5회 캡, opus, ~3분)
-final.md + summary.md
+    ↓                     (도구 호출 3회 캡, opus, ~3분)
+final.md (끝에 <!-- HUMANIZE-SUMMARY --> 블록 내장)
 ```
 
 **Strict 모드 (`--strict` 또는 8,000자+ 자동 승급)**
