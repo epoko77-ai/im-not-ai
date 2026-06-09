@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Humanize KR — Claude Code + Codex CLI 전역 설치 스크립트
-# 저장소를 클론한 뒤 `./install.sh` 한 번이면 설치된 CLI(claude/codex)를 자동 감지해
+# Humanize KR — Claude Code + Codex CLI + Gemini CLI 전역 설치 스크립트
+# 저장소를 클론한 뒤 `./install.sh` 한 번이면 설치된 CLI(claude/codex/gemini)를 자동 감지해
 # humanize-korean 스킬(+ 에이전트)을 전역으로 연결한다. 기본은 심링크(저장소 수정 즉시 반영).
 set -euo pipefail
 
@@ -11,6 +11,7 @@ CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 MODE=symlink          # symlink | copy
 DO_CLAUDE=auto        # auto | yes | no
 DO_CODEX=auto
+DO_GEMINI=auto
 FORCE=0
 DRYRUN=0
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -22,12 +23,15 @@ Usage: ./install.sh [options]
   설치된 CLI를 자동 감지해 humanize-korean 스킬을 전역 설치한다.
   Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-redo} + ~/.claude/agents/*.md
   Codex : ~/.codex/skills/humanize-korean
+  Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
 
 Options:
   --copy          심링크 대신 복사(저장소를 지워도 유지, references 심링크는 실체화).
                   ※ 복사본은 uninstall.sh가 자동 삭제하지 않음(수동 삭제).
   --claude-only   Claude만 설치
   --codex-only    Codex만 설치
+  --gemini-only   Gemini만 설치
+  --no-gemini     Gemini 건너뜀 (claude/codex만)
   --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
   --dry-run       실제 변경 없이 수행할 작업만 출력
   -h, --help      이 도움말
@@ -39,8 +43,10 @@ H
 while [ $# -gt 0 ]; do
   case "$1" in
     --copy) MODE=copy ;;
-    --claude-only) DO_CODEX=no ;;
-    --codex-only) DO_CLAUDE=no ;;
+    --claude-only) DO_CODEX=no; DO_GEMINI=no ;;
+    --codex-only) DO_CLAUDE=no; DO_GEMINI=no ;;
+    --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
+    --no-gemini) DO_GEMINI=no ;;
     --force) FORCE=1 ;;
     --dry-run) DRYRUN=1 ;;
     -h|--help) print_help; exit 0 ;;
@@ -105,9 +111,24 @@ else
   echo "== Codex CLI: 건너뜀 (codex 미감지 — 강제하려면 --codex-only) =="
 fi
 
+# ---- Gemini CLI ----
+if [ "$DO_GEMINI" != no ] && { [ "$DO_GEMINI" = yes ] || command -v gemini >/dev/null 2>&1; }; then
+  echo "== Gemini CLI =="
+  if [ "$DRYRUN" = 1 ]; then
+    echo "+ gemini extensions link $REPO (dry-run)"
+  else
+    echo "gemini extensions link \"$REPO\" 실행 (확장 등록)..."
+    echo "Y" | gemini extensions link "$REPO" 2>/dev/null && echo "installed: Gemini extension (im-not-ai)" \
+      || echo "  (이미 등록됨 또는 수동 등록 필요: gemini extensions link $REPO)"
+  fi
+else
+  echo "== Gemini CLI: 건너뜀 (gemini 미감지 — 강제하려면 --gemini-only) =="
+fi
+
 echo ""
 echo "완료 (mode=$MODE)."
 echo "  Claude: 새 세션에서 /humanize-korean (또는 /humanize)"
 echo "  Codex : \$humanize-korean"
+echo "  Gemini: 새 세션에서 /humanize-korean (또는 /humanize)"
 echo "  업데이트: ./update.sh (새 버전 자동 감지 + 적용) · 제거: ./uninstall.sh"
 exit 0

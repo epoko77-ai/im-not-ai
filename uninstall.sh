@@ -33,4 +33,15 @@ for a in "$REPO/agents"/*.md; do
   remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"
 done
 
+# ---- Gemini CLI ----
+if command -v gemini >/dev/null 2>&1; then
+  echo "Gemini extension 제거 시도..."
+  if [ "$DRYRUN" = 1 ]; then
+    echo "+ gemini extensions uninstall im-not-ai (dry-run)"
+  else
+    gemini extensions uninstall im-not-ai 2>/dev/null && echo "removed: Gemini extension (im-not-ai)" \
+      || echo "  (Gemini extension 미설치 또는 이미 제거됨)"
+  fi
+fi
+
 echo "제거 완료. (.bak.* 백업·--copy 설치본은 보존)"

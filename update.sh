@@ -28,7 +28,10 @@ done
 g rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "git 저장소가 아닙니다: $REPO"; exit 2; }
 
 ver() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$REPO/.claude-plugin/plugin.json" 2>/dev/null \
-          | head -1 | grep -o '[0-9][0-9.]*' || echo "?"; }
+          | head -1 | grep -o '[0-9][0-9.]*' \
+       || grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$REPO/gemini-extension.json" 2>/dev/null \
+          | head -1 | grep -o '[0-9][0-9.]*' \
+       || echo "?"; }
 
 UPSTREAM="$(g rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo origin/main)"
 UP_REMOTE="${UPSTREAM%%/*}"

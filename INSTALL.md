@@ -1,13 +1,14 @@
 # 설치 가이드 (Install)
 
-Humanize KR은 **Claude Code**와 **OpenAI Codex CLI** 양쪽에서 전역으로 쓸 수 있습니다.
+Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
 
 | 도구 | 모드 | 설치 방법 |
 |---|---|---|
 | Claude Code | Fast + strict(5인 파이프라인) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | Codex CLI | Fast(단일 호출)만 | 클론 + `install.sh` |
+| Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
-> Codex는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
+> Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
 
 ---
 
@@ -53,21 +54,22 @@ cd im-not-ai
 
 ---
 
-## 한 번에 양쪽 모두
+## 한 번에 양쪽 모두 (Claude + Codex + Gemini)
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
-./install.sh            # 설치된 claude/codex를 자동 감지해 각각 연결
+./install.sh            # 설치된 claude/codex/gemini를 자동 감지해 각각 연결
 ```
 
 ### `install.sh` 옵션
 
 | 옵션 | 설명 |
 |---|---|
-| (없음) | `claude`·`codex` 자동 감지 후 각각 설치 (심링크) |
+| (없음) | `claude`·`codex`·`gemini` 자동 감지 후 각각 설치 (심링크) |
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
-| `--claude-only` / `--codex-only` | 한쪽만 |
+| `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
+| `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
 | `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
 | `-h`, `--help` | 도움말 |
@@ -108,4 +110,33 @@ cd im-not-ai
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
 - Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 지원).
+- Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
+
+---
+
+## Gemini CLI (Antigravity)
+
+Gemini CLI 0.14.0 이상이 필요합니다.
+
+### 방법 ① 원격 설치 — 클론 불필요 (권장)
+
+```bash
+gemini extensions install https://github.com/epoko77-ai/im-not-ai.git
+```
+
+- 설치 후 새 세션에서 `/humanize-korean`(또는 `/humanize`), 혹은 자연어 트리거("이 글 AI 티 없애줘")로 발동.
+- 업데이트: `gemini extensions update im-not-ai`.
+- 제거: `gemini extensions uninstall im-not-ai`.
+
+### 방법 ② 클론 + 스크립트
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+./install.sh --gemini-only
+```
+
+`gemini extensions link`로 저장소를 직접 링크합니다(저장소 수정 시 즉시 반영). 새 세션에서 `/humanize-korean`.
+
+> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 strict 5인 파이프라인은 Claude Code 전용.

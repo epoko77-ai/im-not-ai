@@ -20,7 +20,10 @@ im-not-ai/
 ├── .claude-plugin/                # Claude 플러그인 + 마켓플레이스 매니페스트
 │   ├── plugin.json                # skills: ./.claude/skills/ · 에이전트는 루트 agents/ 자동탐색
 │   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
-├── install.sh / uninstall.sh      # Claude·Codex 전역 설치/제거 (심링크 기본)
+├── gemini-extension.json          # Gemini CLI Extension 매니페스트
+├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
+├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
+├── install.sh / uninstall.sh      # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
 ├── agents/                        # 서브에이전트 12종 (플러그인 컨벤션 — 루트 agents/에 둬야 로드됨)
 │   ├── humanize-monolith.md       # Fast 단일 호출
 │   ├── ai-tell-detector.md · korean-style-rewriter.md
