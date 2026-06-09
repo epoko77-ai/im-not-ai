@@ -1,7 +1,7 @@
 # Humanize KR — AI 한글 티 제거 (Gemini CLI Extension)
 
-> **v1.5 · Fast(monolith) 모드 전용** — Gemini CLI에서 한 번의 대화로 탐지·윤문·자체검증을 일괄 처리합니다.
-> 정밀 strict 5인 파이프라인은 Claude Code 전용입니다.
+**v1.5 · Fast(monolith) 모드 전용** — Gemini CLI에서 한 번의 대화로 탐지·윤문·자체검증을 일괄 처리합니다.
+정밀 strict 5인 파이프라인은 Claude Code 전용입니다.
 
 ## 개요
 
