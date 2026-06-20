@@ -30,13 +30,27 @@ assert_not_contains() {
 }
 
 codex_output="$(run_installer --codex-only)"
-assert_contains "$codex_output" "== Codex CLI =="
+assert_contains "$codex_output" "== Codex =="
 assert_contains "$codex_output" "+ ln -s $ROOT/codex/skills/humanize-korean $TMP_HOME/.codex/skills/humanize-korean"
-assert_not_contains "$codex_output" "Codex CLI: "
+assert_not_contains "$codex_output" "Codex: "
 
 claude_output="$(run_installer --claude-only)"
 assert_contains "$claude_output" "== Claude Code =="
 assert_contains "$claude_output" "+ ln -s $ROOT/.claude/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
 assert_not_contains "$claude_output" "Claude Code: "
+
+mkdir -p "$TMP_HOME/.codex"
+codex_desktop_output="$(run_installer)"
+assert_contains "$codex_desktop_output" "== Codex =="
+assert_contains "$codex_desktop_output" "+ ln -s $ROOT/codex/skills/humanize-korean $TMP_HOME/.codex/skills/humanize-korean"
+assert_not_contains "$codex_desktop_output" "Codex: "
+rm -rf "$TMP_HOME/.codex"
+
+mkdir -p "$TMP_HOME/.claude"
+claude_desktop_output="$(run_installer)"
+assert_contains "$claude_desktop_output" "== Claude Code =="
+assert_contains "$claude_desktop_output" "+ ln -s $ROOT/.claude/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
+assert_not_contains "$claude_desktop_output" "Claude Code: "
+rm -rf "$TMP_HOME/.claude"
 
 echo "install flag tests passed"

@@ -1,11 +1,11 @@
 # 설치 가이드 (Install)
 
-Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
+Humanize KR은 **Claude Code**와 **OpenAI Codex(CLI/Desktop)**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
 
 | 도구 | 모드 | 설치 방법 |
 |---|---|---|
 | Claude Code | Fast + strict(5인 파이프라인) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
-| Codex CLI | Fast(단일 호출)만 | 클론 + `install.sh` |
+| Codex(CLI/Desktop) | Fast(단일 호출)만 | 클론 + `install.sh` |
 | Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
 > Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
@@ -40,9 +40,9 @@ cd im-not-ai
 
 ---
 
-## Codex CLI
+## Codex(CLI/Desktop)
 
-Codex 0.121.0 이상(1급 Skills 지원)이 필요합니다.
+Codex CLI 0.121.0 이상 또는 `~/.codex/skills`를 읽는 Desktop 버전이 필요합니다.
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
@@ -50,7 +50,7 @@ cd im-not-ai
 ./install.sh --codex-only
 ```
 
-`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요.
+`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. `codex` 명령이 PATH에 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 설치할 수 있습니다.
 
 ---
 
@@ -59,16 +59,17 @@ cd im-not-ai
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
-./install.sh            # 설치된 claude/codex/gemini를 자동 감지해 각각 연결
+./install.sh            # claude/codex/gemini 명령 또는 ~/.claude·~/.codex를 감지해 각각 연결
 ```
 
 ### `install.sh` 옵션
 
 | 옵션 | 설명 |
 |---|---|
-| (없음) | `claude`·`codex`·`gemini` 자동 감지 후 각각 설치 (심링크) |
+| (없음) | `claude`·`codex`·`gemini` 명령을 자동 감지합니다. Claude/Codex는 `~/.claude`·`~/.codex` 디렉터리도 감지합니다. |
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
-| `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
+| `--claude-only` / `--codex-only` | CLI/홈 디렉터리 감지 없이 해당 스킬만 설치 |
+| `--gemini-only` | Gemini만 설치(`gemini extensions link` 실행) |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
 | `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
@@ -102,14 +103,14 @@ cd im-not-ai
 ## 트러블슈팅
 
 - **"refuse: … 가 이미 있음"** — 해당 경로에 이미 다른 파일/링크가 있습니다. `--force`(백업 후 덮어쓰기) 또는 직접 정리 후 재실행하세요.
-- **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/.claude/skills`(스크립트 설치)로 확인하세요. Codex는 `/skills` 메뉴로 확인.
+- **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/.claude/skills`(스크립트 설치)로 확인하세요. Codex는 `/skills` 메뉴 또는 `ls -l ~/.codex/skills`로 확인하세요.
 - **저장소 위치 이동/삭제** — 심링크 설치는 클론한 저장소 경로에 의존합니다. 저장소를 옮기면 `./uninstall.sh`(옛 경로) 후 새 경로에서 `./install.sh`를 다시 실행하거나, 위치 비의존이 필요하면 `--copy`로 설치하세요.
 - **레포 기여 개발** — 이 저장소는 에이전트를 플러그인 컨벤션(`agents/`)에, 스킬을 `.claude/skills/`에 둡니다. 저장소 안에서 직접 테스트하려면 `./install.sh`로 한 번 전역 연결한 뒤(에이전트가 `~/.claude/agents`에서 탐색됨) 사용하세요.
 
 ## 요구 사항
 
-- Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
-- Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 지원).
+- Claude Code: 마켓플레이스/플러그인 지원 버전. 스크립트 설치만 할 때는 `claude` 명령이 없어도 `~/.claude`가 있거나 `--claude-only`를 쓰면 됩니다.
+- Codex: CLI 0.121.0 이상 또는 `~/.codex/skills` Skills를 지원하는 Desktop 버전. 스크립트 설치만 할 때는 `codex` 명령이 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 됩니다.
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 
