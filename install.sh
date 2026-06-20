@@ -43,8 +43,8 @@ H
 while [ $# -gt 0 ]; do
   case "$1" in
     --copy) MODE=copy ;;
-    --claude-only) DO_CODEX=no; DO_GEMINI=no ;;
-    --codex-only) DO_CLAUDE=no; DO_GEMINI=no ;;
+    --claude-only) DO_CLAUDE=yes; DO_CODEX=no; DO_GEMINI=no ;;
+    --codex-only) DO_CLAUDE=no; DO_CODEX=yes; DO_GEMINI=no ;;
     --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
     --no-gemini) DO_GEMINI=no ;;
     --force) FORCE=1 ;;
