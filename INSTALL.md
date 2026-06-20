@@ -1,11 +1,11 @@
 # 설치 가이드 (Install)
 
-Humanize KR은 **Claude Code**와 **OpenAI Codex(CLI/Desktop)**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
+Humanize KR은 **Claude Code**와 **OpenAI Codex**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
 
 | 도구 | 모드 | 설치 방법 |
 |---|---|---|
 | Claude Code | Fast + strict(5인 파이프라인) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
-| Codex(CLI/Desktop) | Fast(단일 호출)만 | 클론 + `install.sh` |
+| Codex | Fast(단일 호출)만 | 클론 + `install.sh` |
 | Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
 > Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
@@ -40,9 +40,9 @@ cd im-not-ai
 
 ---
 
-## Codex(CLI/Desktop)
+## Codex
 
-Codex CLI 0.121.0 이상 또는 `~/.codex/skills`를 읽는 Desktop 버전이 필요합니다.
+Codex에서 `~/.codex/skills`를 읽는 버전이 필요합니다. CLI 사용자는 0.121.0 이상을 권장합니다.
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
@@ -110,7 +110,7 @@ cd im-not-ai
 ## 요구 사항
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전. 스크립트 설치만 할 때는 `claude` 명령이 없어도 `~/.claude`가 있거나 `--claude-only`를 쓰면 됩니다.
-- Codex: CLI 0.121.0 이상 또는 `~/.codex/skills` Skills를 지원하는 Desktop 버전. 스크립트 설치만 할 때는 `codex` 명령이 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 됩니다.
+- Codex: `~/.codex/skills` Skills를 지원하는 버전. CLI 사용자는 0.121.0 이상을 권장합니다. 스크립트 설치만 할 때는 `codex` 명령이 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 됩니다.
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 
