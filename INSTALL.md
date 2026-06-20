@@ -50,7 +50,7 @@ cd im-not-ai
 ./install.sh --codex-only
 ```
 
-`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. `codex` 명령이 PATH에 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 설치할 수 있습니다.
+`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. `codex` 명령이 PATH에 없어도 `~/.codex`가 있으면 설치할 수 있습니다. `--codex-only`는 설치 대상을 Codex로만 제한합니다.
 
 ---
 
@@ -68,7 +68,7 @@ cd im-not-ai
 |---|---|
 | (없음) | `claude`·`codex`·`gemini` 명령을 자동 감지합니다. Claude/Codex는 `~/.claude`·`~/.codex` 디렉터리도 감지합니다. |
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
-| `--claude-only` / `--codex-only` | CLI/홈 디렉터리 감지 없이 해당 스킬만 설치 |
+| `--claude-only` / `--codex-only` | 해당 대상만 설치 시도. 설치 가능 여부는 `claude`/`codex` 명령 또는 `~/.claude`/`~/.codex` 감지로 판단 |
 | `--gemini-only` | Gemini만 설치(`gemini extensions link` 실행) |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
 | `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
@@ -109,8 +109,8 @@ cd im-not-ai
 
 ## 요구 사항
 
-- Claude Code: 마켓플레이스/플러그인 지원 버전. 스크립트 설치만 할 때는 `claude` 명령이 없어도 `~/.claude`가 있거나 `--claude-only`를 쓰면 됩니다.
-- Codex: `~/.codex/skills` Skills를 지원하는 버전. CLI 사용자는 0.121.0 이상을 권장합니다. 스크립트 설치만 할 때는 `codex` 명령이 없어도 `~/.codex`가 있거나 `--codex-only`를 쓰면 됩니다.
+- Claude Code: 마켓플레이스/플러그인 지원 버전. 스크립트 설치는 `claude` 명령 또는 `~/.claude`가 감지될 때 진행됩니다. `--claude-only`는 설치 대상을 Claude로만 제한합니다.
+- Codex: `~/.codex/skills` Skills를 지원하는 버전. CLI 사용자는 0.121.0 이상을 권장합니다. 스크립트 설치는 `codex` 명령 또는 `~/.codex`가 감지될 때 진행됩니다. `--codex-only`는 설치 대상을 Codex로만 제한합니다.
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 

@@ -28,8 +28,8 @@ Usage: ./install.sh [options]
 Options:
   --copy          심링크 대신 복사(저장소를 지워도 유지, references 심링크는 실체화).
                   ※ 복사본은 uninstall.sh가 자동 삭제하지 않음(수동 삭제).
-  --claude-only   Claude만 설치(CLI/홈 디렉터리 감지 없이 강제)
-  --codex-only    Codex만 설치(CLI/홈 디렉터리 감지 없이 강제)
+  --claude-only   Claude만 설치 시도(claude 명령 또는 ~/.claude 감지 시)
+  --codex-only    Codex만 설치 시도(codex 명령 또는 ~/.codex 감지 시)
   --gemini-only   Gemini만 설치
   --no-gemini     Gemini 건너뜀 (claude/codex만)
   --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
@@ -43,8 +43,8 @@ H
 while [ $# -gt 0 ]; do
   case "$1" in
     --copy) MODE=copy ;;
-    --claude-only) DO_CLAUDE=yes; DO_CODEX=no; DO_GEMINI=no ;;
-    --codex-only) DO_CLAUDE=no; DO_CODEX=yes; DO_GEMINI=no ;;
+    --claude-only) DO_CODEX=no; DO_GEMINI=no ;;
+    --codex-only) DO_CLAUDE=no; DO_GEMINI=no ;;
     --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
     --no-gemini) DO_GEMINI=no ;;
     --force) FORCE=1 ;;
@@ -107,7 +107,7 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
     install_one "$a" "$CLAUDE_HOME/agents/$(basename "$a")"
   done
 else
-  echo "== Claude Code: 건너뜀 (claude 또는 $CLAUDE_HOME 미감지 — 강제하려면 --claude-only) =="
+  echo "== Claude Code: 건너뜀 (claude 또는 $CLAUDE_HOME 미감지) =="
 fi
 
 # ---- Codex ----
@@ -116,7 +116,7 @@ if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || has_codex_target; }; then
   run mkdir -p "$CODEX_HOME/skills"
   install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
 else
-  echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지 — 강제하려면 --codex-only) =="
+  echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지) =="
 fi
 
 # ---- Gemini CLI ----
