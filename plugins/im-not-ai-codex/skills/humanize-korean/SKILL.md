@@ -43,13 +43,25 @@ Codex에서는 **Fast가 기본값**이다. 일반 `$humanize-korean` 호출은 
 
 strict는 사용자의 명시적 요청이 있을 때만 시작한다. 시작 전 원문을 cwd 기준 `_workspace/{run_id}/01_input.txt`에 저장하고, 모든 subagent prompt에 이 파일 경로와 아래 reference 파일 경로를 포함한다. 각 subagent는 독립적으로 필요한 reference를 읽게 하며, 최종 판단은 main thread가 종합한다.
 
-1. **Detector subagent**: `references/quick-rules.md`와 `references/ai-tell-taxonomy.md`를 기준으로 Do-NOT span을 제외한 AI 티를 span 단위로 탐지한다. 출력은 `_workspace/{run_id}/02_detection.json`이며 항목은 `id`, `category`, `severity`, `span`, `reason`, `suggested_fix`를 포함한다.
-2. **Rewriter subagent**: `02_detection.json`과 `references/rewriting-playbook.md`만 근거로 수술적으로 윤문한다. 사실·수치·고유명사·인용문을 바꾸지 않고 `_workspace/{run_id}/03_rewrite.md`를 쓴다.
-3. **Fidelity auditor subagent**: `01_input.txt`와 `03_rewrite.md`를 비교해 의미 훼손, 누락, 추가 주장, 수치/날짜/고유명사 변경을 감사한다. 출력은 `_workspace/{run_id}/04_fidelity_audit.json`이다.
-4. **Naturalness reviewer subagent**: `03_rewrite.md`를 다시 스캔해 잔존 S1/S2, 과윤문, 리듬 균일성, register 이탈을 평가한다. 출력은 `_workspace/{run_id}/05_naturalness_review.json`이다.
-5. **Main thread synthesis**: 두 검증 결과를 종합한다. fidelity 실패면 문제 edit를 롤백하거나 보수적으로 재작성한다. 자연도 C/D면 한 번만 재윤문하고 다시 검토한다. 최종 `_workspace/{run_id}/final.md`와 `_workspace/{run_id}/summary.md`를 작성한다.
+Codex는 subagent를 명시 요청 시에만 spawn한다. strict를 실행할 때도 같은 역할을 중복 spawn하지 말고, 각 dependency wave가 완료될 때까지 wait한 뒤 결과 파일과 최종 메시지를 읽어 다음 wave를 시작한다. wait 중 응답이 늦어도 살아 있는 subagent를 실패로 간주하지 않는다. 같은 역할이 아직 실행 중이면 **do not spawn another subagent for the same role**.
 
-Strict 응답은 Fast와 같은 요약 형식을 유지하되, `summary.md` 경로와 subagent 산출물 경로를 함께 알려준다. subagent를 열어 실행했다면 결과 수령 후 완료된 subagent를 닫아 열린 agent를 남기지 않는다.
+모든 subagent prompt는 다음 형식을 포함한다.
+
+```text
+TASK: <역할별 지시>
+DELIVERABLE: <써야 할 파일과 반환 요약>
+SCOPE: <입력 파일, reference 파일, 변경 금지 범위>
+VERIFY: <성공 조건과 금지 조건>
+```
+
+1. **Dependency wave 1 — Detector subagent**: `references/quick-rules.md`와 `references/ai-tell-taxonomy.md`를 기준으로 Do-NOT span을 제외한 AI 티를 span 단위로 탐지한다. 출력은 `_workspace/{run_id}/02_detection.json`이며 항목은 `id`, `category`, `severity`, `span`, `reason`, `suggested_fix`를 포함한다. Parent는 completed subagent 결과를 wait한 뒤 JSON을 읽고 다음 wave로 간다.
+2. **Dependency wave 2 — Rewriter subagent**: `02_detection.json`과 `references/rewriting-playbook.md`만 근거로 수술적으로 윤문한다. 사실·수치·고유명사·인용문을 바꾸지 않고 `_workspace/{run_id}/03_rewrite.md`를 쓴다. Parent는 completed subagent 결과와 파일을 모두 확인한다.
+3. **Dependency wave 3 — parallel auditors**: 아래 둘은 동시에 실행할 수 있다. Parent는 둘 다 wait하고 완료 결과를 모두 읽은 뒤 종합한다.
+   - **Fidelity auditor subagent**: `01_input.txt`와 `03_rewrite.md`를 비교해 의미 훼손, 누락, 추가 주장, 수치/날짜/고유명사 변경을 감사한다. 출력은 `_workspace/{run_id}/04_fidelity_audit.json`이다.
+   - **Naturalness reviewer subagent**: `03_rewrite.md`를 다시 스캔해 잔존 S1/S2, 과윤문, 리듬 균일성, register 이탈을 평가한다. 출력은 `_workspace/{run_id}/05_naturalness_review.json`이다.
+4. **Main thread synthesis**: 두 검증 결과를 종합한다. fidelity 실패면 문제 edit를 롤백하거나 보수적으로 재작성한다. 자연도 C/D면 한 번만 재윤문하고 다시 검토한다. 최종 `_workspace/{run_id}/final.md`와 `_workspace/{run_id}/summary.md`를 작성한다.
+
+Strict 응답은 Fast와 같은 요약 형식을 유지하되, `summary.md` 경로와 subagent 산출물 경로를 함께 알려준다. subagent를 열어 실행했다면 결과 수령 후 완료된 subagent를 close/닫아 열린 agent를 남기지 않는다.
 
 ## 등급
 

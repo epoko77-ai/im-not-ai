@@ -43,7 +43,7 @@ cd im-not-ai
 - Claude: `/humanize-korean` · Codex: `$humanize-korean`
 - 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
 - **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). Claude 마켓플레이스 설치는 `/plugin update`, Codex 플러그인 설치는 marketplace 재등록 후 `codex plugin add im-not-ai-codex@im-not-ai`.
-- Codex는 **Fast가 기본값**이고, 정밀 strict는 사용자가 명시적으로 요청한 경우에만 Codex subagent workflow로 실행합니다.
+- Codex는 **Fast default**이고, 정밀 strict는 사용자가 명시적으로 요청한 경우에만 Codex subagent workflow로 실행합니다. Codex plugin은 skill을 배포하며, 별도 custom agent 파일이 필요하면 Codex 규칙대로 `.codex/agents` 또는 `~/.codex/agents`에 둡니다.
 
 ## 왜 한글 특화인가
 
@@ -222,7 +222,7 @@ codex plugin marketplace add .
 codex plugin add im-not-ai-codex@im-not-ai
 ```
 
-Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). 기존 직접 skill 설치가 필요하면 `./install.sh --codex-only`를 사용할 수 있습니다. Codex는 **Fast default**로 처리하고, `strict`/`정밀`/`서브에이전트`처럼 명시 요청이 있을 때만 Codex subagent workflow를 실행합니다.
+Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). 기존 직접 skill 설치가 필요하면 `./install.sh --codex-only`를 사용할 수 있습니다. Codex는 **Fast default**로 처리하고, `strict`/`정밀`/`서브에이전트`처럼 명시 요청이 있을 때만 Codex subagent workflow를 실행합니다. plugin에는 skill이 들어가며 custom agent TOML을 함께 묶지 않습니다. 그런 agent 구성이 필요하면 `.codex/agents` 또는 `~/.codex/agents`에 별도로 둡니다.
 
 **방법 E — Web UI (비공식)**
 
@@ -251,7 +251,7 @@ Claude Code는 기존 Claude 모드 라우팅을 유지합니다. Codex는 **Fas
 | `05_naturalness_review.json` | 자연도 재측정 결과 |
 | `final.md` + `summary.md` | 최종 윤문본 + 점수·주요 변경·등급 요약 |
 
-정밀 부분 재실행("이 카테고리만 다시 strict로"·"2차 윤문을 서브에이전트로")은 strict 모드로 요청할 수 있습니다.
+정밀 부분 재실행("이 카테고리만 다시 strict로"·"2차 윤문을 서브에이전트로")은 strict 모드로 요청할 수 있습니다. Codex strict에서는 parent가 subagent 호출, 결과 대기, 결과 파일 확인, 종합 판단을 이어서 수행합니다.
 
 ### 5. 결과가 맘에 안 들면
 
