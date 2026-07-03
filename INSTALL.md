@@ -5,10 +5,10 @@ Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity
 | 도구 | 모드 | 설치 방법 |
 |---|---|---|
 | Claude Code | Fast + strict(5인 파이프라인) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
-| Codex CLI | Fast(단일 호출)만 | 클론 + `install.sh` |
+| Codex CLI | Fast default + explicit strict(Codex subagents) | ① Codex 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
-> Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
+> Codex는 Fast가 기본값이고, 사용자가 `strict`/`정밀`/`서브에이전트`처럼 명시 요청한 경우에만 Codex subagent workflow를 실행합니다. Gemini는 단일 호출 Fast Path만 제공합니다.
 
 ---
 
@@ -44,13 +44,26 @@ cd im-not-ai
 
 Codex 0.121.0 이상(1급 Skills 지원)이 필요합니다.
 
+### 방법 ① Codex 플러그인 마켓플레이스 — 권장
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+codex plugin marketplace add .
+codex plugin add im-not-ai-codex@im-not-ai
+```
+
+설치 후 새 Codex 세션에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. 일반 호출은 **Fast default**로 실행되고, `strict`/`정밀`/`5인 파이프라인`/`서브에이전트`처럼 명시 요청한 경우에만 Codex subagent workflow를 사용합니다.
+
+### 방법 ② 클론 + 스크립트 호환 경로
+
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
 ./install.sh --codex-only
 ```
 
-`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요.
+`~/.codex/skills/humanize-korean`에 플러그인에 포함된 `humanize-korean` 스킬을 심링크합니다. 플러그인 명령을 쓸 수 없는 환경의 직접 skill 설치 호환 경로입니다.
 
 ---
 
@@ -85,7 +98,7 @@ cd im-not-ai
   - `./update.sh --check` — 감지만(적용 안 함). 최신이면 종료코드 `0`, 업데이트 있으면 `10`.
   - `--copy`로 설치했다면 `./update.sh --copy --force`.
 - **수동** — `git pull`만 해도 심링크라 내용은 반영됩니다(신규 파일 연결은 `./install.sh` 한 번 더).
-- **마켓플레이스 설치** — Claude Code가 갱신을 관리합니다: `/plugin marketplace update im-not-ai` → `/plugin update humanize-korean`.
+- **마켓플레이스 설치** — Claude Code는 `/plugin marketplace update im-not-ai` → `/plugin update humanize-korean`, Codex는 `codex plugin marketplace add .` 후 `codex plugin add im-not-ai-codex@im-not-ai`를 다시 실행해 갱신합니다.
 - **주기적 무인 업데이트 (opt-in)** — 완전 자동 갱신을 원하면 cron/launchd로 `update.sh`를 거세요. 예(매주 월 09:00, 감지 시 적용):
   ```cron
   0 9 * * 1  cd /path/to/im-not-ai && ./update.sh >> ~/.humanize-update.log 2>&1
@@ -95,7 +108,7 @@ cd im-not-ai
 ## 제거
 
 - **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존).
-- **마켓플레이스** — `/plugin uninstall humanize-korean`.
+- **마켓플레이스** — Claude Code는 `/plugin uninstall humanize-korean`, Codex는 `codex plugin remove im-not-ai-codex@im-not-ai`.
 
 ---
 
@@ -109,7 +122,7 @@ cd im-not-ai
 ## 요구 사항
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
-- Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 지원).
+- Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 및 `codex plugin` 지원).
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 

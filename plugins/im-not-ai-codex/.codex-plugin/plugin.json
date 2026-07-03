@@ -1,0 +1,42 @@
+{
+  "name": "im-not-ai-codex",
+  "version": "2.0.0",
+  "description": "Codex plugin for humanizing Korean AI-written text with Fast default mode and explicit strict subagent workflow.",
+  "author": {
+    "name": "epoko77-ai",
+    "url": "https://github.com/epoko77-ai"
+  },
+  "homepage": "https://github.com/epoko77-ai/im-not-ai",
+  "repository": "https://github.com/epoko77-ai/im-not-ai",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "codex-plugin",
+    "korean",
+    "writing",
+    "humanize",
+    "ai-detection"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Humanize KR for Codex",
+    "shortDescription": "Remove Korean AI tells while preserving meaning.",
+    "longDescription": "Humanize KR for Codex provides the humanize-korean skill. Normal use runs a single-call Fast path; strict precision is available only when the user explicitly requests a Codex subagent workflow.",
+    "developerName": "epoko77-ai",
+    "category": "Writing",
+    "capabilities": [
+      "Skills",
+      "Writing",
+      "Korean Editing"
+    ],
+    "websiteURL": "https://github.com/epoko77-ai/im-not-ai",
+    "privacyPolicyURL": "https://github.com/epoko77-ai/im-not-ai#privacy",
+    "termsOfServiceURL": "https://github.com/epoko77-ai/im-not-ai#license",
+    "defaultPrompt": [
+      "$humanize-korean 이 글 AI 티 없애줘:",
+      "$humanize-korean strict 정밀 검증으로 이 글 윤문해줘:"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

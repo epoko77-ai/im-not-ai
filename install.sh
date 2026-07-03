@@ -22,7 +22,7 @@ Usage: ./install.sh [options]
 
   설치된 CLI를 자동 감지해 humanize-korean 스킬을 전역 설치한다.
   Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-redo} + ~/.claude/agents/*.md
-  Codex : ~/.codex/skills/humanize-korean
+  Codex : ~/.codex/skills/humanize-korean (native plugin skill source)
   Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
 
 Options:
@@ -106,7 +106,7 @@ fi
 if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || command -v codex >/dev/null 2>&1; }; then
   echo "== Codex CLI =="
   run mkdir -p "$CODEX_HOME/skills"
-  install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
+  install_one "$REPO/plugins/im-not-ai-codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
 else
   echo "== Codex CLI: 건너뜀 (codex 미감지 — 강제하려면 --codex-only) =="
 fi
