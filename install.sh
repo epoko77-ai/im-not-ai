@@ -43,8 +43,8 @@ H
 while [ $# -gt 0 ]; do
   case "$1" in
     --copy) MODE=copy ;;
-    --claude-only) DO_CODEX=no; DO_GEMINI=no ;;
-    --codex-only) DO_CLAUDE=no; DO_GEMINI=no ;;
+  --claude-only) DO_CLAUDE=yes; DO_CODEX=no; DO_GEMINI=no ;;
+  --codex-only) DO_CLAUDE=no; DO_CODEX=yes; DO_GEMINI=no ;;
     --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
     --no-gemini) DO_GEMINI=no ;;
     --force) FORCE=1 ;;
@@ -56,6 +56,14 @@ while [ $# -gt 0 ]; do
 done
 
 run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
+
+has_claude_target() {
+  command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME" ]
+}
+
+has_codex_target() {
+  command -v codex >/dev/null 2>&1 || [ -d "$CODEX_HOME" ]
+}
 
 # rc: 0=대상 비었음(설치 진행) / 1=이미 우리 심링크(스킵) / 2=충돌(거부)
 prepare_target() {
@@ -89,7 +97,7 @@ install_one() {
 }
 
 # ---- Claude ----
-if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || command -v claude >/dev/null 2>&1; }; then
+if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; then
   echo "== Claude Code =="
   run mkdir -p "$CLAUDE_HOME/skills" "$CLAUDE_HOME/agents"
   for s in humanize-korean humanize humanize-redo; do
@@ -99,16 +107,16 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || command -v claude >/dev
     install_one "$a" "$CLAUDE_HOME/agents/$(basename "$a")"
   done
 else
-  echo "== Claude Code: 건너뜀 (claude 미감지 — 강제하려면 --claude-only) =="
+  echo "== Claude Code: 건너뜀 (claude 또는 $CLAUDE_HOME 미감지 — 강제하려면 --claude-only) =="
 fi
 
 # ---- Codex ----
-if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || command -v codex >/dev/null 2>&1; }; then
-  echo "== Codex CLI =="
+if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || has_codex_target; }; then
+  echo "== Codex =="
   run mkdir -p "$CODEX_HOME/skills"
   install_one "$REPO/plugins/im-not-ai-codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
 else
-  echo "== Codex CLI: 건너뜀 (codex 미감지 — 강제하려면 --codex-only) =="
+  echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지 — 강제하려면 --codex-only) =="
 fi
 
 # ---- Gemini CLI ----

@@ -42,7 +42,7 @@ cd im-not-ai
 
 ## Codex CLI
 
-Codex 0.121.0 이상(1급 Skills 지원)이 필요합니다.
+`codex plugin`과 Skills를 지원하는 Codex CLI가 필요합니다.
 
 ### 방법 ① Codex 플러그인 마켓플레이스 — 권장
 
@@ -124,7 +124,7 @@ cd im-not-ai
 ## 요구 사항
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
-- Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 및 `codex plugin` 지원).
+- Codex CLI: `~/.codex/skills` Skills 및 `codex plugin` 명령 지원 버전.
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 
@@ -154,4 +154,4 @@ cd im-not-ai
 
 `gemini extensions link`로 저장소를 직접 링크합니다(저장소 수정 시 즉시 반영). 새 세션에서 `/humanize-korean`.
 
-> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 strict 5인 파이프라인은 Claude Code 전용.
+> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 strict 워크플로는 Claude Code와 Codex에서 각 플랫폼의 subagent 방식으로 실행합니다.

@@ -17,10 +17,20 @@ case "${1:-}" in
 esac
 
 remove_if_ours() {
-  local dest="$1" src="$2"
-  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
-    echo "+ rm $dest"; [ "$DRYRUN" = 1 ] || rm "$dest"
-  elif [ -e "$dest" ]; then
+  local dest="$1"
+  shift
+  if [ -L "$dest" ]; then
+    local actual
+    actual="$(readlink "$dest")"
+    local src
+    for src in "$@"; do
+      if [ "$actual" = "$src" ]; then
+        echo "+ rm $dest"; [ "$DRYRUN" = 1 ] || rm "$dest"
+        return 0
+      fi
+    done
+  fi
+  if [ -e "$dest" ]; then
     echo "skip (우리 것 아님): $dest"
   fi
 }
@@ -28,7 +38,9 @@ remove_if_ours() {
 for s in humanize-korean humanize humanize-redo; do
   remove_if_ours "$CLAUDE_HOME/skills/$s" "$REPO/.claude/skills/$s"
 done
-remove_if_ours "$CODEX_HOME/skills/humanize-korean" "$REPO/codex/skills/humanize-korean"
+remove_if_ours "$CODEX_HOME/skills/humanize-korean" \
+  "$REPO/plugins/im-not-ai-codex/skills/humanize-korean" \
+  "$REPO/codex/skills/humanize-korean"
 for a in "$REPO/agents"/*.md; do
   remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"
 done
