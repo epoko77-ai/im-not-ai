@@ -22,8 +22,9 @@ sys.path.insert(0, METRICS_DIR)
 import metrics  # noqa: E402  (sys.path mutation is intentional)
 
 BASELINE_PATH = os.path.join(
-    PROJECT_ROOT, "_workspace", "v1.6-2026-05-06", "02_katfish_baseline.json"
+    METRICS_DIR, "baseline.json"
 )
+MISSING_BASELINE_PATH = os.path.join(PROJECT_ROOT, "_workspace", "missing-baseline.json")
 
 
 class MetricsTests(unittest.TestCase):
@@ -100,9 +101,11 @@ class MetricsTests(unittest.TestCase):
 
     def test_baseline_null_genre_falls_back(self) -> None:
         text = "오늘은 좋은 날이다."
-        result = metrics.compute_all(text, genre="news", baseline_path=BASELINE_PATH)
-        # news is null in baseline => fallback warning expected.
+        result = metrics.compute_all(
+            text, genre="news", baseline_path=MISSING_BASELINE_PATH
+        )
         self.assertIn("warning", result)
+        self.assertIn("baseline_missing", result["warning"])
         self.assertIn("news", result["warning"])
 
     def test_baseline_essay_no_warning(self) -> None:

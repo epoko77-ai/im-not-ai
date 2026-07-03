@@ -211,6 +211,19 @@ def _default_baseline_path() -> str:
 
 def _load_baseline(path: str | None) -> dict[str, Any]:
     p = path or _default_baseline_path()
+    if not os.path.exists(p):
+        fallback = _default_baseline_path()
+        if os.path.exists(fallback):
+            with open(fallback, "r", encoding="utf-8") as f:
+                baseline = json.load(f)
+            baseline["_warning"] = f"baseline_missing:{p}->{fallback}"
+            return baseline
+        return {
+            "_warning": f"baseline_missing:{p}->placeholder",
+            "genres": {"essay": {}},
+            "global_average": {},
+            "lexicons": {},
+        }
     with open(p, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -366,8 +379,10 @@ def compute_all(
             "safe_balances": _evidence_spans(text, safe_lex),
         },
     }
-    if fallback_warning:
-        out["warning"] = fallback_warning
+    baseline_warning = baseline.get("_warning")
+    warnings = [w for w in (baseline_warning, fallback_warning) if w]
+    if warnings:
+        out["warning"] = ";".join(warnings)
     return out
 
 

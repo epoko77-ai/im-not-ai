@@ -18,7 +18,7 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
+PROJECT_ROOT = os.path.abspath(os.path.join(HERE, ".."))
 
 # v1.6 module location
 V1_DIR = os.path.join(
@@ -31,9 +31,10 @@ import metrics  # noqa: E402  (v1.6)
 import metrics_v2  # noqa: E402  (v2.0 superset)
 
 BASELINE_PATH = os.path.join(
-    PROJECT_ROOT, "_workspace", "v1.6-2026-05-06", "02_katfish_baseline.json"
+    V1_DIR, "baseline.json"
 )
-BASELINE_V2_PATH = os.path.join(HERE, "baseline_v2_diff.json")
+MISSING_BASELINE_PATH = os.path.join(PROJECT_ROOT, "_workspace", "missing-baseline.json")
+BASELINE_V2_PATH = os.path.join(V1_DIR, "baseline_v2.json")
 
 
 # ===========================================================================
@@ -92,8 +93,11 @@ class V16RegressionTests(unittest.TestCase):
 
     def test_baseline_null_genre_falls_back(self) -> None:
         text = "오늘은 좋은 날이다."
-        result = metrics.compute_all(text, genre="news", baseline_path=BASELINE_PATH)
+        result = metrics.compute_all(
+            text, genre="news", baseline_path=MISSING_BASELINE_PATH
+        )
         self.assertIn("warning", result)
+        self.assertIn("baseline_missing", result["warning"])
         self.assertIn("news", result["warning"])
 
     def test_baseline_essay_no_warning(self) -> None:
