@@ -10,6 +10,7 @@
 4. **자연성 우선, 완벽성 차순(Natural > Perfect)**: 과하게 문학적으로 고치지 않는다. 일상 한국어 필자의 중간값 리듬을 목표.
 5. **근거 기반(Span-Grounded)**: 모든 변경은 탐지 리포트의 span에 연결된다. 탐지 없는 구간을 건드리지 않는다.
 6. **과윤문 경고(Over-Polish Alarm)**: 전체 문장의 50% 이상이 바뀌면 내용이 훼손됐을 가능성이 크다. 변경률을 모니터링.
+7. **전문 용어 보존(Term Fidelity)**: 개발·AI·학술 문맥에서 이미 굳은 technical term은 억지로 번역하지 않는다. 원어/외래어가 독자에게 더 정확하면 그대로 두고, 조사·어미·어순만 자연스럽게 다듬는다.
 
 ## 1. 카테고리별 치환 레시피
 
@@ -34,17 +35,24 @@
 
 ### B. 영어 인용·용어 처방
 
-- **괄호 병기**: 일반 독자 대상 → 첫 등장 1회만 영어 병기, 이후 한국어만. 전문 독자 대상 → 영어 병기 유지하되 매번 반복하지 않음.
-- **영어 단어 번역표 (빈출)**:
-  - pipeline → 파이프라인 (유지 OK) / 흐름 / 공정
-  - framework → 체계 / 틀 / 구조
+- **괄호 병기**: 일반 독자 대상 → 첫 등장 1회만 병기, 이후 한 표기로 통일. 전문 독자 대상 → 영어/외래어 표기를 유지하되 매번 괄호로 반복하지 않음.
+- **기술 용어 우선 보존**: `pipeline`, `framework`, `API`, `SDK`, `CLI`, `diff`, `prompt`, `token`, `embedding`, `agent`, `monolith`, `strict mode`, `fast path`, `plugin`, `runtime`, `adapter`, `rollback`, `baseline`, `metric`, `span`, `finding`처럼 업계에서 그대로 쓰는 말은 원어 또는 외래어 표기를 유지한다.
+- **직역 금지 예시**:
+  - pipeline → 파이프라인 (O) / 처리 흐름 (문맥상 O) / 관로 (X)
+  - framework → 프레임워크 (O) / 체계 (일반 독자 설명 O) / 틀 (개발 문맥 X)
+  - prompt → 프롬프트 (O) / 입력 지시 (설명문 O) / 지시문 (LLM 문맥 과번역 주의)
+  - token → 토큰 (O) / 표식 (X)
+  - diff → diff (O) / 변경 차이 (설명문 O) / 차이 (리뷰 문맥 X)
+  - agent → agent 또는 에이전트 (O) / 대리인 (X)
+- **번역해도 되는 영어 표현**:
   - leverage → 활용하다 / 기대다 / 끌어올리다
   - seamless → 매끄러운 / 끊김 없는
-  - robust → 튼튼한 / 견고한
-  - scalable → 확장성 있는
-  - insight → 통찰 / 눈 / 시사점
+  - robust → 견고한
+  - scalable → 확장 가능한 / 확장성 있는
+  - insight → 통찰 / 시사점
   - impact → 영향 / 파장
   - holistic → 전체적 / 총체적
+- **판정 기준**: 용어가 제품명·API명·도구명·개발 워크플로·LLM 개념을 가리키면 보존한다. 광고성 buzzword나 한국어 문장 리듬을 깨는 일회성 영어만 줄인다.
 - **영어 인용구**: 원문 어감이 핵심이면 유지하고 한국어 번역 병기. 그렇지 않으면 한국어로 풀어쓰고 출처만 각주.
 
 ### C. 구조 레시피
@@ -159,6 +167,7 @@
 이들은 문체상 AI 티로 보여도 **건드리면 의미가 바뀌는 표현**이므로 보존한다:
 
 - 전문 고유명사·제품명·모델명(GPT-4, Claude 3, Gemini 등)
+- 업계 표준 technical term(LLM, API, SDK, CLI, PR, diff, pipeline, framework, prompt, token, embedding, agent, plugin, runtime, baseline, metric, span, finding 등)
 - 수치·단위·날짜
 - 직접 인용된 문장(큰따옴표 "" 내부)
 - 법률·규정 조문 인용

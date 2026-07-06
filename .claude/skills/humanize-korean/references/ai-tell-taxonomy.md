@@ -162,15 +162,19 @@ J. 시각 장식 남용 — J-1~J-4
 
 ## B. 영어 인용·용어 과다 — S2
 
+> **용어 보존 원칙:** B 카테고리는 "영어가 보이면 지운다"가 아니다. 개발·AI·학술 문맥에서 이미 외래어 또는 원어로 굳은 technical term은 의미 보존 대상이다. `API`, `SDK`, `CLI`, `PR`, `diff`, `pipeline`, `framework`, `prompt`, `token`, `embedding`, `agent`, `plugin`, `runtime`, `baseline`, `metric`, `span`, `finding`, `monolith`, `strict mode`, `fast path` 등은 무리한 직역보다 원어/외래어 표기가 자연스럽다. B 카테고리는 설명 없이 끼워 넣은 buzzword, 반복 괄호 병기, 독자층과 맞지 않는 과시적 영어만 다룬다.
+
 ### B-1. 괄호 병기 관습 [S2]
 - 패턴: 처음 등장할 때 모든 전문용어에 영어 병기
 - 예: "인공지능**(AI)**은 거대언어모델**(LLM)**과 다르다."
 - 처방: 해당 문서가 전문 독자 대상이면 1회만 병기, 이후 한국어만. 일반 독자 대상이면 영어 병기 자체를 최소화.
 
-### B-2. 영어 용어 비번역 [S2]
-- 패턴: `pipeline`, `framework`, `leverage`, `seamless`, `robust` 등 한국어로 쓸 수 있는데 영어 그대로.
-- 예: "이 **framework**를 **leverage**하여" → "이 체계를 활용해"
-- 예외: 고유명사·업계 표준 용어(Transformer, API, SDK 등)는 유지.
+### B-2. 불필요한 영어 장식·일회성 jargon [S2]
+- 패턴: 한국어 문장 안에 설명 없이 끼워 넣은 buzzword가 문장 리듬을 깨거나, 독자층과 맞지 않는 과시적 영어가 반복됨.
+- 예: "이 **framework**를 **leverage**하여" → "이 프레임워크를 활용해" / "이 구조를 활용해"
+- 예: "사용자에게 **seamless**하고 **robust**한 경험을 제공한다" → "사용자가 끊김 없이 안정적으로 쓸 수 있게 한다"
+- 예외: 고유명사·제품명·API명·업계 표준 technical term(Transformer, API, SDK, CLI, diff, pipeline, framework, prompt, token, embedding, agent, plugin, runtime, baseline, metric, span, finding 등)은 원어/외래어로 유지. `pipeline`을 "관로", `framework`를 "틀", `prompt`를 "지시문", `token`을 "표식", `agent`를 "대리인"처럼 기계적으로 직역하지 않는다.
+- 처방: (a) 표준 technical term은 보존, (b) 광고성 buzzword는 한국어로 풀기, (c) 첫 등장 설명 뒤에는 한 표기로 통일.
 
 ### B-3. 과도한 영어 인용구 [S2]
 - 패턴: 영어 문장을 인용문으로 그대로 박아넣고 번역도 병기
