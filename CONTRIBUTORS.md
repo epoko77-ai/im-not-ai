@@ -54,5 +54,6 @@
 - **사용성 개선 제안** — 슬래시 커맨드, Plugin 통합, 자동화 reference 등
 - **다국어 확장** — 일본어/중국어 분류 체계 적용 가능성 검토
 - **버그 리포트** — Issue로 등록
+- **테스트·fixture 기여** — 회귀 테스트 스위트 확장(새 fixture·판정 차원). [`tests/README.md`](tests/README.md) 참고
 
 PR 보내실 때는 GitHub 기본 inbound = outbound 원칙에 따라 동일한 MIT 라이선스로 contribution됩니다. 본 명단은 v1.x 단위로 갱신됩니다.
