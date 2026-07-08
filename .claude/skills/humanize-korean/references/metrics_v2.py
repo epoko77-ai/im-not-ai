@@ -16,8 +16,9 @@ Versioning:
   redefine them here. Regression-safe.
 - v2.0 adds 14 NEW pure functions for post-editese + T1~T8 detection.
 
-This file lives in `_workspace/v2.0-YYYY-MM-DD/03_metrics/`. Phase 6
-integrator will merge it into the project's references/metrics.py.
+This file ships in `references/` alongside metrics.py (v1.6), from which it
+re-exports the 8 base metrics via a sibling import. Phase 6 integrator will
+fold it into metrics.py.
 
 CLI:
     python metrics_v2.py --input run/01_input.txt \
@@ -40,13 +41,13 @@ from typing import Any
 # Import v1.6 metrics module (regression-safe — signatures untouched)
 # ---------------------------------------------------------------------------
 
+# metrics.py(v1.6)는 이 파일과 같은 references/ 디렉터리에 있다. 자기 디렉터리를
+# sys.path에 넣어 sibling import를 보장한다 — cwd/import 방식과 무관하게 견고.
+# (과거엔 _workspace 스테이징 위치 기준 상대경로여서 references/로 옮긴 뒤 깨졌고,
+#  references/가 이미 sys.path에 있을 때만 우연히 import되던 잠재 버그였음.)
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.abspath(os.path.join(_HERE, "..", "..", ".."))
-_V1_METRICS_DIR = os.path.join(
-    _PROJECT_ROOT, ".claude", "skills", "humanize-korean", "references"
-)
-if _V1_METRICS_DIR not in sys.path:
-    sys.path.insert(0, _V1_METRICS_DIR)
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 import metrics as _v1  # noqa: E402  (sys.path mutation is intentional)
 
