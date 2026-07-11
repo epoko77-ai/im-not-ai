@@ -8,7 +8,7 @@ Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity
 | Codex CLI | Fast default + explicit strict(Codex subagents) | ① Codex 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
-> Codex는 Fast default이고, 사용자가 `strict`/`정밀`/`서브에이전트`처럼 명시 요청한 경우에만 Codex subagent workflow를 실행합니다. Codex plugin은 skill을 배포하며, custom agent 파일은 Codex 규칙대로 `.codex/agents` 또는 `~/.codex/agents`에 별도로 둡니다. Gemini는 단일 호출 Fast Path만 제공합니다.
+> Codex는 Fast default이고, 사용자가 `strict`/`정밀`/`서브에이전트`처럼 명시 요청한 경우에만 Codex subagent workflow를 실행합니다. strict skill은 현재 세션에 노출된 subagent 도구 표면을 기준으로 v1/v2를 구분하며 실험 기능 활성화를 요구하지 않습니다. Codex plugin은 skill을 배포하며, custom agent 파일은 Codex 규칙대로 `.codex/agents` 또는 `~/.codex/agents`에 별도로 둡니다. Gemini는 단일 호출 Fast Path만 제공합니다.
 
 ---
 
@@ -55,7 +55,7 @@ codex plugin add im-not-ai-codex@im-not-ai
 
 설치 후 새 Codex 세션에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. 일반 호출은 **Fast default**로 실행되고, `strict`/`정밀`/`5인 파이프라인`/`서브에이전트`처럼 명시 요청한 경우에만 Codex subagent workflow를 사용합니다.
 
-strict 요청 시 Codex parent가 subagent를 명시적으로 호출하고, 결과를 기다린 뒤 산출물 파일을 확인해 최종 결과를 종합합니다. plugin에는 skill만 포함되므로 custom agent TOML을 함께 배포한다고 가정하지 않습니다.
+strict 요청 시 Codex parent가 현재 세션에 노출된 subagent 도구 표면을 확인하고 namespaced v1 또는 flat v2 중 하나만 사용합니다. v1은 대상별 최종 상태를 기다리고 필요 없는 agent를 닫으며, v2는 mailbox notification과 자동 전달된 final 답변을 받아 `list_agents` 및 산출물로 완료를 확인합니다. 모델은 사용자가 지정하지 않으면 활성 Codex가 현재 설정을 상속하거나 작업에 맞게 선택하도록 둡니다. plugin에는 skill만 포함되므로 custom agent TOML을 함께 배포한다고 가정하지 않습니다.
 
 ### 방법 ② 클론 + 스크립트 호환 경로
 
@@ -124,7 +124,7 @@ cd im-not-ai
 ## 요구 사항
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
-- Codex CLI: `~/.codex/skills` Skills 및 `codex plugin` 명령 지원 버전.
+- Codex CLI: `codex plugin`과 Skills 지원 버전. `~/.codex/skills` 직접 설치는 기존 설치를 위한 legacy compatibility 경로이며, 새 설치는 위의 plugin marketplace 방식을 권장합니다.
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 

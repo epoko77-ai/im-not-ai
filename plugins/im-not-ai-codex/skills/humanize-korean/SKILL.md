@@ -44,7 +44,13 @@ Codex에서는 **Fast가 기본값**이다. 일반 `$humanize-korean` 호출은 
 
 strict는 사용자의 명시적 요청이 있을 때만 시작한다. 시작 전 원문을 cwd 기준 `_workspace/{run_id}/01_input.txt`에 저장하고, 모든 subagent prompt에 이 파일 경로와 아래 reference 파일 경로를 포함한다. 각 subagent는 독립적으로 필요한 reference를 읽게 하며, 최종 판단은 main thread가 종합한다.
 
-Codex는 subagent를 명시 요청 시에만 spawn한다. strict를 실행할 때도 같은 역할을 중복 spawn하지 말고, 각 dependency wave가 완료될 때까지 wait한 뒤 결과 파일과 최종 메시지를 읽어 다음 wave를 시작한다. wait 중 응답이 늦어도 살아 있는 subagent를 실패로 간주하지 않는다. 같은 역할이 아직 실행 중이면 **do not spawn another subagent for the same role**.
+Codex는 subagent를 명시 요청 시에만 spawn한다. strict 시작 전 현재 세션에 노출된 tool schema를 확인하고, 아래 v1/v2 중 실제로 제공된 한 표면만 사용한다. CLI 버전 문자열로 도구를 추측하거나 두 표면을 섞지 않는다. 같은 역할이 아직 실행 중이면 **do not spawn another subagent for the same role**.
+
+- **Namespaced v1 표면**: `multi_agent_v1.spawn_agent`에 완결된 prompt와 `fork_context=false`를 넘기고 반환된 agent id를 보관한다. `multi_agent_v1.wait_agent`는 `targets`의 최종 상태를 기다리며 timeout의 빈 상태는 실패가 아니다. 진행 중 보완은 `multi_agent_v1.send_input`을 사용하고, 더 쓸 일이 없는 agent만 `multi_agent_v1.close_agent`로 닫는다.
+- **Flat v2 표면**: `spawn_agent(task_name, message, fork_turns="none")`로 시작하고 반환된 canonical task name을 보관한다. child의 최종 답변은 parent에 자동 전달된다. `wait_agent`에는 target을 넘기지 않는다. 이 도구는 mailbox 활동만 기다리고 결과 본문을 반환하지 않으므로, 깨어난 뒤 수신된 final notification과 `list_agents` 상태를 확인하고 산출물 파일을 읽는다. `send_message`는 새 turn을 시작하지 않는 진행 중 메시지, `followup_task`는 idle agent를 다시 실행하는 후속 작업에만 쓴다. `interrupt_agent`는 실행 중 turn 중단용이며 cleanup/close가 아니다. v2에는 완료 agent를 닫는 호출을 요구하지 않는다.
+- **모델 선택**: 사용자가 특정 모델을 요구하지 않았다면 spawn에서 model과 reasoning_effort를 지정하지 않는다. 활성 Codex가 현재 설정을 상속하거나 작업에 맞게 선택하도록 두고, 이 plugin에 포함되지 않은 custom agent 이름에 의존하지 않는다.
+- **완료 판정**: timeout이나 늦은 응답만으로 실패 처리하지 않는다. 해당 표면의 final 상태/notification을 받고, 예상 산출물의 존재와 형식을 parent가 직접 검증한 뒤 다음 dependency wave로 간다. subagent 도구가 없으면 main thread 순차 fallback을 사용하고 그 사실을 밝힌다.
+- **표면 기록**: `summary.md`에 사용한 표면을 적을 때는 실제로 호출한 qualified tool과 argument schema로 판정한다. `multi_agent_v1.*`를 호출했으면 namespaced v1, `task_name`/`fork_turns` 기반 flat 도구를 호출했으면 flat v2로만 기록한다. UI의 일반적인 `collab` 표시나 추측만으로 v2라고 쓰지 말고, 확정할 수 없으면 버전 라벨을 생략한다.
 
 모든 subagent prompt는 다음 형식을 포함한다.
 
@@ -55,14 +61,14 @@ SCOPE: <입력 파일, reference 파일, 변경 금지 범위>
 VERIFY: <성공 조건과 금지 조건>
 ```
 
-1. **Dependency wave 1 — Detector subagent**: `references/quick-rules.md`와 `references/ai-tell-taxonomy.md`를 기준으로 Do-NOT span을 제외한 AI 티를 span 단위로 탐지한다. 출력은 `_workspace/{run_id}/02_detection.json`이며 항목은 `id`, `category`, `severity`, `span`, `reason`, `suggested_fix`를 포함한다. Parent는 completed subagent 결과를 wait한 뒤 JSON을 읽고 다음 wave로 간다.
-2. **Dependency wave 2 — Rewriter subagent**: `02_detection.json`과 `references/rewriting-playbook.md`만 근거로 수술적으로 윤문한다. 사실·수치·고유명사·인용문을 바꾸지 않고 `_workspace/{run_id}/03_rewrite.md`를 쓴다. Parent는 completed subagent 결과와 파일을 모두 확인한다.
-3. **Dependency wave 3 — parallel auditors**: 아래 둘은 동시에 실행할 수 있다. Parent는 둘 다 wait하고 완료 결과를 모두 읽은 뒤 종합한다.
+1. **Dependency wave 1 — Detector subagent**: `references/quick-rules.md`와 `references/ai-tell-taxonomy.md`를 기준으로 Do-NOT span을 제외한 AI 티를 span 단위로 탐지한다. 출력은 `_workspace/{run_id}/02_detection.json`이며 항목은 `id`, `category`, `severity`, `span`, `reason`, `suggested_fix`를 포함한다. Parent는 선택한 표면의 완료 신호와 JSON 형식을 확인한 뒤 다음 wave로 간다.
+2. **Dependency wave 2 — Rewriter subagent**: `02_detection.json`과 `references/rewriting-playbook.md`만 근거로 수술적으로 윤문한다. 사실·수치·고유명사·인용문을 바꾸지 않고 `_workspace/{run_id}/03_rewrite.md`를 쓴다. Parent는 완료 신호와 파일을 모두 확인한다.
+3. **Dependency wave 3 — parallel auditors**: 아래 둘은 동시에 실행할 수 있다. Parent는 두 agent의 완료 신호와 산출물을 모두 확인한 뒤 종합한다.
    - **Fidelity auditor subagent**: `01_input.txt`와 `03_rewrite.md`를 비교해 의미 훼손, 누락, 추가 주장, 수치/날짜/고유명사 변경을 감사한다. 출력은 `_workspace/{run_id}/04_fidelity_audit.json`이다.
    - **Naturalness reviewer subagent**: `03_rewrite.md`를 다시 스캔해 잔존 S1/S2, 과윤문, 리듬 균일성, register 이탈을 평가한다. 출력은 `_workspace/{run_id}/05_naturalness_review.json`이다.
 4. **Main thread synthesis**: 두 검증 결과를 종합한다. fidelity 실패면 문제 edit를 롤백하거나 보수적으로 재작성한다. 자연도 C/D면 한 번만 재윤문하고 다시 검토한다. 최종 `_workspace/{run_id}/final.md`와 `_workspace/{run_id}/summary.md`를 작성한다.
 
-Strict 응답은 Fast와 같은 요약 형식을 유지하되, `summary.md` 경로와 subagent 산출물 경로를 함께 알려준다. subagent를 열어 실행했다면 결과 수령 후 완료된 subagent를 close/닫아 열린 agent를 남기지 않는다.
+Strict 응답은 Fast와 같은 요약 형식을 유지하되, `summary.md` 경로와 subagent 산출물 경로를 함께 알려준다. v1에서는 재사용하지 않을 완료 agent를 닫고, v2에서는 완료 agent에 별도 close 동작을 만들지 않는다.
 
 ## 등급
 
