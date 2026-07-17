@@ -15,6 +15,10 @@ Inputs:
   --genre STR       essay|column|report|blog|abstract|... (default: essay)
   --diagnosis PATH  optional diagnosis text prepended before the metrics
                     block (정밀 3콜 구조의 진단 1콜 산출물 자리)
+  --chunk           장문 청킹 모드. 01_input.txt 를 손실 없이 청크로 나눠
+                    청크별 01_chunk_{NN}_input_with_metrics.txt 와
+                    chunk_manifest.json 을 만든다. 경계 결정은 100% 코드
+                    (LLM 개입 0). 재조립은 scripts/reassemble_chunks.py.
 
 Outputs (in {run_dir}):
   00_metrics.json             — full compute_all() output (or error stub)
@@ -32,8 +36,10 @@ Hard rules:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import sys
 import traceback
 from datetime import date
@@ -229,6 +235,380 @@ def _render_combined(
 
 
 # ---------------------------------------------------------------------------
+# --chunk mode: 손실 없는 결정적 분할 (v2.0.1 — fast+청킹으로 strict 승급 폐지)
+# ---------------------------------------------------------------------------
+#
+# 불변식 (최상위): 모든 청크(passthrough 포함)를 순서대로 이으면 원문과
+# 공백·개행까지 정확히 일치한다. 이를 위해 청크는 문자열 조각이 아니라
+# 원문 offset [start, end) 구간으로 정의하고, 쓰기 전에 self-check 한다.
+#
+# 경계 우선순위:
+#   1. 헤딩 줄 앞 강제 컷 — 헤딩은 반드시 다음 청크의 첫 줄이 된다.
+#      (웹앱 imnotai.kr 의 "제목이 본문과 한 청크로 묶여 병합 윤문" 버그 차단.
+#       연속 헤딩 런 사이에는 컷하지 않아 청크가 헤딩으로 끝나는 일이 없다.)
+#   2. 빈 줄(\n{2,}) 문단 경계 그리디 패킹 (목표 TARGET_CHUNK_CHARS).
+#   3. 한 문단이 상한 초과 시에만 문장 경계 폴백.
+#   4. 문서 말미 각주 블록은 passthrough 청크로 태깅해 윤문 대상에서 제외.
+#
+# 청크 크기: 목표 3,000 / 상한 4,000. 웹앱의 1800은 flash-lite 전제라 이식
+# 금지 — opus는 대구·리듬 같은 문단 횡단 신호를 잡아야 하므로 청크가 커야 한다.
+
+TARGET_CHUNK_CHARS = 3000
+MAX_CHUNK_CHARS = 4000
+
+HEADING_LINE_RE = re.compile(
+    r"^(#{1,6}\s"
+    r"|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\."
+    r"|\d+\.\s"
+    r"|\d+\)\s"
+    r"|제\s*\d+\s*[장절편]"
+    r"|[가나다라마바사아자차카타파하]\.\s"
+    r"|\([0-9가-힣]+\))"
+)
+# 각주 정의 줄. \d+\) 는 헤딩 정규식과 겹치지만 각주 판정은 문서 말미의
+# 연속 블록에만 적용되고 그 구간은 본문 청킹에서 제외되므로 충돌 없음.
+FOOTNOTE_LINE_RE = re.compile(r"^(?:\d+\)\s|\[\d+\]\s)")
+
+_PARA_SEP_RE = re.compile(r"\n{2,}")
+# 문장 경계: 종결 부호(+닫는 따옴표류) 뒤 공백. 컷은 공백 런 끝 = 다음 문장 시작.
+_SENT_END_RE = re.compile(r"[.!?。！？…]['\"”’』」)\]]*\s+")
+
+
+class ChunkingError(RuntimeError):
+    """손실 없는 분할 불변식 위반 — 즉시 중단해야 하는 fidelity 사고."""
+
+
+def _line_spans(text: str) -> list[tuple[int, int]]:
+    """개행 포함 줄 구간 [(start, end), ...]. 이으면 원문과 일치."""
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    n = len(text)
+    while pos < n:
+        nl = text.find("\n", pos)
+        if nl == -1:
+            spans.append((pos, n))
+            break
+        spans.append((pos, nl + 1))
+        pos = nl + 1
+    return spans
+
+
+def find_footnote_block_start(text: str) -> int | None:
+    """문서 말미의 각주 모음 블록 시작 offset. 없으면 None.
+
+    끝에서 역방향으로 훑으며 빈 줄은 통과, 각주 패턴 줄은 블록에 포함,
+    그 외 줄을 만나면 중단. 최소 1개의 각주 줄이 있어야 블록으로 본다.
+    """
+    spans = _line_spans(text)
+    start: int | None = None
+    for ls, le in reversed(spans):
+        line = text[ls:le]
+        if not line.strip():
+            continue
+        if FOOTNOTE_LINE_RE.match(line):
+            start = ls
+            continue
+        break
+    return start
+
+
+def _has_substantive(body: str, a: int, b: int) -> bool:
+    """[a, b) 구간에 헤딩도 빈 줄도 아닌 실제 본문 줄이 있는가."""
+    for ln in body[a:b].splitlines():
+        if ln.strip() and not HEADING_LINE_RE.match(ln):
+            return True
+    return False
+
+
+def _ends_with_heading(body: str, start: int, end: int) -> bool:
+    region = body[start:end].rstrip()
+    if not region:
+        return False
+    last_line = region.rsplit("\n", 1)[-1]
+    return bool(HEADING_LINE_RE.match(last_line))
+
+
+def _sentence_pieces(
+    text: str, start: int, end: int, target: int
+) -> list[tuple[int, int]]:
+    """상한 초과 문단을 문장 경계에서 target 크기로 그리디 분할.
+
+    경계가 아예 없는 초장 구간은 통짜로 반환한다(호출부가 경고).
+    """
+    bounds = [
+        m.end() for m in _SENT_END_RE.finditer(text, start, end) if m.end() < end
+    ]
+    pieces: list[tuple[int, int]] = []
+    piece_start = start
+    prev: int | None = None
+    for b in bounds:
+        if b - piece_start > target:
+            cut = prev if (prev is not None and prev > piece_start) else b
+            pieces.append((piece_start, cut))
+            piece_start = cut
+            prev = b if b > cut else None
+        else:
+            prev = b
+    if end - piece_start > target and prev is not None and prev > piece_start:
+        pieces.append((piece_start, prev))
+        piece_start = prev
+    pieces.append((piece_start, end))
+    return pieces
+
+
+def _pack_segment(
+    body: str,
+    seg_start: int,
+    seg_end: int,
+    target: int,
+    max_chunk: int,
+    warnings: list[str],
+) -> list[tuple[int, int]]:
+    """헤딩 강제 컷 사이의 한 세그먼트를 문단 단위로 그리디 패킹."""
+    # 문단 단위: 빈 줄 런의 *끝*에서 자르므로 각 청크는 문단 시작에서 출발하고
+    # 구분 개행은 앞 청크 꼬리에 붙는다 (손실 없음).
+    units: list[tuple[int, int]] = []
+    pos = seg_start
+    for m in _PARA_SEP_RE.finditer(body, seg_start, seg_end):
+        if m.end() >= seg_end:
+            break
+        units.append((pos, m.end()))
+        pos = m.end()
+    if pos < seg_end:
+        units.append((pos, seg_end))
+
+    pieces: list[tuple[int, int]] = []
+    for us, ue in units:
+        if ue - us > max_chunk:
+            subs = _sentence_pieces(body, us, ue, target)
+            for ss, se in subs:
+                if se - ss > max_chunk:
+                    warnings.append(
+                        f"문장 경계로 쪼갤 수 없는 초장 구간 {se - ss}자 "
+                        f"(offset {ss}) — 상한({max_chunk}) 초과 허용, 검토 요망"
+                    )
+            pieces.extend(subs)
+        else:
+            pieces.append((us, ue))
+
+    chunks: list[tuple[int, int]] = []
+    cur_start: int | None = None
+    cur_end = 0
+    for ps, pe in pieces:
+        if cur_start is None:
+            cur_start, cur_end = ps, pe
+            continue
+        would = (cur_end - cur_start) + (pe - ps)
+        # 헤딩 글루: 현재 청크가 헤딩으로 끝나는 상태면 크기와 무관하게 이어붙여
+        # "청크가 헤딩으로 끝남"을 구조적으로 금지한다.
+        if would > target and not _ends_with_heading(body, cur_start, cur_end):
+            chunks.append((cur_start, cur_end))
+            cur_start, cur_end = ps, pe
+        else:
+            cur_end = pe
+    if cur_start is not None:
+        chunks.append((cur_start, cur_end))
+    return chunks
+
+
+def compute_chunk_spans(
+    text: str,
+    target: int = TARGET_CHUNK_CHARS,
+    max_chunk: int = MAX_CHUNK_CHARS,
+) -> tuple[list[dict], list[str]]:
+    """원문을 손실 없이 청크 구간으로 나눈다. LLM 개입 0, 100% 결정적.
+
+    반환: ([{start, end, passthrough}, ...], warnings)
+    불변식 위반 시 ChunkingError.
+    """
+    warnings: list[str] = []
+    if not text:
+        return [], warnings
+
+    fn_start = find_footnote_block_start(text)
+    body_end = fn_start if fn_start is not None else len(text)
+
+    spans: list[dict] = []
+    if body_end > 0:
+        body = text[:body_end]
+        # 헤딩 강제 컷 수집. 직전 컷 이후 실제 본문이 없으면(연속 헤딩 런 등)
+        # 컷을 억제해 헤딩으로 끝나는 청크를 만들지 않는다.
+        cuts = [0]
+        for ls, le in _line_spans(body):
+            if ls == 0:
+                continue
+            if HEADING_LINE_RE.match(body[ls:le]) and _has_substantive(
+                body, cuts[-1], ls
+            ):
+                cuts.append(ls)
+        cuts.append(body_end)
+        for seg_start, seg_end in zip(cuts, cuts[1:]):
+            for cs, ce in _pack_segment(
+                body, seg_start, seg_end, target, max_chunk, warnings
+            ):
+                spans.append({"start": cs, "end": ce, "passthrough": False})
+
+    if fn_start is not None:
+        spans.append({"start": fn_start, "end": len(text), "passthrough": True})
+
+    # 후검: 크기 상한 / 말미 헤딩 (본문이 헤딩으로 끝나는 퇴화 문서만 해당).
+    for i, sp in enumerate(spans, 1):
+        size = sp["end"] - sp["start"]
+        if not sp["passthrough"] and size > max_chunk:
+            warnings.append(f"청크 {i} 크기 {size}자 — 상한({max_chunk}) 초과")
+        if not sp["passthrough"] and _ends_with_heading(
+            text, sp["start"], sp["end"]
+        ):
+            warnings.append(
+                f"청크 {i}가 헤딩으로 끝남 — 뒤따르는 본문이 없는 문서 말미 헤딩"
+            )
+
+    # 최상위 불변식 self-check: 한 글자라도 어긋나면 fidelity 사고로 중단.
+    joined = "".join(text[sp["start"] : sp["end"]] for sp in spans)
+    if joined != text:
+        raise ChunkingError(
+            "lossless self-check failed: 청크 연결 결과가 원문과 불일치 "
+            f"(원문 {len(text)}자, 연결 {len(joined)}자)"
+        )
+    return spans, warnings
+
+
+def _render_chunk_header(index: int, total: int, starts_with_heading: bool) -> str:
+    lines = [
+        f"[청크 컨텍스트] 이 텍스트는 한 문서를 나눈 청크 {index}/{total}이다.",
+        "- 문서 전체가 아니므로 서두·결말·전환 문구를 새로 만들지 말 것. "
+        "경계가 잘린 듯 보여도 그대로 둔다.",
+    ]
+    if starts_with_heading:
+        lines.append(
+            "- 첫 줄은 제목/헤딩이다. 번호·기호·형식을 그대로 보존하고 "
+            "본문 문장과 병합하지 말 것."
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
+    run_dir = _resolve_run_dir(args.run_dir, args.text)
+    input_path = run_dir / "01_input.txt"
+    if args.text is not None:
+        input_path.write_text(args.text, encoding="utf-8")
+    if not input_path.exists():
+        raise SystemExit(f"01_input.txt not found in {run_dir}; pass --text to create")
+    text = input_path.read_text(encoding="utf-8")
+    if not text.strip():
+        raise SystemExit("01_input.txt is empty; nothing to chunk")
+
+    spans, warnings = compute_chunk_spans(text)
+
+    # 재청킹은 이전 청크 산출물(경계가 달라진 02_* 윤문 결과 포함)을 무효화한다.
+    # 낡은 파일이 재조립에 잘못 섞이는 사고를 막기 위해 지우고 시작한다.
+    removed: list[str] = []
+    for pattern in (
+        "00_chunk_*",
+        "01_chunk_*",
+        "02_chunk_*_rewritten.txt",
+        "03_reassembled.md",
+        "03_reassembly_report.json",
+    ):
+        for stale in sorted(run_dir.glob(pattern)):
+            stale.unlink()
+            removed.append(stale.name)
+
+    total = len(spans)
+    entries: list[dict] = []
+    degraded = 0
+    for i, sp in enumerate(spans, 1):
+        chunk_text = text[sp["start"] : sp["end"]]
+        first_line = chunk_text.lstrip("\n").split("\n", 1)[0]
+        starts_with_heading = not sp["passthrough"] and bool(
+            HEADING_LINE_RE.match(first_line)
+        )
+        entry = {
+            "index": i,
+            "start": sp["start"],
+            "end": sp["end"],
+            "char_count": sp["end"] - sp["start"],
+            "starts_with_heading": starts_with_heading,
+            "heading": first_line.strip() if starts_with_heading else None,
+            "passthrough": sp["passthrough"],
+            "input_file": None,
+            "rewritten_file": None,
+        }
+        if not sp["passthrough"]:
+            entry["input_file"] = f"01_chunk_{i:02d}_input_with_metrics.txt"
+            entry["rewritten_file"] = f"02_chunk_{i:02d}_rewritten.txt"
+
+            metrics_obj: dict | None = None
+            metrics_path = run_dir / f"00_chunk_{i:02d}_metrics.json"
+            error_path = run_dir / f"00_chunk_{i:02d}_metrics.error"
+            if _metrics_mod is None:
+                error_path.write_text(
+                    "metrics module import failed; chunk emitted without score block",
+                    encoding="utf-8",
+                )
+                degraded += 1
+            else:
+                try:
+                    metrics_obj = _metrics_mod.compute_all(
+                        chunk_text, genre=args.genre, baseline_path=args.baseline
+                    )
+                    metrics_path.write_text(
+                        json.dumps(metrics_obj, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                except Exception as exc:  # noqa: BLE001 — graceful degrade.
+                    metrics_obj = None
+                    degraded += 1
+                    error_path.write_text(
+                        f"metrics_failed: {type(exc).__name__}: {exc}\n\n"
+                        + traceback.format_exc(),
+                        encoding="utf-8",
+                    )
+            combined = _render_chunk_header(
+                i, total, starts_with_heading
+            ) + _render_combined(chunk_text, metrics_obj, diagnosis=diagnosis)
+            (run_dir / entry["input_file"]).write_text(combined, encoding="utf-8")
+        entries.append(entry)
+
+    manifest = {
+        "version": 1,
+        "created": date.today().isoformat(),
+        "source_file": "01_input.txt",
+        "source_chars": len(text),
+        "source_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "genre": args.genre,
+        "target_chunk_chars": TARGET_CHUNK_CHARS,
+        "max_chunk_chars": MAX_CHUNK_CHARS,
+        "chunk_count": total,
+        "body_chunk_count": sum(1 for e in entries if not e["passthrough"]),
+        "passthrough_chunk_count": sum(1 for e in entries if e["passthrough"]),
+        "lossless_check": "ok",
+        "warnings": warnings,
+        "chunks": entries,
+    }
+    manifest_path = run_dir / "chunk_manifest.json"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    sizes = [e["char_count"] for e in entries]
+    print(
+        f"run_dir={run_dir}\n"
+        f"manifest={manifest_path}\n"
+        f"chunks={total} (body {manifest['body_chunk_count']} + "
+        f"passthrough {manifest['passthrough_chunk_count']})\n"
+        f"sizes={sizes}\n"
+        f"metrics_degraded_chunks={degraded}\n"
+        f"stale_removed={len(removed)}\n"
+        f"warnings={len(warnings)}"
+    )
+    for w in warnings:
+        print(f"WARNING: {w}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -249,6 +629,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Path to a diagnosis text file; prepended before the metrics "
         "block (정밀 3콜 구조의 진단 1콜 산출물). Omit for legacy behaviour.",
     )
+    p.add_argument(
+        "--chunk",
+        action="store_true",
+        help="장문 청킹 모드: 01_input.txt 를 손실 없이 분할해 청크별 "
+        "input_with_metrics 파일과 chunk_manifest.json 을 만든다.",
+    )
     args = p.parse_args(argv)
 
     diagnosis: str | None = None
@@ -259,6 +645,9 @@ def main(argv: list[str] | None = None) -> int:
         if not diag_path.exists():
             raise SystemExit(f"--diagnosis file not found: {diag_path}")
         diagnosis = diag_path.read_text(encoding="utf-8")
+
+    if args.chunk:
+        return run_chunk_mode(args, diagnosis)
 
     run_dir = _resolve_run_dir(args.run_dir, args.text)
     input_path = run_dir / "01_input.txt"
