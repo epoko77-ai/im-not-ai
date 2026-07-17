@@ -5,7 +5,7 @@ argument-hint: [조정 지시 — 예 "번역투만 다시" "이 문단만" "강
 
 # /humanize-redo — 2차 윤문 / 부분 재실행
 
-가장 최근 cwd 기준 `_workspace/{run_id}/`를 찾아 `humanize-korean` 스킬 Phase 3(윤문) 또는 Phase 4(검증)부터 재호출한다.
+가장 최근 cwd 기준 `_workspace/{run_id}/`를 찾아 `humanize-korean` 스킬 strict 파이프라인의 Phase B(윤문) 또는 Phase C(검증)부터 재호출한다.
 
 ## 사용자 지시
 $ARGUMENTS
@@ -22,9 +22,8 @@ $ARGUMENTS
 3. `korean-style-rewriter`를 재호출하되 입력에:
    - 기존 `02_detection.json` 또는 `05_naturalness_review.json`의 잔존 finding
    - 사용자 지시를 `target_filter`로 전달
-   - 직전 run의 `author-context.yaml`이 있으면 그대로 재주입(voice profile 일관성)
 4. 산출물은 `03_rewrite_v2.md` (또는 v3)로 버전 분리 저장.
-5. Phase 4 병렬 검증 → Phase 6 최종 출력 (변경 비교 표, 신규 등급).
+5. Phase C 병렬 검증 → Phase D 최종 출력 (변경 비교 표, 신규 등급).
 
 ## 루프 한도
 
@@ -33,4 +32,3 @@ $ARGUMENTS
 ## 참고
 
 - 풀 파이프라인 신규 실행은 [`/humanize`](./humanize.md) 사용.
-- 잔존 패턴이 voice profile로 무력화된 ID라면 `naturalness-reviewer`가 다시 잡더라도 오케스트레이터가 `accepted_by_voice_profile` 플래그로 처리한다(권한 위계 §5).
