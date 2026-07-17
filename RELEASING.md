@@ -34,6 +34,9 @@ sed -n '1,40p' README.md
 
 ## 2. 릴리스 전 확인 항목
 
+- [ ] **글로벌 에이전트 심링크 동기화** (에이전트를 추가·은퇴한 릴리스만): `~/.claude/agents/`는 프로젝트 `.claude/agents/*.md`로의 파일별 심링크다. 신규 에이전트는 `ln -sf`로 링크를 걸고, 은퇴한 에이전트는 죽은 링크를 `rm`한다. 링크가 없으면 세션이 그 에이전트를 로드하지 못한다(정밀 3콜이 안 돎). 확인: `ls -la ~/.claude/agents/ | grep humanize`로 링크 대상이 실재 파일인지 검사.
+
+
 - [ ] **테스트**: `python3 -m pytest tests/ -q` 전체 통과 (pytest 미설치 환경이면 `pip install pytest` 후 실행)
 - [ ] **shim 스모크**: `python3 scripts/prepare_monolith_input.py --text "테스트 문장입니다." --genre essay` 가 `00_metrics.json` + `01_input_with_metrics.txt`를 만드는지 확인 (생성된 임시 run 디렉토리는 삭제)
 - [ ] **버전 문자열**: §1 표의 #1~#9 전수 갱신 — 특히 **SKILL.md frontmatter·배너** (과거 2회 누락 지점)

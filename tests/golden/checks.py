@@ -312,7 +312,22 @@ def check_quotes(original: str, output: str) -> list[Failure]:
 # Entry point
 # ===========================================================================
 
+_SUMMARY_BLOCK_RE = re.compile(r"<!--\s*HUMANIZE-SUMMARY\b.*", re.DOTALL)
+
+
+def strip_summary_block(text: str) -> str:
+    """final.md 끝의 <!-- HUMANIZE-SUMMARY --> 메타 블록을 제거한다.
+
+    이 블록은 윤문 산출물이 아니라 메타데이터다. 자체검증 문구에 '하였- 무'
+    같은 표현이 들어가 채점기가 본문 주입으로 오판하는 것을 막는다
+    (verify_change_rate.py와 동일한 처리).
+    """
+    return _SUMMARY_BLOCK_RE.sub("", text).strip()
+
+
 def run_checks(original: str, output: str) -> list[Failure]:
+    original = strip_summary_block(original)
+    output = strip_summary_block(output)
     if not output.strip():
         return [Failure("empty_output", "윤문본이 비어 있습니다")]
     fails: list[Failure] = []
