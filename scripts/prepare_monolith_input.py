@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""Humanize KR v1.6 — monolith input shim.
+"""Humanize KR v2.0 — monolith input shim.
 
-Pre-processes user input by computing v1.6 quantitative metrics and
-prepending the result to the text the monolith agent reads. The monolith
-keeps its 4-tool-call cap (Read input + Read rules + Write final + Write
-summary) because the metrics block is folded into the same input file.
+Pre-processes user input by computing quantitative metrics (v1.6 8지표 +
+v2.0 카운트형 지표) and prepending the result to the text the monolith
+agent reads. The monolith keeps its 4-tool-call cap (Read input + Read
+rules + Write final + Write summary) because the metrics block is folded
+into the same input file.
 
 Inputs:
-  --run-dir DIR   existing run directory containing 01_input.txt
-  --text STR      ad-hoc text; if --run-dir is omitted, a new run dir
-                  `_workspace/<YYYY-MM-DD>-NNN/` is created and 01_input.txt
-                  written.
-  --genre STR     essay|column|report|blog|abstract|... (default: essay)
+  --run-dir DIR     existing run directory containing 01_input.txt
+  --text STR        ad-hoc text; if --run-dir is omitted, a new run dir
+                    `_workspace/<YYYY-MM-DD>-NNN/` is created and
+                    01_input.txt written.
+  --genre STR       essay|column|report|blog|abstract|... (default: essay)
+  --diagnosis PATH  optional diagnosis text prepended before the metrics
+                    block (정밀 3콜 구조의 진단 1콜 산출물 자리)
 
 Outputs (in {run_dir}):
   00_metrics.json             — full compute_all() output (or error stub)
@@ -112,6 +115,46 @@ def _z_marker(z: float | None) -> str:
     return ""
 
 
+# v2.0 카운트형 지표 — baseline 없이 원값만으로 유용한 지표들.
+# (key, 한국어 라벨, taxonomy ID, 포맷) — ID는 ai-tell-taxonomy.md 본진.
+_V2_COUNT_METRICS = (
+    ("double_passive_count", "이중 피동", "A-8", "{:d}"),
+    ("by_passive_count", "~에 의해 피동", "A-9", "{:d}"),
+    ("pronoun_density", "인칭 대명사 밀도", "A-16", "{:.3f}"),
+    ("have_make_literal_count", "have/make 직역", "A-7", "{:d}"),
+    ("double_particle_count", "이중 조사 결합", "A-19", "{:d}"),
+    ("relative_clause_nesting", "관형절 3중+ 중첩 문장 수", "A-18", "{:d}"),
+    ("deul_overuse_rate", "'-들' 남용률", "A-17 hold", "{:.3f}"),
+)
+
+
+def _render_v2_counts(metrics_obj: dict) -> list[str]:
+    """v2.0 카운트형 지표 원값 렌더.
+
+    v2 z-score는 렌더하지 않는다 — baseline_v2.json 70셀 전부 placeholder
+    (추정치)라 calibration 전까지 해석 보류. 카운트/밀도 원값은 baseline
+    없이도 그 자체로 윤문 근거가 된다.
+    """
+    v2 = metrics_obj.get("v2_metrics")
+    if not v2:
+        return []
+    lines: list[str] = []
+    lines.append("[v2.0 카운트형 지표 — 원값 / baseline calibration 전 z-score 해석 보류]")
+    for key, label, tell_id, fmt in _V2_COUNT_METRICS:
+        val = v2.get(key)
+        if val is None:
+            lines.append(f"- {key}: n/a")
+            continue
+        if fmt == "{:d}":
+            rendered = fmt.format(int(val))
+        else:
+            rendered = fmt.format(float(val))
+        lines.append(f"- {key} ({label}, 본진 {tell_id}): {rendered}")
+    lines.append("- 카운트 > 0 지표는 해당 본진 ID 처방(quick-rules.md·taxonomy)과 교차 확인 후 윤문할 것.")
+    lines.append("")
+    return lines
+
+
 def _render_block(metrics_obj: dict) -> str:
     m = metrics_obj.get("metrics", {})
     z = metrics_obj.get("z_scores", {})
@@ -120,7 +163,7 @@ def _render_block(metrics_obj: dict) -> str:
     safe = ev.get("safe_balances") or []
 
     lines: list[str] = []
-    lines.append("[정량 사전 점수 v1.6 / KatFish baseline]")
+    lines.append("[정량 사전 점수 v2.0 — v1.6 8지표(KatFish baseline) + v2.0 카운트형]")
     lines.append(
         f"risk_band: {metrics_obj.get('risk_band', 'unknown')}  "
         f"(score {metrics_obj.get('risk_score', 0)})"
@@ -130,7 +173,7 @@ def _render_block(metrics_obj: dict) -> str:
     if metrics_obj.get("warning"):
         lines.append(f"warning: {metrics_obj['warning']}")
     lines.append("")
-    lines.append("[지표]")
+    lines.append("[v1.6 지표]")
 
     def row(key: str, value_fmt: str, with_z: bool = True, suffix: str = "") -> str:
         val = m.get(key)
@@ -157,6 +200,7 @@ def _render_block(metrics_obj: dict) -> str:
     lines.append(row("hanja_nominalizer_density", "{:.3f}"))
     lines.append(row("lexical_diversity", "{:.2f}"))
     lines.append("")
+    lines.extend(_render_v2_counts(metrics_obj))
     lines.append("[근거 사용 가이드]")
     lines.append("- 위 점수는 *근거 보조*다. 단독 판정 금지(보고서 명시).")
     lines.append("- z>1.0 지표는 quick-rules.md S1·S2 패턴과 교차 확인 후 윤문할 것.")
@@ -166,8 +210,15 @@ def _render_block(metrics_obj: dict) -> str:
     return "\n".join(lines)
 
 
-def _render_combined(text: str, metrics_obj: dict | None) -> str:
+def _render_combined(
+    text: str, metrics_obj: dict | None, diagnosis: str | None = None
+) -> str:
     parts: list[str] = []
+    if diagnosis:
+        parts.append("[진단]")
+        parts.append(diagnosis.rstrip("\n"))
+        parts.append("[진단 끝]")
+        parts.append("")
     if metrics_obj is not None:
         parts.append(_render_block(metrics_obj))
     parts.append("[원문 시작]")
@@ -183,7 +234,7 @@ def _render_combined(text: str, metrics_obj: dict | None) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="Humanize KR v1.6 monolith input shim")
+    p = argparse.ArgumentParser(description="Humanize KR v2.0 monolith input shim")
     p.add_argument("--run-dir", help="Existing run directory (relative ok)")
     p.add_argument("--text", help="Inline text input (creates new run dir)")
     p.add_argument("--genre", default="essay", help="Genre hint (default: essay)")
@@ -192,7 +243,22 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Override baseline JSON path (default: project default)",
     )
+    p.add_argument(
+        "--diagnosis",
+        default=None,
+        help="Path to a diagnosis text file; prepended before the metrics "
+        "block (정밀 3콜 구조의 진단 1콜 산출물). Omit for legacy behaviour.",
+    )
     args = p.parse_args(argv)
+
+    diagnosis: str | None = None
+    if args.diagnosis:
+        diag_path = Path(args.diagnosis)
+        if not diag_path.is_absolute():
+            diag_path = PROJECT_ROOT / diag_path
+        if not diag_path.exists():
+            raise SystemExit(f"--diagnosis file not found: {diag_path}")
+        diagnosis = diag_path.read_text(encoding="utf-8")
 
     run_dir = _resolve_run_dir(args.run_dir, args.text)
     input_path = run_dir / "01_input.txt"
@@ -238,7 +304,9 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     combined_path = run_dir / "01_input_with_metrics.txt"
-    combined_path.write_text(_render_combined(text, metrics_obj), encoding="utf-8")
+    combined_path.write_text(
+        _render_combined(text, metrics_obj, diagnosis=diagnosis), encoding="utf-8"
+    )
 
     rb = (metrics_obj or {}).get("risk_band", "absent")
     rs = (metrics_obj or {}).get("risk_score", "absent")
