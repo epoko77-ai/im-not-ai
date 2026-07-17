@@ -18,22 +18,21 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
+PROJECT_ROOT = os.path.abspath(os.path.join(HERE, ".."))
 
-# v1.6 module location
-V1_DIR = os.path.join(
+# Deployed module location — metrics.py and metrics_v2.py ship together here.
+REFERENCES_DIR = os.path.join(
     PROJECT_ROOT, ".claude", "skills", "humanize-korean", "references"
 )
-sys.path.insert(0, V1_DIR)
-sys.path.insert(0, HERE)
+sys.path.insert(0, REFERENCES_DIR)
 
 import metrics  # noqa: E402  (v1.6)
 import metrics_v2  # noqa: E402  (v2.0 superset)
 
-BASELINE_PATH = os.path.join(
-    PROJECT_ROOT, "_workspace", "v1.6-2026-05-06", "02_katfish_baseline.json"
-)
-BASELINE_V2_PATH = os.path.join(HERE, "baseline_v2_diff.json")
+# Bundled baselines shipped next to the modules — fresh-clone safe
+# (_workspace/ is gitignored, so never depend on it in tests).
+BASELINE_PATH = os.path.join(REFERENCES_DIR, "baseline.json")
+BASELINE_V2_PATH = os.path.join(REFERENCES_DIR, "baseline_v2.json")
 
 
 # ===========================================================================
@@ -355,6 +354,81 @@ class V20IntegrationTests(unittest.TestCase):
         )
         # All v2 baseline cells are placeholders by design.
         self.assertGreater(len(result["v2_baseline_warnings"]), 0)
+
+
+class BaselineV2WiringTests(unittest.TestCase):
+    """Regression guard — the v2.0.0 bug class where the default path pointed
+    at a non-shipped file (baseline_v2_diff.json) and silently loaded {}."""
+
+    def test_default_baseline_v2_path_exists(self) -> None:
+        path = metrics_v2._default_baseline_v2_path()
+        self.assertTrue(os.path.exists(path), f"bundled baseline_v2 missing: {path}")
+        self.assertEqual(os.path.basename(path), "baseline_v2.json")
+
+    def test_default_baseline_v2_loads_nonempty(self) -> None:
+        bv2 = metrics_v2._load_baseline_v2(None)
+        self.assertTrue(bv2, "default baseline_v2 loaded empty — wiring broken")
+        self.assertIn("genres", bv2)
+
+    def test_compute_all_v2_default_paths_produce_z_scores(self) -> None:
+        # No explicit baseline paths — must still resolve bundled files and
+        # produce z-scores (placeholder-flagged, but not silently absent).
+        text = "오늘은 비가 온다. 길이 미끄럽다."
+        result = metrics_v2.compute_all_v2(text, genre="essay")
+        non_null = [k for k, v in result["v2_z_scores"].items() if v is not None]
+        self.assertGreater(len(non_null), 0)
+        self.assertGreater(len(result["v2_baseline_warnings"]), 0)
+
+
+class ChangeRateTests(unittest.TestCase):
+    """change_rate() — 철칙 #4 게이트 SSOT."""
+
+    def test_identical_is_zero(self) -> None:
+        text = "오늘은 비가 온다. 길이 미끄럽다."
+        self.assertEqual(metrics_v2.change_rate(text, text), 0.0)
+
+    def test_both_empty_is_zero(self) -> None:
+        self.assertEqual(metrics_v2.change_rate("", ""), 0.0)
+
+    def test_full_replacement_is_near_one(self) -> None:
+        self.assertGreater(
+            metrics_v2.change_rate("가나다라마바사", "ABCDEFG"), 0.9
+        )
+
+    def test_small_edit_is_small(self) -> None:
+        before = "오늘은 비가 온다. 길이 미끄럽다. 우산을 챙겨야 한다."
+        after = "오늘은 비가 온다. 길이 미끄럽다. 우산을 챙겨야 했다."
+        rate = metrics_v2.change_rate(before, after)
+        self.assertGreater(rate, 0.0)
+        self.assertLess(rate, 0.10)
+
+    def test_range_bounds(self) -> None:
+        rate = metrics_v2.change_rate("문장 하나.", "완전히 다른 문장 둘.")
+        self.assertGreaterEqual(rate, 0.0)
+        self.assertLessEqual(rate, 1.0)
+
+    def test_gate_constants(self) -> None:
+        self.assertEqual(metrics_v2.CHANGE_RATE_WARN, 0.30)
+        self.assertEqual(metrics_v2.CHANGE_RATE_ABORT, 0.50)
+        self.assertLess(
+            metrics_v2.CHANGE_RATE_WARN, metrics_v2.CHANGE_RATE_ABORT
+        )
+
+    def test_ignore_markup_discounts_heading_removal(self) -> None:
+        # Deleting headings/fences inflates the plain rate; ignore_markup
+        # must report a strictly lower rate for the same body text.
+        before = (
+            "## 서론\n\n오늘은 비가 온다. 길이 미끄럽다.\n\n"
+            "---\n\n## 본론\n\n우산을 챙겨야 한다. 버스가 늦게 온다.\n"
+        )
+        after = (
+            "오늘은 비가 온다. 길이 미끄럽다.\n\n"
+            "우산을 챙겨야 한다. 버스가 늦게 온다.\n"
+        )
+        plain = metrics_v2.change_rate(before, after)
+        markup_aware = metrics_v2.change_rate(before, after, ignore_markup=True)
+        self.assertLess(markup_aware, plain)
+        self.assertLess(markup_aware, 0.10)
 
 
 if __name__ == "__main__":
