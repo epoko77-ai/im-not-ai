@@ -5,7 +5,7 @@ argument-hint: [조정 지시 — 예 "번역투만 다시" "이 문단만" "강
 
 # /humanize-redo — 2차 윤문 / 부분 재실행
 
-가장 최근 cwd 기준 `_workspace/{run_id}/`를 찾아 `humanize-korean` 스킬 strict 파이프라인의 Phase B(윤문) 또는 Phase C(검증)부터 재호출한다.
+가장 최근 cwd 기준 `_workspace/{run_id}/`를 찾아 `humanize-korean` 스킬 **정밀 모드**를 재실행한다. 진단(P1)을 조정 지시에 맞춰 다시 잡고 겨냥 윤문·finalize를 이어간다.
 
 ## 사용자 지시
 $ARGUMENTS
@@ -13,17 +13,15 @@ $ARGUMENTS
 ## 동작
 
 1. cwd 기준 `_workspace/`에서 가장 최신 `run_id` 디렉토리 식별 (없으면 "이전 실행이 없습니다. `/humanize`로 시작하세요" 안내).
-2. 사용자 지시 파싱:
-   - **카테고리 지정** ("번역투만", "관용구만", "이모지만" 등) → 해당 카테고리 finding만 다시 윤문
-   - **문단 지정** ("이 문단만", "두 번째 문단만") → 해당 범위 finding만 처리
-   - **강도 조정** ("강도 낮춰" / "보수적으로") → S1만 처리, "강도 높여" → S1+S2+S3 모두
-   - **롤백 요청** ("이 변경 되돌려줘") → 해당 edit을 `content-fidelity-auditor` 롤백 명령으로 처리
-   - 지시가 없거나 "2차 윤문해줘" → 잔존 finding 전체 대상으로 round 2
-3. `korean-style-rewriter`를 재호출하되 입력에:
-   - 기존 `02_detection.json` 또는 `05_naturalness_review.json`의 잔존 finding
-   - 사용자 지시를 `target_filter`로 전달
-4. 산출물은 `03_rewrite_v2.md` (또는 v3)로 버전 분리 저장.
-5. Phase C 병렬 검증 → Phase D 최종 출력 (변경 비교 표, 신규 등급).
+2. 사용자 지시 파싱 → 진단 범위 조정:
+   - **카테고리 지정** ("번역투만", "관용구만" 등) → `02_diagnosis.md`의 지배 패턴을 해당 카테고리로 한정
+   - **문단 지정** ("이 문단만") → 해당 범위만 입력으로 삼아 새 run_id 생성
+   - **강도 조정** ("강도 낮춰"/"보수적으로") → 진단 지배 패턴 개수를 3개로 축소, "강도 높여" → 6개로 확대
+   - **롤백 요청** ("이 변경 되돌려줘") → finalize에 해당 구간 원문 복원 지시
+   - 지시가 없거나 "2차 윤문해줘" → 직전 `final.md`를 새 입력으로 정밀 P1부터 재실행
+3. 정밀 파이프라인(진단 → 겨냥 윤문 → 변경률 게이트 → finalize)을 재실행하되 진단에 사용자 지시를 반영.
+4. 산출물은 `final.md`를 갱신(직전본은 `final_pre_finalize.md`/`final_prev.md`로 백업).
+5. 변경 비교 + 신규 등급 + `09_finalize.json` verdict 출력.
 
 ## 루프 한도
 
@@ -31,4 +29,4 @@ $ARGUMENTS
 
 ## 참고
 
-- 풀 파이프라인 신규 실행은 [`/humanize`](./humanize.md) 사용.
+- 정밀 신규 실행은 [`/humanize`](./humanize.md) 사용.
