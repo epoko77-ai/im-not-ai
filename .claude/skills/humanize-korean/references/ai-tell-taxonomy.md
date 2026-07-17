@@ -1,6 +1,6 @@
 # AI 한글 티 분류 체계 v2.0 (Korean AI-Tell Taxonomy)
 
-LLM(ChatGPT·Claude·Gemini 등)이 생성한 한글 글에서 반복적으로 관찰되는 "AI 티" 패턴을 10개 대분류 × 서브 패턴으로 정리한다. 탐지기·윤문가·리뷰어가 공유하는 단일 진실 원천(SSOT). 각 패턴마다 (1) 정의, (2) 시그니처 예문, (3) 심각도(S1 결정적 / S2 강함 / S3 약함), (4) 윤문 처방을 제공한다.
+LLM(ChatGPT·Claude·Gemini 등)이 생성한 한글 글에서 반복적으로 관찰되는 "AI 티" 패턴을 10개 대분류 × 서브 패턴으로 정리한다. 윤문 파이프라인의 진단·윤문·마무리 콜(diagnostician·monolith·finalizer)이 공유하는 단일 진실 원천(SSOT). 각 패턴마다 (1) 정의, (2) 시그니처 예문, (3) 심각도(S1 결정적 / S2 강함 / S3 약함), (4) 윤문 처방을 제공한다.
 
 > **v2.0 추가 (2026-05-07):** 한국 번역학계 8대 번역투 정통성 계보(이영옥 2001·김도훈 2009·김정우 2007·김혜영 2019 등) + 보고서 §III.3(8유형) 통합. **본진 신규 4건** — `A-16` 영어 대명사 직역 [S1] · `A-18` 관계절 좌향 수식 [S2] · `A-19` 이중 조사 결합 [S2] · `E-7` 청자 경어법 일관성 손실 [S2 · estimated]. **본진 보강 4건** — `A-15` 인지·발화 동사 분리 구문 처방 · `A-7` light verb construction 일반화(have/make/take/give) · `F-4` 영어 명사화 접미사(-tion·-ment·-ness·-ity) 통합 · `E-2` 진행형 '~고 있다' 자동 매핑 처방. **본진 hold 1건** — `A-17` 무정물·추상명사 '-들' 부착 [학술 강함, 외부 회차 양성 0건 → NMT 원본 회차 후 v2.1 재평가]. **post-editese 3축은 metric-only 트랙** — caveat C3(한국어 정량 검증 부재)에 따라 본진 ID 미부여, `metrics_v2.py` 14개 신규 함수로 운영(`deul_overuse_rate` 포함, A-17 hold 검증용). 학술 전문은 외부 SSOT `references/scholarship.md`에 보존(본진 슬림성). valid as of 2026-05.
 >
@@ -154,7 +154,7 @@ J. 시각 장식 남용 — J-1~J-4
 >
 > **유지 자산**: scholarship.md §4(전문 학술 인용 보존), `metrics_v2.deul_overuse_rate` 함수와 무정물·추상 명사 사전 25종(검증용 정량 측정은 계속), 본 hold 결정 기록(`promotion_decisions.md`).
 >
-> A-17 ID는 v2.1 부활을 위해 비워둠 — detector·rewriter 코드의 patternID 안정성 보존.
+> A-17 ID는 부활을 위해 비워둠 — 파이프라인·metric 코드의 patternID 안정성 보존.
 
 - _quick: false_
 
@@ -616,7 +616,7 @@ J. 시각 장식 남용 — J-1~J-4
 - **normalisation 축**: `normalisation_score`(평서형 -다/된다/이다 집중률) · `da_streak_rate`(-다 4문장 연속 streak 카운트) (Baker 1993).
 - **interference 축**: T1~T8 8개 검출 시그널 + `interference_index` 합성 (Toury 1995 law of interference) — `inanimate_subject_rate`(T1↔A-15·D-5) · `by_passive_count`/`double_passive_count`(T2↔A-8·A-9·A-12) · `pronoun_density`(T3↔A-16) · `deul_overuse_rate`(T4↔A-17 **hold, 검증용 측정 유지**) · `relative_clause_nesting`(T5↔A-18) · `have_make_literal_count`(T6↔A-7·F-4) · `double_particle_count`(T7↔A-19) · `progressive_aspect_rate`(T8↔E-2·E-7).
 
-본진 패턴 → metric 연계는 양방향이다. 패턴 위반 카운트가 임계 초과면 detector·rewriter가 본진 ID로 처방하고, 동시에 metric 합성 점수가 baseline 대비 이상치면 reviewer가 추가 검증한다. 한국어 baseline은 metric-engineer가 비번역 한국어 corpus(Sejong 등) 기준 산출한다.
+본진 패턴 → metric 연계는 양방향이다. 패턴 위반 카운트가 임계 초과면 진단·윤문 콜이 본진 ID로 처방하고, 동시에 metric 합성 점수가 baseline 대비 이상치면 finalize 콜이 추가 검증한다. 한국어 baseline은 metric-engineer가 비번역 한국어 corpus(Sejong 등) 기준 산출한다.
 
 ## 버전 관리
 

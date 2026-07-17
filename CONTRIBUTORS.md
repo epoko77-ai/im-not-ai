@@ -4,7 +4,7 @@
 
 ## Maintainer
 
-- **[@epoko77-ai](https://github.com/epoko77-ai)** (이승현, epoko@nate.com) — 프로젝트 창립 및 유지보수. 분류 체계(`ai-tell-taxonomy.md`) 설계, 5인 에이전트 파이프라인 구축, v1.0~v1.2 릴리스 책임.
+- **[@epoko77-ai](https://github.com/epoko77-ai)** (이승현, epoko@nate.com) — 프로젝트 창립 및 유지보수. 분류 체계(`ai-tell-taxonomy.md`) 설계, 초기 5인 에이전트 파이프라인 구축(v2.1에서 정밀 3콜 구조로 재편), v1.0~v1.2 릴리스 책임.
 
 ## v1.2 외부 기여자
 
