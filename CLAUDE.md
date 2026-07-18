@@ -1,11 +1,16 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.1.0)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.2.0)
 
 ## 프로젝트 개요
 
-AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 이중 모드 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 70개 AI 티 패턴(+A-17 hold 1건)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
+AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 70개 AI 티 패턴(+A-17 hold 1건)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
 
-- **Fast 모드 (디폴트)** — 정량 점수 shim 사전 처리 후 `humanize-monolith` 에이전트 1콜. 도구 호출 3회 캡, 5,000자 이하 2~3분. 장문(6,000자 초과)은 결정적 청킹(`--chunk`) 후 청크별 병렬 윤문 → 재조립.
-- **정밀 모드 (`--strict`, 사용자 opt-in)** — 진단 1콜(`humanize-diagnostician`) → 겨냥 윤문(monolith 재사용) → 마무리 1콜(`humanize-finalizer`)의 3콜 구조. 입력 길이는 모드를 바꾸지 않는다(구 "8,000자+ 자동 승급"은 v2.1에서 폐지). 옛 5인 파이프라인은 v2.1에서 이 구조로 대체됐다.
+v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
+
+- **light (1콜)** — 잘 쓴 글(어휘 티 거의 0). 진단·finalize 생략, 보수 강도 단일 윤문. 손댈 게 거의 없으면 "이미 좋습니다" 조기 종료.
+- **standard (2콜)** — 보통의 AI 초안. 진단 1콜 + 겨냥 윤문 1콜. finalize 생략이 기본(결정적 변경률 게이트로 대체). 1만자급도 청킹 없이 단일 윤문 콜.
+- **heavy (3+콜)** — 중증 AI 슬롭 밀집 or 초장문(15,000자 초과) or 검증 증적 필요. 진단 → 윤문(shim이 청크를 2개 이상 만든 경우에만 청크 병렬) → finalize. `--strict`·"정밀 모드"는 이 경로를 강제.
+
+**콜 수 절감 원리** — 절감은 모델 티어가 아니라 콜 수에서 온다. 실측: 1만자 글 청킹 7콜 = 610K 토큰 vs 단일 콜 = 134K(품질 동등). 청크마다 룰북·진단이 재로드되는 비용이 폭발 원인. 따라서 **단일 콜 우선, 청킹은 heavy 전용·15,000자 이하 비권장.**
 
 ## 철칙
 
@@ -32,7 +37,7 @@ im-not-ai/
 ├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
 ├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
 ├── scripts/
-│   ├── prepare_monolith_input.py  # input shim — 정량 점수 + 결합 입력 (`--diagnosis`·`--chunk` 지원)
+│   ├── prepare_monolith_input.py  # input shim — 정량 점수 + route_hint 산출 + 결합 입력 (`--diagnosis`·`--chunk` 지원)
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
 │   ├── verify_change_rate.py      # 변경률 게이트 — 철칙 #4의 결정적 판정 (exit code)
 │   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
@@ -42,16 +47,16 @@ im-not-ai/
 │   ├── test_metrics.py · test_metrics_v2.py · test_chunking.py · test_quick_rules_build.py
 │   └── golden/                    # 윤문 품질 회귀 픽스처 + 결정적 채점기(checks.py)
 ├── agents/                        # 서브에이전트 9종 (플러그인 컨벤션 — 루트 agents/에 둬야 로드됨)
-│   ├── humanize-monolith.md       # fast·정밀 공용 윤문 콜
-│   ├── humanize-diagnostician.md  # 정밀 P1 진단 (지배 패턴 3~6개)
-│   ├── humanize-finalizer.md      # 정밀 P3 마무리 (의미 15항 + 자연성)
+│   ├── humanize-monolith.md       # 전 경로 공용 윤문 콜
+│   ├── humanize-diagnostician.md  # standard·heavy P1 진단 (지배 패턴 3~6개)
+│   ├── humanize-finalizer.md      # heavy P3 마무리 (의미 15항 + 자연성)
 │   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
 │   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
 ├── .claude/skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
 │   └── humanize-korean/
-│       ├── SKILL.md               # 오케스트레이터 (fast/정밀 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
+│       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
-│           ├── quick-rules.md          # fast 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
+│           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
 │           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (+ _quick 빌드 메타)
 │           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
@@ -65,50 +70,45 @@ im-not-ai/
         ├── 01_input.txt · 00_metrics.json · 01_input_with_metrics.txt  # 원문·점수·결합
         ├── final.md                    # 윤문본 (끝에 <!-- HUMANIZE-SUMMARY --> 블록)
         ├── 01_chunk_{NN}… · 02_chunk_{NN}_rewritten.txt · 03_reassembled.md  # (장문 청킹)
-        ├── 02_diagnosis.md             # (정밀 P1) 지배 패턴 진단
-        ├── final_pre_finalize.md · 09_finalize.json   # (정밀 P3) 백업 · 판정
+        ├── 02_diagnosis.md             # (standard·heavy P1) 지배 패턴 진단
+        ├── final_pre_finalize.md · 09_finalize.json   # (heavy P3) 백업 · 판정
 ```
 
-## 파이프라인
-
-### Fast 모드 (디폴트)
+## 파이프라인 (route_hint 3경로)
 
 ```
 01_input.txt
     ↓ [scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre {genre}]
-00_metrics.json + 01_input_with_metrics.txt
-    ↓ [humanize-monolith — 단일 호출, 도구 호출 3회 캡 (Read 입력 + Read 룰북 + Write final)]
-final.md (본문 + <!-- HUMANIZE-SUMMARY --> 주석 블록)
-    ↓ [scripts/verify_change_rate.py — 변경률 게이트 (exit code)]
+00_metrics.json (route_hint 포함) + 01_input_with_metrics.txt
+    ↓ route_hint가 디폴트 경로 결정 (사용자 명시 --strict/"가볍게"가 오버라이드)
+    │
+    ├─ light ────→ [humanize-monolith ×1, 보수 강도] ──→ final.md
+    │
+    ├─ standard ─→ [humanize-diagnostician] → 02_diagnosis.md
+    │                ↓ [shim --diagnosis] 진단+점수+원문 결합
+    │              [humanize-monolith 겨냥 윤문] ──────→ final.md
+    │
+    └─ heavy ────→ [humanize-diagnostician] → 02_diagnosis.md
+                     ↓ [shim --diagnosis] (청킹 필요 시에만 --chunk)
+                   [humanize-monolith — shim이 청크 2+개 만든 경우에만 청크 병렬]
+                     ↓ [verify_change_rate.py] (P2.5)
+                   [humanize-finalizer — 의미 15항 + 자연성, 국소 보정]
+                   final.md(보정) + 09_finalize.json
+    ↓ [scripts/verify_change_rate.py — 변경률 게이트 (exit code)] — 모든 경로 공통
 ```
 
-shim은 graceful degrade 내장 — metrics 실패 시 점수 블록 없는 결합 파일을 쓰고 `00_metrics.error`를 남긴다. 장문(6,000자 초과)은 `--chunk`로 결정적 분할 후 청크별 monolith 병렬 호출(동시 최대 4) → `reassemble_chunks.py` 재조립.
-
-### 정밀 모드 (3콜)
-
-```
-01_input.txt
-    ↓ [shim] 01_input_with_metrics.txt
-    ↓ [humanize-diagnostician]   — 지배 패턴 3~6개 진단 (P1)
-02_diagnosis.md
-    ↓ [shim --diagnosis] 진단+점수+원문 결합
-    ↓ [humanize-monolith]        — 진단 겨냥 윤문 (장문이면 청크 병렬) (P2)
-final.md
-    ↓ [verify_change_rate.py]    — 변경률 게이트 (exit code, 결정적) (P2.5)
-    ↓ [humanize-finalizer]       — 의미 15항 + 자연성 판정, 국소 보정 (P3)
-final.md(보정) + 09_finalize.json
-    ↓ [verify_change_rate.py]    — 최종 변경률 확정
-```
-
-finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_change_rate.py`(결정적, exit code)가 내린다.
+- shim은 graceful degrade 내장 — metrics 실패 시 점수 블록 없는 결합 파일을 쓰고 `00_metrics.error`를 남긴다. 이 경우 route_hint 부재 → **standard로 간주**.
+- **청킹 남발 금지** — `--chunk`는 heavy 전용, 15,000자 이하 비권장. 그때도 shim이 실제로 청크를 2개 이상 만들었을 때만 병렬(청크 1개면 단일 콜). 재조립은 `reassemble_chunks.py`.
+- light·standard 결과가 등급 C/D면 heavy 재실행을 사용자에게 권고한다(자동 전환 아님 — opt-in).
+- finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_change_rate.py`(결정적, exit code)가 내린다.
 
 ## 에이전트 구성 (9개 — 역할 구분 필수)
 
 **런타임 3종** (스킬 실행 중 호출):
 
-1. **humanize-monolith** — fast·정밀 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 3회 캡 (v1.6.1).
-2. **humanize-diagnostician** — 정밀 P1 진단. 글 전체의 지배 패턴 3~6개를 본진 ID로 진단 → `02_diagnosis.md`.
-3. **humanize-finalizer** — 정밀 P3 마무리. 원문 직접 대조로 의미 15항 + 자연성(잔존·과윤문 양방향) 판정, 문제 구간만 국소 보정 → `09_finalize.json`. 도구 호출 4회 캡.
+1. **humanize-monolith** — 전 경로 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 3회 캡 (v1.6.1).
+2. **humanize-diagnostician** — standard·heavy P1 진단. 글 전체의 지배 패턴 3~6개를 본진 ID로 진단 → `02_diagnosis.md`.
+3. **humanize-finalizer** — heavy P3 마무리. 원문 직접 대조로 의미 15항 + 자연성(잔존·과윤문 양방향) 판정, 문제 구간만 국소 보정 → `09_finalize.json`. 도구 호출 4회 캡.
 
 **유지보수 1종** (별도 명령으로만):
 
@@ -144,8 +144,8 @@ finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 
    이 AI 글 자연스럽게 윤문해줘:
    ```
    (텍스트 첨부) — 또는 `/humanize` 슬래시 커맨드.
-2. 디폴트는 fast(monolith 1콜, 장문 6,000자+는 청크 병렬). `--strict`·"정밀 모드"·부분 재실행은 정밀 3콜(진단→겨냥 윤문→finalize). 입력 길이는 모드를 바꾸지 않는다.
-3. 결과: fast는 `final.md` 1개(끝에 summary 주석 블록), 정밀은 `final.md` + `02_diagnosis.md`·`09_finalize.json`.
+2. 디폴트는 shim의 `route_hint`가 정한다 — light 1콜 / standard 2콜 / heavy 3+콜. `--strict`·"정밀 모드"·부분 재실행은 heavy 강제, "가볍게"는 light 강제.
+3. 결과: light는 `final.md` 1개(끝에 summary 주석 블록), standard는 + `02_diagnosis.md`, heavy는 + `09_finalize.json`·`final_pre_finalize.md`.
 
 ## 파일 시스템 접근 규칙
 
@@ -183,6 +183,6 @@ finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 
 - 오케스트레이터: `.claude/skills/humanize-korean/SKILL.md`
 - 분류 체계: `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`
 - 윤문 처방: `.claude/skills/humanize-korean/references/rewriting-playbook.md`
-- 슬림 룰북(fast): `.claude/skills/humanize-korean/references/quick-rules.md`
+- 슬림 룰북(monolith): `.claude/skills/humanize-korean/references/quick-rules.md`
 - 학술 인용 SSOT: `.claude/skills/humanize-korean/references/scholarship.md`
 - 웹 스펙: `.claude/skills/humanize-korean/references/web-service-spec.md`
