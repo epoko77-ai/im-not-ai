@@ -99,6 +99,93 @@ def _resolve_run_dir(run_dir_arg: str | None, text_arg: str | None) -> Path:
 
 
 # ---------------------------------------------------------------------------
+# Route hint — shim이 "손댈 양"을 판정해 경로를 권고한다
+# ---------------------------------------------------------------------------
+#
+# 배경: 9,817자 실측 run(_workspace/2026-07-18-001)은 어휘·피동 카운트형 티가
+# 전부 0이고 구조 티(ending_comma z=+6.29)만 있는 "잘 쓴 글"이었는데도 최중량
+# 6청크 경로를 돌아 610K 토큰을 썼다. 같은 글 단일 콜은 134K에 품질 동등.
+# shim은 이미 그 판정에 필요한 점수를 전부 내고 있으므로, 여기서 route_hint 를
+# 함께 산출해 오케스트레이터가 경로를 정하게 한다. route_hint 는 **권고**다 —
+# 사용자·오케스트레이터가 무시할 수 있고, 산출 실패 시 없는 채로 진행한다.
+#
+# 3-tier 판정 (전부 결정적 · 실측 기반):
+#   light    — 카운트형 어휘·피동 티 합 ≤ 2 AND risk_band low~medium.
+#              이미 잘 쓴 글. 단일 콜·최소 파이프라인 권장.
+#   standard — 그 외 (티가 섞여 있거나, 카운트형 0이어도 구조 지표로 risk high).
+#              진단 + 단일 윤문 권장. 실측 글(카운트 0·risk high)이 여기 온다.
+#   heavy    — risk high AND 카운트형 티 합 ≥ 8 (AI 슬롭 밀집),
+#              또는 초장문(> CHUNK_RECOMMEND_MIN_CHARS). 진단 + 청킹 권장.
+#
+# 카운트형 티 = v1.6 conclusion_pivot·safe_balance + v2.0 이중피동·에의해피동·
+# have/make직역·이중조사. 전부 정수 카운트라 baseline calibration 없이도 안정적.
+# 밀도·z-score 지표는 판정에서 제외 — v2 baseline 이 placeholder 라 불안정하다.
+
+ROUTE_LIGHT_MAX_TELLS = 2
+ROUTE_HEAVY_MIN_TELLS = 8
+# 초장문 기준. 아래 청킹 섹션의 CHUNK_RECOMMEND_MIN_CHARS 가 이 값을 공유한다
+# — "heavy 판정"과 "청킹이 의미 있는 최소 분량"은 같은 실증에서 나온 한 기준.
+ROUTE_HEAVY_MIN_CHARS = 15000
+
+_ROUTE_TELL_KEYS_V16 = ("conclusion_pivot_count", "safe_balance_count")
+_ROUTE_TELL_KEYS_V2 = (
+    "double_passive_count",
+    "by_passive_count",
+    "have_make_literal_count",
+    "double_particle_count",
+)
+
+
+def compute_route_hint(metrics_obj: dict) -> dict:
+    """metrics_obj(compute_all 산출)로부터 route_hint 권고를 산출한다.
+
+    반환 dict 는 metrics_obj 에 update 해서 00_metrics.json 에 함께 실린다.
+    입력이 부분적이어도(키 누락) 죽지 않고 보수적으로 standard 로 수렴한다.
+    """
+    m = metrics_obj.get("metrics") or {}
+    v2 = metrics_obj.get("v2_metrics") or {}
+    tells = 0
+    for key in _ROUTE_TELL_KEYS_V16:
+        tells += int(m.get(key) or 0)
+    for key in _ROUTE_TELL_KEYS_V2:
+        tells += int(v2.get(key) or 0)
+    chars = int(metrics_obj.get("char_count") or 0)
+    risk = metrics_obj.get("risk_band", "unknown")
+
+    if chars > ROUTE_HEAVY_MIN_CHARS:
+        hint = "heavy"
+        reason = (
+            f"{chars:,}자 초장문(>{ROUTE_HEAVY_MIN_CHARS:,}) — 진단 + 청킹 권장"
+        )
+    elif risk == "high" and tells >= ROUTE_HEAVY_MIN_TELLS:
+        hint = "heavy"
+        reason = (
+            f"risk_band high + 카운트형 티 {tells}건 — AI 슬롭 밀집, "
+            f"진단 + 청킹 권장"
+        )
+    elif tells <= ROUTE_LIGHT_MAX_TELLS and risk in ("low", "medium"):
+        hint = "light"
+        reason = (
+            f"카운트형 어휘·피동 티 {tells}건 · risk_band {risk} — "
+            f"이미 잘 쓴 글, 단일 콜·최소 파이프라인 권장"
+        )
+    else:
+        hint = "standard"
+        reason = (
+            f"카운트형 티 {tells}건 · risk_band {risk} — 진단 + 단일 윤문 권장"
+        )
+    return {
+        "route_hint": hint,
+        "route_reason": reason,
+        "route_signals": {
+            "lexical_tell_count": tells,
+            "risk_band": risk,
+            "char_count": chars,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
 # Combined-file rendering
 # ---------------------------------------------------------------------------
 
@@ -174,6 +261,12 @@ def _render_block(metrics_obj: dict) -> str:
         f"risk_band: {metrics_obj.get('risk_band', 'unknown')}  "
         f"(score {metrics_obj.get('risk_score', 0)})"
     )
+    if metrics_obj.get("route_hint"):
+        lines.append(
+            f"route_hint: {metrics_obj['route_hint']}  "
+            f"(권고 — 사용자·오케스트레이터가 무시 가능)"
+        )
+        lines.append(f"route_reason: {metrics_obj.get('route_reason', '')}")
     lines.append(f"genre: {metrics_obj.get('genre', 'essay')}")
     lines.append(f"char_count: {metrics_obj.get('char_count', 0)}")
     if metrics_obj.get("warning"):
@@ -250,11 +343,28 @@ def _render_combined(
 #   3. 한 문단이 상한 초과 시에만 문장 경계 폴백.
 #   4. 문서 말미 각주 블록은 passthrough 청크로 태깅해 윤문 대상에서 제외.
 #
-# 청크 크기: 목표 3,000 / 상한 4,000. 웹앱의 1800은 flash-lite 전제라 이식
-# 금지 — opus는 대구·리듬 같은 문단 횡단 신호를 잡아야 하므로 청크가 커야 한다.
+# 청크 크기: 목표 7,000 / 상한 9,000 (v2.1 상향 — 종전 3,000/4,000).
+# 근거: 9,817자 실측 run(_workspace/2026-07-18-001)에서 6청크 정밀 파이프라인이
+# 610K 토큰(7콜)을 쓴 반면 단일 콜은 134K로 품질 동등(ending_comma_rate 0.09/0.08)
+# — 폭발 원인은 콜마다 룰북·컨텍스트 재로드이므로 청크 수 자체를 줄여야 한다.
+# 단일 콜이 1만자를 검증된 품질로 처리하므로 청크도 그 급으로 키운다. 웹앱의
+# 1800은 flash-lite 전제라 이식 금지 — 큰 모델은 대구·리듬 같은 문단 횡단
+# 신호를 잡아야 하므로 청크가 커야 한다.
+#
+# 청킹 자체는 CHUNK_RECOMMEND_MIN_CHARS(15,000자) 초과 장문에서만 의미가 있다
+# — 그 미만은 단일 콜 실증 범위라 run_chunk_mode 가 비권장 경고를 남긴다(권고,
+# 강제 아님). 헤딩 강제 컷은 무결성 불변식이라 유지되므로, 헤딩이 촘촘한
+# 문서는 크기 임계와 무관하게 섹션 수만큼 청크가 나온다 — 그런 문서일수록
+# 단일 콜 경로(route_hint)가 답이다.
 
-TARGET_CHUNK_CHARS = 3000
-MAX_CHUNK_CHARS = 4000
+TARGET_CHUNK_CHARS = 7000
+MAX_CHUNK_CHARS = 9000
+# 문장 경계 폴백 트리거 겸 "쪼갤 수 없는 통짜 런" 경고 기준. 상한(9,000)과
+# 분리해 종전 4,000을 유지한다 — 재조립 유실 검증(청크 절반 미만 감지)의
+# granularity 와 종결부호 없는 초장 런 경고 감도를 보존하기 위함. 폴백으로
+# 잘게 난 조각은 어차피 target 까지 그리디 재패킹되므로 콜 수는 늘지 않는다.
+SENT_SPLIT_TRIGGER_CHARS = 4000
+CHUNK_RECOMMEND_MIN_CHARS = ROUTE_HEAVY_MIN_CHARS
 
 HEADING_LINE_RE = re.compile(
     r"^(#{1,6}\s"
@@ -379,13 +489,18 @@ def _pack_segment(
 
     pieces: list[tuple[int, int]] = []
     for us, ue in units:
-        if ue - us > max_chunk:
+        if ue - us > SENT_SPLIT_TRIGGER_CHARS:
             subs = _sentence_pieces(body, us, ue, target)
             for ss, se in subs:
-                if se - ss > max_chunk:
+                # 문장 경계가 전혀 없는 통짜 런은 재조립 유실 검증의 사각지대라
+                # 크기 상한과 무관하게 종전 4,000 기준으로 계속 경고한다.
+                if se - ss > SENT_SPLIT_TRIGGER_CHARS and not _SENT_END_RE.search(
+                    body, ss, se
+                ):
                     warnings.append(
                         f"문장 경계로 쪼갤 수 없는 초장 구간 {se - ss}자 "
-                        f"(offset {ss}) — 상한({max_chunk}) 초과 허용, 검토 요망"
+                        f"(offset {ss}) — 경고 기준({SENT_SPLIT_TRIGGER_CHARS}) "
+                        f"초과 허용, 검토 요망"
                     )
             pieces.extend(subs)
         else:
@@ -501,6 +616,23 @@ def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
 
     spans, warnings = compute_chunk_spans(text)
 
+    # 전문(全文) 기준 route_hint — 청킹 경로가 애초에 적절했는지 manifest 에
+    # 남긴다. 판정 실패는 청킹을 막지 않는다 (graceful degrade).
+    route: dict | None = None
+    if _metrics_mod is not None:
+        try:
+            full_metrics = _metrics_mod.compute_all(
+                text, genre=args.genre, baseline_path=args.baseline
+            )
+            route = compute_route_hint(full_metrics)
+        except Exception:  # noqa: BLE001 — 권고 산출 실패는 치명 아님.
+            route = None
+    if len(text) <= CHUNK_RECOMMEND_MIN_CHARS:
+        warnings.append(
+            f"입력 {len(text):,}자 ≤ 청킹 권장 최소 {CHUNK_RECOMMEND_MIN_CHARS:,}자 "
+            f"— 단일 콜 실증 범위라 --chunk 비권장 (권고, route_hint 참조)"
+        )
+
     # 재청킹은 이전 청크 산출물(경계가 달라진 02_* 윤문 결과 포함)을 무효화한다.
     # 낡은 파일이 재조립에 잘못 섞이는 사고를 막기 위해 지우고 시작한다.
     removed: list[str] = []
@@ -580,6 +712,8 @@ def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
         "genre": args.genre,
         "target_chunk_chars": TARGET_CHUNK_CHARS,
         "max_chunk_chars": MAX_CHUNK_CHARS,
+        "route_hint": route["route_hint"] if route else None,
+        "route_reason": route["route_reason"] if route else None,
         "chunk_count": total,
         "body_chunk_count": sum(1 for e in entries if not e["passthrough"]),
         "passthrough_chunk_count": sum(1 for e in entries if e["passthrough"]),
@@ -599,6 +733,7 @@ def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
         f"chunks={total} (body {manifest['body_chunk_count']} + "
         f"passthrough {manifest['passthrough_chunk_count']})\n"
         f"sizes={sizes}\n"
+        f"route_hint={manifest['route_hint']}\n"
         f"metrics_degraded_chunks={degraded}\n"
         f"stale_removed={len(removed)}\n"
         f"warnings={len(warnings)}"
@@ -674,6 +809,7 @@ def main(argv: list[str] | None = None) -> int:
             metrics_obj = _metrics_mod.compute_all(
                 text, genre=args.genre, baseline_path=args.baseline
             )
+            metrics_obj.update(compute_route_hint(metrics_obj))
             metrics_path.write_text(
                 json.dumps(metrics_obj, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -699,10 +835,12 @@ def main(argv: list[str] | None = None) -> int:
 
     rb = (metrics_obj or {}).get("risk_band", "absent")
     rs = (metrics_obj or {}).get("risk_score", "absent")
+    rh = (metrics_obj or {}).get("route_hint", "absent")
     print(
         f"run_dir={run_dir}\n"
         f"combined={combined_path}\n"
         f"risk_band={rb}  risk_score={rs}\n"
+        f"route_hint={rh}\n"
         f"degraded={metrics_obj is None}"
     )
     return 0
