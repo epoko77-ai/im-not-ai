@@ -2,13 +2,13 @@
 
 Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
 
-| 도구 | 모드 | 설치 방법 |
+| 도구 | 경로 | 설치 방법 |
 |---|---|---|
-| Claude Code | Fast + 정밀(3콜) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
-| Codex CLI | Fast(단일 호출)만 | 클론 + `install.sh` |
-| Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
+| Claude Code | 3경로 전체 — light 1콜 · standard 2콜 · heavy 3+콜 | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
+| Codex CLI | 단일 콜 경로만 | 클론 + `install.sh` |
+| Gemini CLI | 단일 콜 경로만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
-> Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 Fast Path만 제공합니다. 정밀 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
+> Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 경로만 제공합니다. 진단·finalize가 포함된 heavy(정밀) 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
 
 ---
 
@@ -139,4 +139,4 @@ cd im-not-ai
 
 `gemini extensions link`로 저장소를 직접 링크합니다(저장소 수정 시 즉시 반영). 새 세션에서 `/humanize-korean`.
 
-> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 3콜(진단→겨냥 윤문→finalize)은 Claude Code 전용.
+> Gemini는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
