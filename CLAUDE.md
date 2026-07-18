@@ -19,48 +19,54 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 ## 디렉토리 구조
 
 ```
-humanize-ko/
+im-not-ai/
 ├── CLAUDE.md                      # 본 파일 — 프로젝트 가이드
-├── README.md                      # 공개 문서
-├── RELEASING.md                   # 릴리스 체크리스트 (버전 문자열 전수 목록)
+├── README.md / INSTALL.md         # 사용·설치 안내
+├── RELEASING.md                   # 릴리스 체크리스트 (버전 문자열 전수 + 글로벌 심링크 동기화)
 ├── CONTRIBUTORS.md
+├── .claude-plugin/                # Claude 플러그인 + 마켓플레이스 매니페스트
+│   ├── plugin.json                # skills: ./.claude/skills/ · 에이전트는 루트 agents/ 자동탐색
+│   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
+├── gemini-extension.json          # Gemini CLI Extension 매니페스트
+├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
+├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
+├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
 ├── scripts/
 │   ├── prepare_monolith_input.py  # input shim — 정량 점수 + 결합 입력 (`--diagnosis`·`--chunk` 지원)
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
 │   ├── verify_change_rate.py      # 변경률 게이트 — 철칙 #4의 결정적 판정 (exit code)
-│   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드
+│   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
 │   ├── build_social_preview_v2.py
 │   └── make_thumbnail.py
-├── tests/                         # metrics 단위 테스트 (pytest)
-│   ├── test_metrics.py
-│   └── test_metrics_v2.py
-├── .claude/
-│   ├── commands/                  # /humanize · /humanize-redo 슬래시 커맨드
-│   ├── agents/                    # 9개 정의 — 아래 "에이전트 구성" 참조
-│   └── skills/humanize-korean/
-│       ├── SKILL.md               # 오케스트레이터 (fast/strict 분기·shim 배선)
+├── tests/                         # pytest — metrics 단위 + 청킹 + 빌드 sync + golden 픽스처
+│   ├── test_metrics.py · test_metrics_v2.py · test_chunking.py · test_quick_rules_build.py
+│   └── golden/                    # 윤문 품질 회귀 픽스처 + 결정적 채점기(checks.py)
+├── agents/                        # 서브에이전트 9종 (플러그인 컨벤션 — 루트 agents/에 둬야 로드됨)
+│   ├── humanize-monolith.md       # fast·정밀 공용 윤문 콜
+│   ├── humanize-diagnostician.md  # 정밀 P1 진단 (지배 패턴 3~6개)
+│   ├── humanize-finalizer.md      # 정밀 P3 마무리 (의미 15항 + 자연성)
+│   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
+│   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
+├── .claude/skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
+│   └── humanize-korean/
+│       ├── SKILL.md               # 오케스트레이터 (fast/정밀 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
-│           ├── quick-rules.md          # monolith 전용 슬림 룰북 (fast)
-│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (strict)
-│           ├── rewriting-playbook.md   # 카테고리별 치환 레시피 (strict)
-│           ├── metrics.py              # v1.6 정량 지표 (KatFish baseline 8종)
-│           ├── metrics_v2.py           # v2.0 post-editese 14종 (shim이 우선 import)
-│           ├── baseline.json           # v1.6 baseline
-│           ├── baseline_v2.json        # v2.0 baseline (placeholder 셀 포함)
+│           ├── quick-rules.md          # fast 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
+│           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
+│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (+ _quick 빌드 메타)
+│           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
+│           ├── metrics.py · metrics_v2.py     # v1.6 8종 + v2.0 post-editese 14종
+│           ├── baseline.json · baseline_v2.json   # v1.6 baseline · v2.0(placeholder — calibration 대기)
 │           ├── scholarship.md          # v2.0 학술 인용 외부 SSOT
 │           └── web-service-spec.md     # 웹 확장 스펙 (옵션)
+├── codex/skills/humanize-korean/  # Codex Fast Path 스킬 (references → SSOT 공유 심링크)
 └── _workspace/                    # 런타임 산출물 (run_id별, gitignored)
     └── {YYYY-MM-DD-NNN}/
-        ├── 01_input.txt                # 원문
-        ├── 00_metrics.json             # shim 정량 점수
-        ├── 01_input_with_metrics.txt   # 점수 블록 + 원문 결합 파일 (monolith 입력, 정밀은 진단까지 결합)
+        ├── 01_input.txt · 00_metrics.json · 01_input_with_metrics.txt  # 원문·점수·결합
         ├── final.md                    # 윤문본 (끝에 <!-- HUMANIZE-SUMMARY --> 블록)
-        ├── 01_chunk_{NN}_input_with_metrics.txt  # (장문 청킹) + chunk_manifest.json
-        ├── 02_chunk_{NN}_rewritten.txt # (장문 청킹) 청크별 윤문 산출
-        ├── 03_reassembled.md           # (장문 청킹) 재조립본 → final.md로 채택
-        ├── 02_diagnosis.md             # (정밀 P1) 지배 패턴 3~6개 진단
-        ├── final_pre_finalize.md       # (정밀 P3) finalize 보정 전 백업
-        └── 09_finalize.json            # (정밀 P3) 의미 15항 + 자연성 판정
+        ├── 01_chunk_{NN}… · 02_chunk_{NN}_rewritten.txt · 03_reassembled.md  # (장문 청킹)
+        ├── 02_diagnosis.md             # (정밀 P1) 지배 패턴 진단
+        ├── final_pre_finalize.md · 09_finalize.json   # (정밀 P3) 백업 · 판정
 ```
 
 ## 파이프라인

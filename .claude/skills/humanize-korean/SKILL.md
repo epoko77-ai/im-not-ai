@@ -72,7 +72,7 @@ python3 scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre 
 입력:
 ```
 input_path: <abs path>/_workspace/{run_id}/01_input_with_metrics.txt
-quick_rules_path: <abs path>/.claude/skills/humanize-korean/references/quick-rules.md
+quick_rules_path: ${CLAUDE_SKILL_DIR}/references/quick-rules.md
 genre_hint: 칼럼 | 리포트 | 블로그 | 공적 | null
 ```
 
@@ -202,9 +202,9 @@ final.md(보정) + 09_finalize.json
 
 **모델:** 런타임 4종 모두 `model: opus`. (모델 다운그레이드는 v1.4에서 시도했으나 당시 병목은 도구 호출 chain이었음. 3콜 구조에서는 재검토 여지가 있으나 품질 회귀 게이트(골든 픽스처) 통과를 조건으로 별도 회차에서 다룬다.)
 
-**에이전트 정의 위치:** Claude Code가 다음 우선순위로 자동 탐색.
-1. `<cwd>/.claude/agents/` (프로젝트 로컬)
-2. `~/.claude/agents/` (글로벌, 본 프로젝트는 프로젝트→글로벌 심볼릭 링크)
+**에이전트 정의 위치:** 저장소 루트 `agents/`에 12종 정의(플러그인 컨벤션). Claude Code 탐색 경로:
+1. 플러그인 설치 시 — `humanize-korean` 플러그인이 `agents/`를 번들로 제공(전역).
+2. 스크립트 설치 시 — `install.sh`가 `agents/*.md`를 `~/.claude/agents/`에 심링크(전역).
 
 `.claude/agents/`에는 총 10개 정의가 있으나, **본 스킬 런타임이 호출하는 것은 4종뿐**이다.
 
