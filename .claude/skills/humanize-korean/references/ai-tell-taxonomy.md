@@ -198,7 +198,9 @@ J. 시각 장식 남용 — J-1~J-4
 - _quick: true · quick_pattern: 한글 + 괄호 영어 병기 매번 반복("~(Sovereign AI)" 식) · quick_fix: 첫 등장만 병기, 이후 한글만_
 
 ### B-2. 불필요한 영어 장식·일회성 jargon [S2]
-> **용어 보존 원칙**: B 카테고리는 "영어가 보이면 지운다"가 아니다. 개발·AI·학술 문맥에서 이미 외래어·원어로 굳은 technical term은 **의미 보존 대상**이다(`API`·`SDK`·`CLI`·`prompt`·`token`·`embedding`·`agent`·`plugin`·`runtime`·`baseline`·`metric`·`span`·`pipeline`·`framework` 등). `prompt`를 "지시문", `token`을 "표식", `agent`를 "대리인"처럼 **기계적으로 직역하지 않는다**. B는 설명 없이 끼워 넣은 광고성 buzzword·반복 괄호 병기·독자층과 안 맞는 과시적 영어만 다룬다.
+> **용어 보존 원칙**: B 카테고리는 "영어가 보이면 지운다"가 아니다. **개발·AI 문맥의 글**에서 이미 외래어·원어로 굳은 표준 technical term은 의미 보존 대상이다(`API`·`SDK`·`CLI`·`prompt`·`token`·`embedding`·`agent`·`plugin`·`pipeline`·`framework` 등). `prompt`를 "지시문", `token`을 "표식", `agent`를 "대리인"처럼 **기계적으로 직역하지 않는다**.
+> - **단, 보존은 독자층·문맥 의존이다.** 일반 독자 대상 글이나 비개발 문맥에서는 `span`→"구간", `baseline`→"기준선", `metric`→"지표", `runtime`→"실행 시점"처럼 자연스러운 한국어가 오히려 맞다. 보존 목록을 무한정 넓혀 B 카테고리를 무력화하지 말 것 — 판단 기준은 "이 글의 독자가 그 원어를 번역보다 자연스럽게 읽는가"다.
+> - B가 실제로 다루는 것은 설명 없이 낀 광고성 buzzword·반복 괄호 병기·독자층과 안 맞는 과시적 영어다.
 - 패턴: 한국어 문장에 설명 없이 낀 buzzword가 리듬을 깨거나, 과시적 영어가 반복됨.
 - 예: "사용자에게 **seamless**하고 **robust**한 경험을 제공한다" → "사용자가 끊김 없이 안정적으로 쓸 수 있게 한다"
 - 예: "이 **framework**를 **leverage**하여" → "이 프레임워크를 활용해"(표준어는 외래어 표기 유지, 광고성 leverage만 풀기)
