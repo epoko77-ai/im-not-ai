@@ -4,7 +4,7 @@
 
 ## Maintainer
 
-- **[@epoko77-ai](https://github.com/epoko77-ai)** (이승현, epoko@nate.com) — 프로젝트 창립 및 유지보수. 분류 체계(`ai-tell-taxonomy.md`) 설계, 5인 에이전트 파이프라인 구축, v1.0~v1.2 릴리스 책임.
+- **[@epoko77-ai](https://github.com/epoko77-ai)** (이승현, epoko@nate.com) — 프로젝트 창립 및 유지보수. 분류 체계(`ai-tell-taxonomy.md`) 설계, 초기 5인 에이전트 파이프라인 구축(v2.1에서 정밀 3콜 구조로 재편), v1.0~v1.2 릴리스 책임.
 
 ## v1.2 외부 기여자
 
@@ -49,8 +49,7 @@
 
 본 프로젝트는 MIT 라이선스이며 외부 기여를 환영합니다. 기여 형태는 다음 중 무엇이든 좋습니다.
 
-- **새 AI 티 패턴 제보** — `references/ai-tell-taxonomy.md` 후보로 Issue 등록 (실증 사례 2건+ 첨부 시 v1+ 승격 검토)
-- **`author-context.yaml` 외부 회귀 케이스 제공** — 다른 작가/장르의 입력 텍스트로 v1.1 vs v1.2 비교 리포트 (v1.2.1 hotfix 게이트)
+- **새 AI 티 패턴 제보** — `references/ai-tell-taxonomy.md` 후보로 Issue 등록 (실증 사례 2건+ 첨부 시 승격 검토)
 - **사용성 개선 제안** — 슬래시 커맨드, Plugin 통합, 자동화 reference 등
 - **다국어 확장** — 일본어/중국어 분류 체계 적용 가능성 검토
 - **버그 리포트** — Issue로 등록

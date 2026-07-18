@@ -4,7 +4,7 @@ Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity
 
 | 도구 | 모드 | 설치 방법 |
 |---|---|---|
-| Claude Code | Fast + strict(5인 파이프라인) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
+| Claude Code | Fast + 정밀(3콜) | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | Codex CLI | Fast(단일 호출)만 | 클론 + `install.sh` |
 | Gemini CLI | Fast(단일 호출)만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
@@ -26,7 +26,7 @@ Claude Code 세션에서:
 - 설치 후 새 세션에서 `/humanize-korean`(또는 `/humanize`, `/humanize-redo`), 혹은 자연어 트리거("이 글 AI 티 없애줘")로 발동.
 - 업데이트: `/plugin marketplace update im-not-ai` 후 `/plugin update humanize-korean`.
 - 제거: `/plugin uninstall humanize-korean`.
-- 구성요소: 스킬 3개(humanize-korean·humanize·humanize-redo) + 서브에이전트 12개가 함께 설치됩니다.
+- 구성요소: 스킬 3개(humanize-korean·humanize·humanize-redo) + 서브에이전트 9개가 함께 설치됩니다.
 
 ### 방법 ② 클론 + 스크립트
 
@@ -36,7 +36,7 @@ cd im-not-ai
 ./install.sh --claude-only
 ```
 
-`~/.claude/skills/`에 스킬 3개, `~/.claude/agents/`에 에이전트 12개를 **심링크**합니다(저장소를 수정하면 즉시 반영). 새 세션에서 `/humanize-korean`.
+`~/.claude/skills/`에 스킬 3개, `~/.claude/agents/`에 에이전트 9개를 **심링크**합니다(저장소를 수정하면 즉시 반영). 새 세션에서 `/humanize-korean`.
 
 ---
 
@@ -139,4 +139,4 @@ cd im-not-ai
 
 `gemini extensions link`로 저장소를 직접 링크합니다(저장소 수정 시 즉시 반영). 새 세션에서 `/humanize-korean`.
 
-> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 strict 5인 파이프라인은 Claude Code 전용.
+> Gemini는 **Fast(단일 호출) 모드만** 제공합니다. 정밀 3콜(진단→겨냥 윤문→finalize)은 Claude Code 전용.

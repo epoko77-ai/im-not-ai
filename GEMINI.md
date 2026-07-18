@@ -1,7 +1,7 @@
 # Humanize KR — AI 한글 티 제거 (Gemini CLI Extension)
 
 **v1.5 · Fast(monolith) 모드 전용** — Gemini CLI에서 한 번의 대화로 탐지·윤문·자체검증을 일괄 처리합니다.
-정밀 strict 5인 파이프라인은 Claude Code 전용입니다.
+정밀 3콜(진단→겨냥 윤문→finalize)은 Claude Code 전용입니다.
 
 ## 개요
 
@@ -45,7 +45,7 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 1. 한 줄 상태: `완료. 변경률 X% / 등급 Y / 자체검증 N/6 통과`
 2. 윤문본 본문 (마크다운 블록)
 3. 카테고리별 탐지 건수 before/after + 주요 변경 하이라이트 3~5건
-4. 등급 B 이하면 "정밀 검증이 필요하면 Claude Code의 strict 5인 파이프라인 권장" 안내
+4. 등급 B 이하면 "정밀 검증이 필요하면 Claude Code의 정밀 모드(3콜) 권장" 안내
 
 ## 옵션 (인자 끝에 자연어로)
 

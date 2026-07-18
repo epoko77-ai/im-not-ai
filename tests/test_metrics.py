@@ -21,12 +21,25 @@ sys.path.insert(0, METRICS_DIR)
 
 import metrics  # noqa: E402  (sys.path mutation is intentional)
 
-BASELINE_PATH = os.path.join(
-    PROJECT_ROOT, "_workspace", "v1.6-2026-05-06", "02_katfish_baseline.json"
-)
+# Bundled baseline shipped next to metrics.py — works on a fresh clone
+# (_workspace/ is gitignored, so never depend on it in tests).
+BASELINE_PATH = os.path.join(METRICS_DIR, "baseline.json")
 
 
 class MetricsTests(unittest.TestCase):
+    # ------------------------------------------------------------------
+    # Bundled baseline wiring (fresh-clone regression guard)
+    # ------------------------------------------------------------------
+
+    def test_default_baseline_path_exists(self) -> None:
+        path = metrics._default_baseline_path()
+        self.assertTrue(os.path.exists(path), f"bundled baseline missing: {path}")
+        self.assertEqual(os.path.abspath(path), os.path.abspath(BASELINE_PATH))
+
+    def test_compute_all_works_without_explicit_baseline(self) -> None:
+        result = metrics.compute_all("오늘은 좋은 날이다.", genre="essay")
+        self.assertIn(result["risk_band"], ("low", "medium", "high"))
+
     # ------------------------------------------------------------------
     # Robustness
     # ------------------------------------------------------------------

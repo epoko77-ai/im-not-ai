@@ -1,0 +1,4 @@
+{
+  "description": "격식 역주행 — 살아있는 구어 글이 격식화되고 원문에 없던 상투구가 주입되는 실패 (웹앱 실사용 ★1 사례의 실패 모드)",
+  "bad_must_fail": ["hayeot_injection", "cliche_injection", "colloquial_erased"]
+}
