@@ -1,6 +1,6 @@
 {
   "name": "humanize-korean",
-  "version": "1.5.0",
+  "version": "2.1.0",
   "description": "AI가 쓴 한글 텍스트를 사람이 쓴 글처럼 윤문 — Fast(monolith) + strict 5인 파이프라인. 10대 카테고리 40+ AI 티 패턴 탐지·재작성.",
   "author": {
     "name": "epoko77-ai"

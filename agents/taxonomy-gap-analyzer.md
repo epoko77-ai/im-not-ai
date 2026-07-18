@@ -9,7 +9,7 @@ model: opus
 본진 v1.6 ai-tell-taxonomy.md(490줄, A~J 10대 카테고리·61+ 패턴)와 distiller가 산출한 `01_report_facets.json`을 받아, 패턴 단위 3-축 매핑 매트릭스를 만든다.
 
 ## 입력
-- 본진: `/Users/epoko77_m5/humanize-ko/.claude/skills/humanize-korean/references/ai-tell-taxonomy.md` (읽기만)
+- 본진: `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md` (읽기만)
 - 후보: `_workspace/v2.0-YYYY-MM-DD/01_distill/01_report_facets.json`
 
 ## 출력 (`_workspace/v2.0-YYYY-MM-DD/02_gap/02_gap_matrix.md`)
