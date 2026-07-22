@@ -29,6 +29,12 @@ Failure codes (stable API — tests and fixtures reference these):
     footnote_anchor    a footnote marker moved to a different sentence
                        (detected via the nearest preceding number token)
     quote_altered      a direct quote is no longer verbatim
+    number_injected    a numeric value appears in the output that never
+                       occurred in the original (수치 주입)
+
+Advisory (NOT a failure code): 원문 수치의 소실은 문장 병합·표기 통합의
+정상 부산물일 수 있어 게이트하지 않는다. `dropped_numbers()`가 소실 값
+목록을 반환하며, verify_gates.py가 리포트 전용 축(P4)에서 관측만 한다.
 """
 
 from __future__ import annotations
@@ -280,6 +286,72 @@ def check_footnotes(original: str, output: str) -> list[Failure]:
 
 
 # ===========================================================================
+# Number fidelity — 수치는 철칙상 불변. 주입만 FAIL (방향성 게이트).
+# 삭제는 재구성 부산물일 수 있어 advisory(dropped_numbers)로만 관측.
+# ===========================================================================
+
+# 한글 수사 단위 — 숫자 토큰 직후에 바로 붙은 단일 글자만 환산 ("1만").
+# "1만2천" 복합·띄어쓰기 케이스는 환산하지 않는다(양쪽 표기가 대칭이면
+# 오탐 없음 — 과설계 금지).
+_KO_UNIT_MULT = {
+    "백": 100,
+    "천": 1_000,
+    "만": 10_000,
+    "억": 100_000_000,
+    "조": 1_000_000_000_000,
+}
+
+
+def _number_values(text: str) -> set[str]:
+    """Canonical set of numeric VALUES in text.
+
+    - `_NUM_TOKEN` 재사용 (콤마·소수점 포함 토큰: "10,000", "3.1").
+    - 천단위 콤마는 정규화한다 ("10,000" == "10000") — 표기 변경은 수치
+      변조가 아니다.
+    - 숫자 토큰 직후에 바로 붙은 한글 수사 단위 1글자(만·억·조·천·백)는
+      값으로 환산한다 ("1만" == "10,000" == 10000, "1억" == 100000000).
+    - set(값 집합) 비교라서 헤딩 재번호·반복 횟수 변화(순서/multiset 차)는
+      플래그하지 않는다. 오탐 최소화가 우선.
+    """
+    values: set[str] = set()
+    for m in _NUM_TOKEN.finditer(text):
+        tok = m.group(0).replace(",", "")
+        mult = _KO_UNIT_MULT.get(text[m.end():m.end() + 1])
+        if mult:
+            try:
+                val = float(tok) * mult
+                values.add(str(int(val)) if val == int(val) else str(val))
+                continue
+            except ValueError:
+                pass
+        values.add(tok)
+    return values
+
+
+def dropped_numbers(original: str, output: str) -> list[str]:
+    """원문에는 있는데 윤문본에서 사라진 수치 값 목록 (advisory 전용).
+
+    Failure가 아니다 — 문장 병합·표기 통합에서도 수치가 사라질 수 있어
+    게이트하면 양치기 소년이 된다. run_checks는 호출하지 않으며,
+    verify_gates.py가 P4(리포트 전용 축)에서 관측만 한다.
+    """
+    return sorted(_number_values(original) - _number_values(output))
+
+
+def check_numbers(original: str, output: str) -> list[Failure]:
+    """수치 주입 방향성 게이트 — 주입(number_injected)만 FAIL."""
+    fails: list[Failure] = []
+    injected = sorted(_number_values(output) - _number_values(original))
+    if injected:
+        fails.append(Failure(
+            "number_injected",
+            f"원문에 없던 수치가 윤문본에 등장했습니다: {injected} "
+            f"(수치 불변 철칙 — 없던 주장 주입 위험)",
+        ))
+    return fails
+
+
+# ===========================================================================
 # Quote fidelity — direct quotes are immutable under the iron rules
 # ===========================================================================
 
@@ -335,6 +407,7 @@ def run_checks(original: str, output: str) -> list[Failure]:
     fails += check_headings(original, output)
     fails += check_footnotes(original, output)
     fails += check_quotes(original, output)
+    fails += check_numbers(original, output)
     return fails
 
 

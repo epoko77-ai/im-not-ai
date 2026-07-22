@@ -210,6 +210,76 @@ class StructureCheckTests(unittest.TestCase):
         self.assertEqual(checks.check_quotes(orig, out), [])
 
 
+class NumberCheckTests(unittest.TestCase):
+    """수치 주입/삭제 방향성 게이트 — check_numbers."""
+
+    def test_number_injected_detected(self) -> None:
+        orig = "매출이 크게 늘었다."
+        out = "매출이 14개월 만에 75배 늘었다."
+        codes = {x.code for x in checks.check_numbers(orig, out)}
+        self.assertIn("number_injected", codes)
+
+    def test_numbers_preserved_passes(self) -> None:
+        orig = "성장률은 3.1%였다. 비용은 0.00001달러다. 14개월 걸렸다."
+        out = "성장률은 3.1%를 기록했다. 14개월이 걸렸고 비용은 0.00001달러다."
+        self.assertEqual(checks.check_numbers(orig, out), [])
+
+    def test_number_dropped_is_not_a_gate(self) -> None:
+        """수치 소실은 문장 병합의 정상 부산물일 수 있다 — run_checks에는
+        안 나오고 dropped_numbers(advisory)로만 잡힌다."""
+        orig = "성장률은 3.1%였다. 물가는 2.4% 올랐다."
+        out = "성장률은 3.1%였다."
+        self.assertEqual(checks.check_numbers(orig, out), [])
+        self.assertEqual(checks.run_checks(orig, out), [])
+        self.assertEqual(checks.dropped_numbers(orig, out), ["2.4"])
+
+    def test_dropped_numbers_empty_when_preserved(self) -> None:
+        orig = "성장률은 3.1%였다."
+        out = "성장률은 3.1%를 기록했다."
+        self.assertEqual(checks.dropped_numbers(orig, out), [])
+
+    def test_korean_unit_man_equivalence(self) -> None:
+        """"1만" == "10,000" — 수사 단위 표기 변경은 주입/소실이 아니다."""
+        orig = "이용자는 1만 명이다."
+        out = "이용자는 10,000 명이다."
+        self.assertEqual(checks.check_numbers(orig, out), [])
+        self.assertEqual(checks.dropped_numbers(orig, out), [])
+        # 반대 방향도 대칭
+        self.assertEqual(checks.check_numbers(out, orig), [])
+        self.assertEqual(checks.dropped_numbers(out, orig), [])
+
+    def test_korean_unit_eok_equivalence(self) -> None:
+        """"1억" == "100,000,000" 동등."""
+        orig = "예산은 1억 원이다."
+        out = "예산은 100,000,000 원이다."
+        self.assertEqual(checks.check_numbers(orig, out), [])
+        self.assertEqual(checks.dropped_numbers(orig, out), [])
+
+    def test_korean_unit_only_when_attached(self) -> None:
+        """단위는 숫자 직후에 바로 붙은 경우만 환산 — "5 만"은 환산 안 함."""
+        vals = checks._number_values("5 만 명")
+        self.assertIn("5", vals)
+        self.assertNotIn("50000", vals)
+
+    def test_comma_thousands_normalized(self) -> None:
+        """"10,000" ↔ "10000" 표기 변경은 수치 변조가 아니다."""
+        orig = "예산은 10,000억 원이다."
+        out = "예산은 10000억 원이다."
+        self.assertEqual(checks.check_numbers(orig, out), [])
+
+    def test_repetition_change_not_flagged(self) -> None:
+        """값 set 비교 — 같은 값의 등장 횟수 변화(헤딩 재번호 등)는 무시."""
+        orig = "1. 서론\n1) 각주가 아니라 목록.\n결과는 1건이다."
+        out = "결과는 1건이다."
+        codes = {x.code for x in checks.check_numbers(orig, out)}
+        self.assertNotIn("number_injected", codes)
+        self.assertNotIn("number_dropped", codes)
+
+    def test_run_checks_includes_numbers(self) -> None:
+        fails = checks.run_checks("보고서다.", "보고서는 2024년에 나왔다.")
+        self.assertIn("number_injected", {x.code for x in fails})
+
+
 class EdgeCaseTests(unittest.TestCase):
     def test_plain_text_no_failures(self) -> None:
         orig = "오늘은 날씨가 맑다. 산책을 다녀왔다."

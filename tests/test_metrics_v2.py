@@ -431,5 +431,45 @@ class ChangeRateTests(unittest.TestCase):
         self.assertLess(markup_aware, 0.10)
 
 
+class AntithesisCountTests(unittest.TestCase):
+    """C-8 대구 카운터 — 전멸 게이트 전용 (절대치 판정 금지)."""
+
+    def test_counts_all_surface_forms(self) -> None:
+        text = (
+            "이것은 기술이 아니라 태도의 문제다. "
+            "성공이기 이전에 생존이었다. "
+            "제도가 되기 이전에 관행이었다. "
+            "확신이기보다 희망에 가깝다."
+        )
+        self.assertEqual(metrics_v2.antithesis_count(text), 4)
+
+    def test_ga_anira_variant(self) -> None:
+        self.assertEqual(
+            metrics_v2.antithesis_count("문제는 속도가 아니라 방향이다."), 1
+        )
+
+    def test_whitespace_tolerated(self) -> None:
+        self.assertEqual(
+            metrics_v2.antithesis_count("돈이  아니라 시간이다."), 1
+        )
+
+    def test_zero_on_plain_text(self) -> None:
+        self.assertEqual(
+            metrics_v2.antithesis_count("오늘은 비가 온다. 길이 미끄럽다."), 0
+        )
+
+    def test_empty_input(self) -> None:
+        self.assertEqual(metrics_v2.antithesis_count(""), 0)
+        self.assertEqual(metrics_v2.antithesis_count("   \n  "), 0)
+
+    def test_exposed_in_compute_all_v2(self) -> None:
+        result = metrics_v2.compute_all_v2(
+            "속도가 아니라 방향이다. 기술이 아니라 태도다.",
+            baseline_path=BASELINE_PATH,
+            baseline_v2_path=BASELINE_V2_PATH,
+        )
+        self.assertEqual(result["v2_metrics"]["antithesis_count"], 2)
+
+
 if __name__ == "__main__":
     unittest.main()

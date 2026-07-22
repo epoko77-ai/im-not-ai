@@ -21,3 +21,5 @@ jobs:
       # quick-rules.md가 taxonomy(SSOT)에서 재생성한 것과 일치하는지 검사.
       # 손으로 고쳤거나 taxonomy 수정 후 재생성을 잊으면 여기서 막힌다.
       - run: python3 scripts/build_quick_rules.py --check
+      # diagnosis-rules.md(진단 전용 슬림 인덱스)도 동일한 drift 검사.
+      - run: python3 scripts/build_diagnosis_rules.py --check

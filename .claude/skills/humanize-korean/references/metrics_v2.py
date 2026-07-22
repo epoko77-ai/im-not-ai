@@ -613,6 +613,28 @@ def interference_index(text: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# === C-8 ANTITHESIS COUNTER (구조 게이트 — 전멸 판정 전용) ===
+# ---------------------------------------------------------------------------
+
+# C-8 부정-긍정 대구 표층형: "X가/이 아니라 Y", "~이기 이전에", "~되기 이전에",
+# "~이기보다". 사람 글에도 흔한 정상 수사이므로 절대치로는 아무 판정도 못 한다.
+_ANTITHESIS_RE = re.compile(r"(?:가|이)\s*아니라|이기\s*이전에|되기\s*이전에|이기보다")
+
+
+def antithesis_count(text: str) -> int:
+    """C-8 부정-긍정 대구("X가 아니라 Y" 류) 카운트. 전멸 게이트용.
+
+    절대치 판정 금지 — 대구는 사람 글에도 흔한 정상 수사다. 이 카운트는
+    ``before >= 5 AND after == 0`` (전멸 = 윤문이 수사 구조를 몰살) 판정
+    전용이다. 문자 diff가 못 보는 구조 편집(C-8 -75% 뒤에 change_rate
+    2.77%가 숨는 실측 사례)을 잡기 위한 진단 앵커.
+    """
+    if not text.strip():
+        return 0
+    return len(_ANTITHESIS_RE.findall(text))
+
+
+# ---------------------------------------------------------------------------
 # === CHANGE RATE (철칙 #4 게이트 SSOT) ===
 # ---------------------------------------------------------------------------
 
@@ -723,6 +745,9 @@ def compute_all_v2(
         "have_make_literal_count": have_make_literal_count(text),
         "double_particle_count": double_particle_count(text),
         "progressive_aspect_rate": progressive_aspect_rate(text),
+        # C-8 대구 카운트 — 진단 앵커로만 노출. baseline placeholder라 z는
+        # None이어도 무방. 판정은 before/after 전멸 비교로만 한다.
+        "antithesis_count": antithesis_count(text),
     }
     interference = interference_index(text)
 
