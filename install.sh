@@ -16,12 +16,19 @@ FORCE=0
 DRYRUN=0
 TS="$(date +%Y%m%d-%H%M%S)"
 
+# 에이전트 이원화: 스킬이 런타임에 호출하는 4종만 전역(~/.claude/agents)으로 연결하고,
+# 릴리스 회차 전용 개발 도구 5종은 저장소 로컬(.claude/agents)에만 연결한다.
+# 전역 에이전트 description은 모든 프로젝트의 모든 세션에 상시 로드되므로, 여기 목록에
+# 추가하는 것은 SKILL.md가 실제로 호출하는 에이전트로 한정할 것.
+RUNTIME_AGENTS="humanize-monolith humanize-diagnostician humanize-finalizer korean-ai-tell-taxonomist"
+
 print_help() {
   cat <<'H'
 Usage: ./install.sh [options]
 
   설치된 CLI를 자동 감지해 humanize-korean 스킬을 전역 설치한다.
-  Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-redo} + ~/.claude/agents/*.md
+  Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-redo} + 런타임 에이전트 4종(~/.claude/agents)
+          개발 전용 에이전트 5종은 저장소 내부 .claude/agents 에만 연결(저장소에서 연 세션에서만 로드)
   Codex : ~/.codex/skills/humanize-korean
   Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
 
@@ -100,7 +107,28 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
     install_one "$REPO/.claude/skills/$s" "$CLAUDE_HOME/skills/$s"
   done
   for a in "$REPO/agents"/*.md; do
-    install_one "$a" "$CLAUDE_HOME/agents/$(basename "$a")"
+    name="$(basename "$a" .md)"
+    case " $RUNTIME_AGENTS " in
+      *" $name "*)
+        install_one "$a" "$CLAUDE_HOME/agents/$name.md"
+        ;;
+      *)
+        install_one "$a" "$REPO/.claude/agents/$name.md"
+        # 구버전(에이전트 전원 전역) 설치 마이그레이션: 우리 저장소를 가리키는 전역 링크만 해제
+        legacy="$CLAUDE_HOME/agents/$name.md"
+        if [ -L "$legacy" ] && [ "$(readlink "$legacy")" = "$a" ]; then
+          echo "+ rm $legacy (개발 전용 — 전역 해제)"; [ "$DRYRUN" = 1 ] || rm "$legacy"
+        fi
+        ;;
+    esac
+  done
+  # 은퇴 에이전트 마이그레이션: 우리 저장소를 가리키지만 원본이 사라진 링크 해제 (v2.1 은퇴 5종 등)
+  for legacy in "$CLAUDE_HOME/agents"/*.md "$REPO/.claude/agents"/*.md; do
+    [ -L "$legacy" ] || continue
+    tgt="$(readlink "$legacy")"
+    case "$tgt" in
+      "$REPO/agents/"*) [ -e "$tgt" ] || { echo "+ rm $legacy (은퇴 에이전트 — 원본 없음)"; [ "$DRYRUN" = 1 ] || rm "$legacy"; } ;;
+    esac
   done
 else
   echo "== Claude Code: 건너뜀 (claude 또는 $CLAUDE_HOME 미감지) =="

@@ -30,7 +30,16 @@ for s in humanize-korean humanize humanize-redo; do
 done
 remove_if_ours "$CODEX_HOME/skills/humanize-korean" "$REPO/codex/skills/humanize-korean"
 for a in "$REPO/agents"/*.md; do
-  remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"
+  remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"   # 전역(런타임 4종 + 구버전 전원 설치 잔여)
+  remove_if_ours "$REPO/.claude/agents/$(basename "$a")" "$a"  # 저장소 로컬(개발 전용 5종)
+done
+# 은퇴 에이전트 잔여: 우리 저장소를 가리키지만 원본이 사라진 링크도 제거
+for legacy in "$CLAUDE_HOME/agents"/*.md "$REPO/.claude/agents"/*.md; do
+  [ -L "$legacy" ] || continue
+  tgt="$(readlink "$legacy")"
+  case "$tgt" in
+    "$REPO/agents/"*) [ -e "$tgt" ] || { echo "+ rm $legacy (은퇴 에이전트)"; [ "$DRYRUN" = 1 ] || rm "$legacy"; } ;;
+  esac
 done
 
 # ---- Gemini CLI ----

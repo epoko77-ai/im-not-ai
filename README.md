@@ -192,7 +192,7 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 /plugin install humanize-korean@im-not-ai
 ```
 
-스킬 3개 + 서브에이전트 9개가 함께 설치됩니다. 자세한 옵션·스크립트 설치는 [설치](#설치-install) 섹션과 [`INSTALL.md`](INSTALL.md) 참고. (초기 패키징을 탐색한 [`gaebalai/im-not-ai`](https://github.com/gaebalai/im-not-ai) 포크도 있습니다.)
+스킬 3개 + 서브에이전트 9개가 함께 설치됩니다. (스크립트 설치 `./install.sh`는 전역엔 런타임 에이전트 4개만 연결하고 릴리스 회차 전용 개발 도구 5개는 저장소 로컬로 분리합니다 — [`INSTALL.md`](INSTALL.md) 참고.) 자세한 옵션·스크립트 설치는 [설치](#설치-install) 섹션과 [`INSTALL.md`](INSTALL.md) 참고. (초기 패키징을 탐색한 [`gaebalai/im-not-ai`](https://github.com/gaebalai/im-not-ai) 포크도 있습니다.)
 
 **방법 D — Codex CLI (공식, 단일 콜 경로)**
 

@@ -36,7 +36,7 @@ cd im-not-ai
 ./install.sh --claude-only
 ```
 
-`~/.claude/skills/`에 스킬 3개, `~/.claude/agents/`에 에이전트 9개를 **심링크**합니다(저장소를 수정하면 즉시 반영). 새 세션에서 `/humanize-korean`.
+`~/.claude/skills/`에 스킬 3개, `~/.claude/agents/`에 **런타임 에이전트 4개**(monolith·diagnostician·finalizer·taxonomist)를 **심링크**합니다(저장소를 수정하면 즉시 반영). 릴리스 회차 전용 개발 도구 5개(distiller·scholar·gap-analyzer·metric-engineer·rules-integrator)는 저장소 내부 `.claude/agents/`에만 연결되어 **이 저장소에서 연 세션에서만** 로드됩니다 — 전역 에이전트 description이 무관한 프로젝트 세션의 컨텍스트를 차지하지 않게 하기 위한 분리입니다(Claude 5 세대 컨텍스트 엔지니어링 권고). 새 세션에서 `/humanize-korean`.
 
 ---
 
@@ -104,7 +104,7 @@ cd im-not-ai
 - **"refuse: … 가 이미 있음"** — 해당 경로에 이미 다른 파일/링크가 있습니다. `--force`(백업 후 덮어쓰기) 또는 직접 정리 후 재실행하세요.
 - **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/.claude/skills`(스크립트 설치)로 확인하세요. Codex는 `/skills` 메뉴로 확인.
 - **저장소 위치 이동/삭제** — 심링크 설치는 클론한 저장소 경로에 의존합니다. 저장소를 옮기면 `./uninstall.sh`(옛 경로) 후 새 경로에서 `./install.sh`를 다시 실행하거나, 위치 비의존이 필요하면 `--copy`로 설치하세요.
-- **레포 기여 개발** — 이 저장소는 에이전트를 플러그인 컨벤션(`agents/`)에, 스킬을 `.claude/skills/`에 둡니다. 저장소 안에서 직접 테스트하려면 `./install.sh`로 한 번 전역 연결한 뒤(에이전트가 `~/.claude/agents`에서 탐색됨) 사용하세요.
+- **레포 기여 개발** — 이 저장소는 에이전트 원본을 플러그인 컨벤션(`agents/`)에, 스킬을 `.claude/skills/`에 둡니다. `./install.sh`를 한 번 실행하면 런타임 에이전트 4개는 `~/.claude/agents`에, 릴리스 회차 전용 개발 도구 5개는 저장소 `.claude/agents/`에 연결되므로, **저장소 루트에서 연 세션에서는 9종 전부** 사용할 수 있습니다. (구버전으로 전역 설치했던 개발 전용·은퇴 에이전트 링크는 재실행 시 자동 해제됩니다.)
 
 ## 요구 사항
 

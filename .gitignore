@@ -2,6 +2,9 @@
 _workspace/
 _workspace_prev/
 
+# install.sh가 생성하는 저장소 로컬 에이전트 링크 (원본은 agents/)
+.claude/agents/
+
 # macOS
 .DS_Store
 
