@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 70개 AI 티 패턴(+A-17 hold 1건)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
+AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 72개 AI 티 패턴(+A-17 hold 1건)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
 
 v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
 
@@ -58,7 +58,7 @@ im-not-ai/
 │       └── references/
 │           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
-│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (+ _quick 빌드 메타)
+│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 72 패턴 (+ _quick 빌드 메타)
 │           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
 │           ├── metrics.py · metrics_v2.py     # v1.6 8종 + v2.0 post-editese 14종
 │           ├── baseline.json · baseline_v2.json   # v1.6 baseline · v2.0(placeholder — calibration 대기)
