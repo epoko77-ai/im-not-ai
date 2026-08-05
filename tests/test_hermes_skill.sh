@@ -12,10 +12,21 @@ BUNDLED_RULES="$SKILL_DIR/references/quick-rules.md"
 [ -f "$BUNDLED_RULES" ] || { echo "missing bundled quick-rules.md" >&2; exit 1; }
 [ ! -L "$BUNDLED_RULES" ] || { echo "Hermes support files must not be symlinks" >&2; exit 1; }
 
-cmp "$CANONICAL_RULES" "$BUNDLED_RULES" || {
-  echo "Hermes quick-rules.md drifted from the canonical rules" >&2
-  exit 1
-}
+python3 - "$CANONICAL_RULES" "$BUNDLED_RULES" <<'PY'
+import sys
+from pathlib import Path
+
+
+def pattern_body(path: str) -> str:
+    content = Path(path).read_text(encoding="utf-8")
+    start = content.index("## A. ")
+    end = content.index("## 자체검증", start)
+    return content[start:end].rstrip()
+
+
+if pattern_body(sys.argv[1]) != pattern_body(sys.argv[2]):
+    raise SystemExit("Hermes A-J rule body drifted from the canonical rules")
+PY
 
 python3 - "$SKILL_MD" "$SKILL_DIR" <<'PY'
 import re
@@ -61,21 +72,65 @@ missing_tools = mandatory_tools - declared_tools
 if missing_tools:
     raise SystemExit(f"SKILL.md is missing mandatory tools: {sorted(missing_tools)}")
 
-support_refs = set(re.findall(
-    r"(?:references|templates|scripts|assets|examples)/[^\s)`\"'<>]+",
-    content,
-))
-if not support_refs:
+required_intervals = {
+    "`0% <= change_rate <= 30%`",
+    "`30% < change_rate <= 50%`",
+    "`change_rate > 50%`",
+}
+missing_intervals = {interval for interval in required_intervals if interval not in content}
+if missing_intervals:
+    raise SystemExit(f"SKILL.md is missing unambiguous change-rate intervals: {sorted(missing_intervals)}")
+
+ref_pattern = re.compile(r"(?:references|templates|scripts|assets|examples)/[^\s)`\"'<>]+")
+pending_files = [skill_md]
+seen_files = set()
+support_docs = {}
+referenced_files = set()
+
+while pending_files:
+    support_file = pending_files.pop()
+    resolved_file = support_file.resolve()
+    if resolved_file in seen_files:
+        continue
+    seen_files.add(resolved_file)
+    try:
+        file_content = support_file.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        continue
+    if resolved_file != skill_md.resolve():
+        support_docs[str(support_file.relative_to(skill_dir))] = file_content
+
+    for raw_rel in sorted(set(ref_pattern.findall(file_content))):
+        rel = raw_rel.rstrip(".,;:")
+        candidate = skill_dir / rel
+        resolved_candidate = candidate.resolve()
+        if skill_dir not in resolved_candidate.parents:
+            raise SystemExit(f"support file escapes skill directory: {rel}")
+        if not candidate.is_file():
+            raise SystemExit(f"missing recursively referenced support file: {rel}")
+        if candidate.is_symlink():
+            raise SystemExit(f"referenced support file must not be a symlink: {rel}")
+        referenced_files.add(rel)
+        pending_files.append(candidate)
+
+if not referenced_files:
     raise SystemExit("SKILL.md must reference at least one bundled support file")
 
-for rel in sorted(support_refs):
-    candidate = skill_dir / rel.rstrip(".,;:")
-    if not candidate.is_file():
-        raise SystemExit(f"missing referenced support file: {rel}")
-    if candidate.is_symlink():
-        raise SystemExit(f"referenced support file must not be a symlink: {rel}")
-    if skill_dir not in candidate.resolve().parents:
-        raise SystemExit(f"support file escapes skill directory: {rel}")
+forbidden_runtime_markers = (
+    "humanize-monolith",
+    "오케스트레이터 Phase 2.5",
+    "verify_change_rate.py",
+    "strict 모드",
+)
+for rel, doc_content in support_docs.items():
+    for marker in forbidden_runtime_markers:
+        if marker in doc_content:
+            raise SystemExit(f"Hermes support file {rel} contains unavailable runtime marker: {marker}")
+    for line in doc_content.splitlines():
+        if "변경률" in line and re.search(r"(?:30|50)%\s*(?:이상|초과|이하|미만)", line):
+            raise SystemExit(
+                f"Hermes support file {rel} duplicates the SKILL.md change-rate boundary: {line}"
+            )
 PY
 
 echo "Hermes skill bundle tests passed"
