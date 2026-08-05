@@ -25,7 +25,7 @@
 
 ## 설계 노트 — 진단 슬림 인덱스 (v2.3)
 
-진단(humanize-diagnostician)의 핸드오프 계약은 "정확한 본진 ID + 지배도 판단"이다. taxonomy 전량(74.8KB)의 대부분은 예문·처방·학술 인용·버전주석 — 진단에 불필요. `scripts/build_diagnosis_rules.py`가 SSOT에서 71패턴 전수(ID·정의·탐지 시그니처)를 ~13KB로 결정적 생성한다(83% 절감). quick-rules로 대체할 수 없는 이유: 진단은 문서 레벨 패턴(C-8 대구·E-1 리듬·D-6 결말공식 등 quick:false 23종)을 반드시 봐야 한다. drift는 CI `--check`가 차단.
+진단(humanize-diagnostician)의 핸드오프 계약은 "정확한 본진 ID + 지배도 판단"이다. taxonomy 전량(74.8KB)의 대부분은 예문·처방·학술 인용·버전주석 — 진단에 불필요. `scripts/build_diagnosis_rules.py`가 SSOT에서 패턴 전수(ID·정의·탐지 시그니처)를 ~13KB로 결정적 생성한다(83% 절감). quick-rules로 대체할 수 없는 이유: 진단은 문서 레벨 패턴(C-8 대구·E-1 리듬·D-6 결말공식 등 quick:false 23종)을 반드시 봐야 한다. drift는 CI `--check`가 차단.
 
 ## 테스트 시나리오
 
