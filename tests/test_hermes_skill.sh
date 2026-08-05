@@ -82,6 +82,7 @@ if missing_intervals:
     raise SystemExit(f"SKILL.md is missing unambiguous change-rate intervals: {sorted(missing_intervals)}")
 
 ref_pattern = re.compile(r"(?:references|templates|scripts|assets|examples)/[^\s)`\"'<>]+")
+direct_refs = {raw.rstrip(".,;:") for raw in ref_pattern.findall(content)}
 pending_files = [skill_md]
 seen_files = set()
 support_docs = {}
@@ -102,6 +103,10 @@ while pending_files:
 
     for raw_rel in sorted(set(ref_pattern.findall(file_content))):
         rel = raw_rel.rstrip(".,;:")
+        if resolved_file != skill_md.resolve() and rel not in direct_refs:
+            raise SystemExit(
+                f"transitive support reference is not directly declared in SKILL.md: {rel}"
+            )
         candidate = skill_dir / rel
         resolved_candidate = candidate.resolve()
         if skill_dir not in resolved_candidate.parents:
