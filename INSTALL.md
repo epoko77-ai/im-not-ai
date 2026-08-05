@@ -1,14 +1,15 @@
 # 설치 가이드 (Install)
 
-Humanize KR은 **Claude Code**와 **OpenAI Codex CLI**, **Gemini CLI(Antigravity)** 에서 전역으로 쓸 수 있습니다.
+Humanize KR은 **Claude Code**, **OpenAI Codex CLI**, **Gemini CLI(Antigravity)**, **Hermes Agent**에서 전역으로 쓸 수 있습니다.
 
 | 도구 | 경로 | 설치 방법 |
 |---|---|---|
 | Claude Code | 3경로 전체 — light 1콜 · standard 2콜 · heavy 3+콜 | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | Codex CLI | 단일 콜 경로만 | 클론 + `install.sh` |
 | Gemini CLI | 단일 콜 경로만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
+| Hermes Agent | 단일 콜 경로만 | ① `hermes skills install`(권장) / ② 클론 + `install.sh` |
 
-> Codex와 Gemini는 Claude식 다중 서브에이전트 파이프라인을 결정적으로 실행하지 못해, 단일 호출 경로만 제공합니다. 진단·finalize가 포함된 heavy(정밀) 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
+> Codex·Gemini·Hermes 포트는 단일 호출 경로만 제공합니다. 진단·finalize가 포함된 heavy(정밀) 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
 
 ---
 
@@ -54,27 +55,55 @@ cd im-not-ai
 
 ---
 
-## 한 번에 양쪽 모두 (Claude + Codex + Gemini)
+## Hermes Agent
+
+### 방법 ① Skills Hub — 클론 불필요 (권장)
+
+```bash
+hermes skills install epoko77-ai/im-not-ai/hermes/skills/humanize-korean
+```
+
+- 설치 후 **새 세션**에서 `/humanize-korean`, 혹은 자연어 트리거("이 글 AI 티 없애줘")로 발동.
+- 업데이트: `hermes skills check`로 확인하고 `hermes skills update`로 적용.
+- 제거: `hermes skills uninstall humanize-korean`.
+- Hermes Skills Hub의 보안 스캔과 호환되도록 `SKILL.md`와 `references/quick-rules.md`를 실제 파일로 묶었습니다. 번들 안에 심볼릭 링크가 없습니다.
+
+### 방법 ② 클론 + 스크립트
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
-./install.sh            # 설치된 claude/codex/gemini를 자동 감지해 각각 연결
+./install.sh --hermes-only
+```
+
+`$HERMES_HOME/skills/humanize-korean`(기본 `~/.hermes/skills/humanize-korean`)에 Fast Path 스킬을 심링크합니다. 프로필별 설치는 대상 프로필의 `HERMES_HOME`을 지정한 뒤 실행하세요.
+
+Hermes 포트는 `skill_view`로 룰북을 점진 로드하고, Hermes의 파일 도구로 원문과 산출물을 관리하며, 문자 변경률을 도구로 결정적으로 계산합니다. Claude Code의 `Agent` 도구나 `${CLAUDE_SKILL_DIR}`에는 의존하지 않습니다.
+
+---
+
+## 한 번에 모두 (Claude + Codex + Gemini + Hermes)
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+./install.sh            # 설치된 claude/codex/gemini/hermes를 자동 감지해 각각 연결
 ```
 
 ### `install.sh` 옵션
 
 | 옵션 | 설명 |
 |---|---|
-| (없음) | `claude`·`codex`·`gemini` 자동 감지 후 각각 설치 (심링크) |
+| (없음) | `claude`·`codex`·`gemini`·`hermes` 자동 감지 후 각각 설치 (심링크) |
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
-| `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
-| `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
+| `--claude-only` / `--codex-only` / `--gemini-only` / `--hermes-only` | 한 도구만 |
+| `--no-gemini` | Gemini 건너뜀 |
+| `--no-hermes` | Hermes 건너뜀 |
 | `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
 | `-h`, `--help` | 도움말 |
 
-환경변수 `CLAUDE_HOME`(기본 `~/.claude`), `CODEX_HOME`(기본 `~/.codex`)로 설치 위치를 바꿀 수 있습니다.
+환경변수 `CLAUDE_HOME`(기본 `~/.claude`), `CODEX_HOME`(기본 `~/.codex`), `HERMES_HOME`(기본 `~/.hermes`)으로 설치 위치를 바꿀 수 있습니다.
 
 ---
 
@@ -86,6 +115,7 @@ cd im-not-ai
   - `--copy`로 설치했다면 `./update.sh --copy --force`.
 - **수동** — `git pull`만 해도 심링크라 내용은 반영됩니다(신규 파일 연결은 `./install.sh` 한 번 더).
 - **마켓플레이스 설치** — Claude Code가 갱신을 관리합니다: `/plugin marketplace update im-not-ai` → `/plugin update humanize-korean`.
+- **Hermes Skills Hub 설치** — `hermes skills check` → `hermes skills update`.
 - **주기적 무인 업데이트 (opt-in)** — 완전 자동 갱신을 원하면 cron/launchd로 `update.sh`를 거세요. 예(매주 월 09:00, 감지 시 적용):
   ```cron
   0 9 * * 1  cd /path/to/im-not-ai && ./update.sh >> ~/.humanize-update.log 2>&1
@@ -96,21 +126,23 @@ cd im-not-ai
 
 - **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존).
 - **마켓플레이스** — `/plugin uninstall humanize-korean`.
+- **Hermes Skills Hub** — `hermes skills uninstall humanize-korean`.
 
 ---
 
 ## 트러블슈팅
 
 - **"refuse: … 가 이미 있음"** — 해당 경로에 이미 다른 파일/링크가 있습니다. `--force`(백업 후 덮어쓰기) 또는 직접 정리 후 재실행하세요.
-- **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/.claude/skills`(스크립트 설치)로 확인하세요. Codex는 `/skills` 메뉴로 확인.
+- **스킬이 안 보임** — Claude와 Hermes는 **새 세션**에서 로드됩니다. Claude는 `claude plugin list`, Hermes는 `hermes skills list`, Codex는 `/skills` 메뉴로 확인하세요.
 - **저장소 위치 이동/삭제** — 심링크 설치는 클론한 저장소 경로에 의존합니다. 저장소를 옮기면 `./uninstall.sh`(옛 경로) 후 새 경로에서 `./install.sh`를 다시 실행하거나, 위치 비의존이 필요하면 `--copy`로 설치하세요.
-- **레포 기여 개발** — 이 저장소는 에이전트를 플러그인 컨벤션(`agents/`)에, 스킬을 `.claude/skills/`에 둡니다. 저장소 안에서 직접 테스트하려면 `./install.sh`로 한 번 전역 연결한 뒤(에이전트가 `~/.claude/agents`에서 탐색됨) 사용하세요.
+- **레포 기여 개발** — Claude 에이전트와 스킬은 `agents/`·`.claude/skills/`, Hermes 번들은 `hermes/skills/`에 둡니다. 저장소 안에서 직접 테스트하려면 `./install.sh`로 전역 연결한 뒤 사용하세요.
 
 ## 요구 사항
 
 - Claude Code: 마켓플레이스/플러그인 지원 버전(`claude plugin` 명령 사용 가능).
 - Codex CLI: 0.121.0 이상(`~/.codex/skills` Skills 지원).
 - Gemini CLI: 0.14.0 이상(`gemini extensions` 명령 사용 가능).
+- Hermes Agent: `hermes skills` 명령과 Agent Skills를 지원하는 버전.
 - macOS·Linux의 `bash`. (Windows는 WSL 권장 — 심링크 때문에.)
 
 ---

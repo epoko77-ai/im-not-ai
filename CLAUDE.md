@@ -35,7 +35,7 @@ im-not-ai/
 ├── gemini-extension.json          # Gemini CLI Extension 매니페스트
 ├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
 ├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
-├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
+├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini·Hermes 전역 설치/제거 (심링크 기본)
 ├── scripts/
 │   ├── prepare_monolith_input.py  # input shim — 정량 점수 + route_hint 산출 + 결합 입력 (`--diagnosis`·`--chunk` 지원)
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
@@ -65,6 +65,7 @@ im-not-ai/
 │           ├── scholarship.md          # v2.0 학술 인용 외부 SSOT
 │           └── web-service-spec.md     # 웹 확장 스펙 (옵션)
 ├── codex/skills/humanize-korean/  # Codex Fast Path 스킬 (references → SSOT 공유 심링크)
+├── hermes/skills/humanize-korean/ # Hermes Fast Path 번들 (실파일 references, Skills Hub 호환)
 └── _workspace/                    # 런타임 산출물 (run_id별, gitignored)
     └── {YYYY-MM-DD-NNN}/
         ├── 01_input.txt · 00_metrics.json · 01_input_with_metrics.txt  # 원문·점수·결합

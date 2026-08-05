@@ -23,3 +23,7 @@ jobs:
       - run: python3 scripts/build_quick_rules.py --check
       # diagnosis-rules.md(진단 전용 슬림 인덱스)도 동일한 drift 검사.
       - run: python3 scripts/build_diagnosis_rules.py --check
+      # CLI별 설치 플래그와 자체 포함 Hermes 스킬 번들을 검증한다.
+      - run: bash tests/test_install_flags.sh
+      - run: bash tests/test_uninstall_flags.sh
+      - run: bash tests/test_hermes_skill.sh

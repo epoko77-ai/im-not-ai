@@ -4,13 +4,13 @@
 
 # Humanize KR — 한글 AI 티 제거기 v2.3.0
 
-AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 Claude Code 스킬입니다. 
+AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 에이전트 스킬입니다.
 
 번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 70 서브 패턴**(+검증 대기 hold 1건)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
 
 ## 설치 (Install)
 
-> **Claude Code**와 **OpenAI Codex CLI** 양쪽을 지원합니다. 전체 가이드: [`INSTALL.md`](INSTALL.md)
+> **Claude Code**, **OpenAI Codex CLI**, **Gemini CLI**, **Hermes Agent**를 지원합니다. 전체 가이드: [`INSTALL.md`](INSTALL.md)
 
 **Claude Code — 플러그인 마켓플레이스 (클론 불필요, 권장)**
 
@@ -21,18 +21,26 @@ AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자�
 
 새 세션에서 `/humanize-korean` (또는 자연어로 "이 글 AI 티 없애줘").
 
-**Claude Code · Codex CLI — 클론 + 스크립트**
+**Hermes Agent — Skills Hub (클론 불필요, 권장)**
+
+```bash
+hermes skills install epoko77-ai/im-not-ai/hermes/skills/humanize-korean
+```
+
+새 세션에서 `/humanize-korean` 또는 자연어로 "이 글 AI 티 없애줘". Hermes 포트는 단일 콜 Fast Path를 제공합니다.
+
+**Claude Code · Codex CLI · Hermes Agent — 클론 + 스크립트**
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
-./install.sh            # 설치된 claude/codex 자동 감지 → 전역 심링크
+./install.sh            # 설치된 claude/codex/gemini/hermes 자동 감지 → 전역 심링크
 ```
 
-- Claude: `/humanize-korean` · Codex: `$humanize-korean`
-- 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
+- Claude: `/humanize-korean` · Codex: `$humanize-korean` · Hermes: `/humanize-korean`
+- 한쪽만: `./install.sh --claude-only` / `--codex-only` / `--hermes-only` · 제거: `./uninstall.sh`
 - **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
-- Codex는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
+- Codex·Gemini·Hermes는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
 
 ## 왜 한글 특화인가
 
@@ -156,7 +164,7 @@ claude
 
 ### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
 
-Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Codex 사용자는 아래 **방법 D**의 community port를 참고하세요.
+Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Codex와 Hermes 사용자는 각각 아래 **방법 D**, **방법 E**를 참고하세요.
 
 **방법 A — 자연어 한 문장 (가장 쉬움)**
 
@@ -205,7 +213,17 @@ git clone https://github.com/epoko77-ai/im-not-ai.git && cd im-not-ai
 
 Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). Codex는 **단일 콜 경로만** 제공하며, 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용입니다. (Codex Desktop용 별도 어댑터로는 community 포트 [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)도 있습니다.)
 
-**방법 E — Web UI (비공식)**
+**방법 E — Hermes Agent (공식, 단일 콜 경로)**
+
+Hermes Skills Hub에서 클론 없이 설치합니다:
+
+```bash
+hermes skills install epoko77-ai/im-not-ai/hermes/skills/humanize-korean
+```
+
+새 세션에서 `/humanize-korean`으로 발동하거나 자연어로 요청하세요. Hermes 포트는 `skill_view`·파일 도구·결정적 변경률 계산에 맞춘 자체 포함 번들이며, 보안상 심볼릭 링크를 쓰지 않습니다. 다콜 경로는 Claude Code 전용입니다.
+
+**방법 F — Web UI (비공식)**
 
 opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 - 접속: [im-not-ai-ocx.illuwa.click](https://im-not-ai-ocx.illuwa.click/)

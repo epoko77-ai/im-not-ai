@@ -65,4 +65,30 @@ assert_contains "$claude_desktop_output" "+ ln -s $ROOT/.claude/skills/humanize-
 assert_not_contains "$claude_desktop_output" "Claude Code: "
 rm -rf "$TMP_HOME/.claude"
 
+hermes_without_target_output="$(run_installer --hermes-only)"
+assert_contains "$hermes_without_target_output" "== Hermes Agent: 건너뜀"
+assert_not_contains "$hermes_without_target_output" "+ ln -s $ROOT/hermes/skills/humanize-korean"
+
+mkdir -p "$TMP_HOME/bin"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$TMP_HOME/bin/hermes"
+chmod +x "$TMP_HOME/bin/hermes"
+hermes_command_output="$(
+  env -i HOME="$TMP_HOME" PATH="$TMP_HOME/bin:$MINIMAL_PATH" \
+    bash "$ROOT/install.sh" --hermes-only --dry-run
+)"
+assert_contains "$hermes_command_output" "== Hermes Agent =="
+assert_contains "$hermes_command_output" "+ ln -s $ROOT/hermes/skills/humanize-korean $TMP_HOME/.hermes/skills/humanize-korean"
+rm -rf "$TMP_HOME/bin"
+
+mkdir -p "$TMP_HOME/.hermes"
+hermes_output="$(run_installer --hermes-only)"
+assert_contains "$hermes_output" "== Hermes Agent =="
+assert_contains "$hermes_output" "+ ln -s $ROOT/hermes/skills/humanize-korean $TMP_HOME/.hermes/skills/humanize-korean"
+assert_not_contains "$hermes_output" "Hermes Agent: "
+
+hermes_disabled_output="$(run_installer --no-hermes)"
+assert_contains "$hermes_disabled_output" "== Hermes Agent: 건너뜀"
+assert_not_contains "$hermes_disabled_output" "+ ln -s $ROOT/hermes/skills/humanize-korean"
+rm -rf "$TMP_HOME/.hermes"
+
 echo "install flag tests passed"

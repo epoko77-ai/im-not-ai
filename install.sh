@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Humanize KR — Claude Code + Codex CLI + Gemini CLI 전역 설치 스크립트
-# 저장소를 클론한 뒤 `./install.sh` 한 번이면 설치된 CLI(claude/codex/gemini)를 자동 감지해
+# Humanize KR — Claude Code + Codex CLI + Gemini CLI + Hermes Agent 전역 설치 스크립트
+# 저장소를 클론한 뒤 `./install.sh` 한 번이면 설치된 CLI(claude/codex/gemini/hermes)를 자동 감지해
 # humanize-korean 스킬(+ 에이전트)을 전역으로 연결한다. 기본은 심링크(저장소 수정 즉시 반영).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 
 MODE=symlink          # symlink | copy
 DO_CLAUDE=auto        # auto | yes | no
 DO_CODEX=auto
 DO_GEMINI=auto
+DO_HERMES=auto
 FORCE=0
 DRYRUN=0
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -24,6 +26,7 @@ Usage: ./install.sh [options]
   Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-redo} + ~/.claude/agents/*.md
   Codex : ~/.codex/skills/humanize-korean
   Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
+  Hermes: $HERMES_HOME/skills/humanize-korean (기본 ~/.hermes)
 
 Options:
   --copy          심링크 대신 복사(저장소를 지워도 유지, references 심링크는 실체화).
@@ -31,22 +34,26 @@ Options:
   --claude-only   Claude만 설치 시도(claude 명령 또는 ~/.claude 감지 시)
   --codex-only    Codex만 설치 시도(codex 명령 또는 ~/.codex 감지 시)
   --gemini-only   Gemini만 설치
-  --no-gemini     Gemini 건너뜀 (claude/codex만)
+  --hermes-only   Hermes만 설치 시도(hermes 명령 또는 HERMES_HOME 감지 시)
+  --no-gemini     Gemini 건너뜀
+  --no-hermes     Hermes 건너뜀
   --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
   --dry-run       실제 변경 없이 수행할 작업만 출력
   -h, --help      이 도움말
 
-Env overrides: CLAUDE_HOME(기본 ~/.claude), CODEX_HOME(기본 ~/.codex)
+Env overrides: CLAUDE_HOME(기본 ~/.claude), CODEX_HOME(기본 ~/.codex), HERMES_HOME(기본 ~/.hermes)
 H
 }
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --copy) MODE=copy ;;
-    --claude-only) DO_CODEX=no; DO_GEMINI=no ;;
-    --codex-only) DO_CLAUDE=no; DO_GEMINI=no ;;
-    --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
+    --claude-only) DO_CODEX=no; DO_GEMINI=no; DO_HERMES=no ;;
+    --codex-only) DO_CLAUDE=no; DO_GEMINI=no; DO_HERMES=no ;;
+    --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes; DO_HERMES=no ;;
+    --hermes-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=no ;;
     --no-gemini) DO_GEMINI=no ;;
+    --no-hermes) DO_HERMES=no ;;
     --force) FORCE=1 ;;
     --dry-run) DRYRUN=1 ;;
     -h|--help) print_help; exit 0 ;;
@@ -91,6 +98,7 @@ install_one() {
 # CLI 명령 또는 홈 디렉터리(앱만 설치한 사용자)로 대상 감지
 has_claude_target() { command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME" ]; }
 has_codex_target()  { command -v codex  >/dev/null 2>&1 || [ -d "$CODEX_HOME" ]; }
+has_hermes_target() { command -v hermes >/dev/null 2>&1 || [ -d "$HERMES_HOME" ]; }
 
 # ---- Claude ----
 if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; then
@@ -115,6 +123,15 @@ else
   echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지) =="
 fi
 
+# ---- Hermes ----
+if [ "$DO_HERMES" != no ] && { [ "$DO_HERMES" = yes ] || has_hermes_target; }; then
+  echo "== Hermes Agent =="
+  run mkdir -p "$HERMES_HOME/skills"
+  install_one "$REPO/hermes/skills/humanize-korean" "$HERMES_HOME/skills/humanize-korean"
+else
+  echo "== Hermes Agent: 건너뜀 (hermes 또는 $HERMES_HOME 미감지) =="
+fi
+
 # ---- Gemini CLI ----
 if [ "$DO_GEMINI" != no ] && { [ "$DO_GEMINI" = yes ] || command -v gemini >/dev/null 2>&1; }; then
   echo "== Gemini CLI =="
@@ -134,5 +151,6 @@ echo "완료 (mode=$MODE)."
 echo "  Claude: 새 세션에서 /humanize-korean (또는 /humanize)"
 echo "  Codex : \$humanize-korean"
 echo "  Gemini: 새 세션에서 /humanize-korean (또는 /humanize)"
+echo "  Hermes: 새 세션에서 /humanize-korean"
 echo "  업데이트: ./update.sh (새 버전 자동 감지 + 적용) · 제거: ./uninstall.sh"
 exit 0

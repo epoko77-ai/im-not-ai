@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Humanize KR — 전역 설치 제거 스크립트
+# Humanize KR — Claude·Codex·Gemini·Hermes 전역 설치 제거 스크립트
 # install.sh가 만든 "이 저장소를 가리키는 심링크"만 제거한다. 사용자가 직접 둔 파일이나
 # 다른 곳을 가리키는 링크, .bak.* 백업은 건드리지 않는다. (--copy 설치본은 자동 삭제 대상 아님)
 set -euo pipefail
@@ -7,6 +7,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 DRYRUN=0
 
 case "${1:-}" in
@@ -29,6 +30,7 @@ for s in humanize-korean humanize humanize-redo; do
   remove_if_ours "$CLAUDE_HOME/skills/$s" "$REPO/.claude/skills/$s"
 done
 remove_if_ours "$CODEX_HOME/skills/humanize-korean" "$REPO/codex/skills/humanize-korean"
+remove_if_ours "$HERMES_HOME/skills/humanize-korean" "$REPO/hermes/skills/humanize-korean"
 for a in "$REPO/agents"/*.md; do
   remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"
 done
