@@ -25,7 +25,7 @@ remove_if_ours() {
   fi
 }
 
-for s in humanize-korean humanize humanize-redo; do
+for s in humanize-korean humanize humanize-redo commit-ko; do
   remove_if_ours "$CLAUDE_HOME/skills/$s" "$REPO/.claude/skills/$s"
 done
 remove_if_ours "$CODEX_HOME/skills/humanize-korean" "$REPO/codex/skills/humanize-korean"

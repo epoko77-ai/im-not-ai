@@ -146,7 +146,7 @@ has_codex_target()  { command -v codex  >/dev/null 2>&1 || [ -d "$CODEX_HOME" ];
 if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; then
   echo "== Claude Code =="
   run mkdir -p "$CLAUDE_HOME/skills" "$CLAUDE_HOME/agents"
-  for s in humanize-korean humanize humanize-redo; do
+  for s in humanize-korean humanize humanize-redo commit-ko; do
     install_one "$REPO/.claude/skills/$s" "$CLAUDE_HOME/skills/$s"
   done
   agents=()
