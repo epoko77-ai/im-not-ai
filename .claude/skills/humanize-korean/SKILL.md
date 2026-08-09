@@ -57,7 +57,7 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 어휘 티가 거의 없고 구조 티만 미미한 글. 목표는 **과윤문 방지**이지 많이 고치는 게 아니다.
 
 1. **진단 생략.** `humanize-monolith`를 `Agent` 도구로 1회 호출 — 청킹 없음.
-   - 입력: `input_path=01_input_with_metrics.txt`, `quick_rules_path=${CLAUDE_SKILL_DIR}/references/quick-rules.md`, `genre_hint`, 그리고 강도 지시 `보수`(원문에 없던 표현 삽입 금지, 확신 없는 구간은 그대로 둔다).
+   - 입력: `input_path=01_input_with_metrics.txt`, `quick_rules_path=${CLAUDE_SKILL_DIR}/references/quick-rules.md`, `human_guide_path=${CLAUDE_SKILL_DIR}/references/human-guide.md`(사용자 피드백 HG 규칙 — quick-rules보다 우선), `genre_hint`, 그리고 강도 지시 `보수`(원문에 없던 표현 삽입 금지, 확신 없는 구간은 그대로 둔다).
    - 출력: `final.md` (본문 + `<!-- HUMANIZE-SUMMARY -->` 블록).
 2. Phase 2.5 변경률 게이트(Bash — LLM 콜 아님).
 3. **조기 종료 보고**: monolith 탐지가 거의 없고 게이트 변경률이 5% 미만이면, 결과 전달을 "이미 좋은 글입니다 — 손댄 곳은 {N}곳({요지}) 정도"로 요약한다. 억지로 더 고치지 않는다.
@@ -68,7 +68,7 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 ## Standard 경로 (2콜) — 보통의 AI 초안
 
 1. **진단 1콜**: `humanize-diagnostician`을 `Agent` 도구로 1회 호출.
-   - 입력: `input_path=01_input_with_metrics.txt`, `taxonomy_path=references/diagnosis-rules.md` (진단 전용 슬림 인덱스 — 71패턴 전수, taxonomy에서 자동 생성)
+   - 입력: `input_path=01_input_with_metrics.txt`, `taxonomy_path=references/diagnosis-rules.md` (진단 전용 슬림 인덱스 — 71패턴 전수, taxonomy에서 자동 생성), `human_guide_path=${CLAUDE_SKILL_DIR}/references/human-guide.md` (사용자 피드백 HG 규칙 — 해당 시 HG ID로 지배 패턴에 포함)
    - 출력: `02_diagnosis.md` — 글 전체의 **지배 패턴 3~6개**(본진 ID + 근거 + 처방) + 장르·격식 + 보존 지침.
    - 진단은 span을 세지 않는다. "무엇이 이 글을 지배하는가"를 판단한다(안정적).
 2. shim으로 진단을 monolith 입력 앞에 결합 (Bash — LLM 콜 아님):
@@ -76,7 +76,7 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
    python3 scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre {genre} --diagnosis _workspace/{run_id}/02_diagnosis.md
    ```
    → `01_input_with_metrics.txt`가 [진단 → 정량 블록 → 원문] 순으로 재생성된다.
-3. **윤문 1콜**: `humanize-monolith` 1회 호출 — **청킹 없음. 1만자급도 단일 콜이다.** → `final.md`.
+3. **윤문 1콜**: `humanize-monolith` 1회 호출(light와 동일하게 `quick_rules_path`·`human_guide_path` 전달) — **청킹 없음. 1만자급도 단일 콜이다.** → `final.md`.
 4. Phase 2.5 변경률 게이트(Bash).
 5. **finalize 생략이 기본.** 과윤문은 `verify_gates.py`의 결정적 게이트가 잡는다. finalize 승급 조건(아래 표)에 걸릴 때만 `humanize-finalizer` 1콜 추가(이 경우 총 3콜).
 
@@ -100,7 +100,7 @@ Standard의 1과 동일 — `humanize-diagnostician` 1콜 → `02_diagnosis.md`.
 3. **단일 콜(기본)**: `humanize-monolith` 1회 호출(`input_path=01_input_with_metrics.txt`). monolith는 진단문을 앞머리에서 읽고 지배 패턴을 겨냥해 윤문한다. → `final.md`.
 4. **청크 병렬(shim이 실제로 쪼갠 경우만)**:
    - 각 body 청크를 monolith로 **병렬 호출**(동시 최대 4). 입력·출력 파일명은 manifest의 **`input_file`·`rewritten_file` 필드를 그대로** 사용한다 — 파일명을 직접 조립하지 않는다(인덱싱 불일치 사고 방지).
-   - 각 청크 콜은 같은 `quick_rules_path`(파일 참조)와 같은 `02_diagnosis.md`를 공유한다. **룰북·진단 전문을 청크 프롬프트에 복붙하지 않는다** — 재로드 비용이 청킹 토큰 폭발의 주범이었다(§설계 노트).
+   - 각 청크 콜은 같은 `quick_rules_path`·`human_guide_path`(파일 참조)와 같은 `02_diagnosis.md`를 공유한다. **룰북·가이드·진단 전문을 청크 프롬프트에 복붙하지 않는다** — 재로드 비용이 청킹 토큰 폭발의 주범이었다(§설계 노트).
    - 재조립: `python3 scripts/reassemble_chunks.py --run-dir _workspace/{run_id}` → `03_reassembled.md`(passthrough 원문 삽입 + 문자수 대사). 이걸 `final.md`로 삼는다.
    - 청크 경계 문체 이음매가 어색하면 경계 전후 2문단만 monolith로 국소 패치(전역 재작성 금지 — 의미 드리프트 유발).
    - **재청킹 주의**: `--chunk` 재실행 시 경계가 바뀌므로 기존 `02_chunk_*_rewritten.txt`는 shim이 자동 삭제한다(`stale_removed`). 청킹 후 입력을 수정하면 재청킹부터 다시 한다.
@@ -110,7 +110,7 @@ Phase 2.5(공통)와 동일 — `verify_gates.py --genre {genre}`. Bash 1회 —
 
 ### Phase P3: finalize (heavy는 항상)
 `humanize-finalizer`를 `Agent` 도구로 1회 호출.
-- 입력: `original_path=01_input.txt`, `rewritten_path=final.md`, `diagnosis_path=02_diagnosis.md`
+- 입력: `original_path=01_input.txt`, `rewritten_path=final.md`, `diagnosis_path=02_diagnosis.md`, `human_guide_path=${CLAUDE_SKILL_DIR}/references/human-guide.md` (HG 규칙 위반 잔존 여부도 자연성 판정에 포함)
 - 원문↔윤문본 **직접 대조**로 의미 보존 15항(각주·제목·없던 주장 주입 포함) + 자연성(잔존 + 과윤문 양방향)을 판정하고 **문제 구간만 국소 보정**(전체 재작성 금지).
 - 출력: 보정된 `final.md`(원본은 `final_pre_finalize.md` 백업) + `09_finalize.json`.
 - `verdict=hold_and_report`면 사람 검토 안내. 그 외 finalize 후 `verify_gates.py`를 한 번 더 돌려 최종 변경률 확정.
@@ -230,6 +230,8 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 - `humanize-diagnostician` — standard·heavy 진단
 - `humanize-finalizer` — heavy·승급 시 마무리
 
+**공통 입력**: 런타임 3종 모든 콜에 `human_guide_path=${CLAUDE_SKILL_DIR}/references/human-guide.md`를 전달한다 — 사용자 피드백으로 누적된 HG-N 규칙(우선순위: 철칙 > human-guide > quick-rules). 윤문 결과에 새 사용자 피드백이 오면 루트 `human-guide.md`에 HG 항목으로 추가하는 것까지가 세션의 마무리다.
+
 **유지보수 1종 (별도 명령으로만 트리거)**
 - `korean-ai-tell-taxonomist` — 분류 체계(SSOT) 유지·확장. 본 스킬 실행 중에는 호출되지 않음
 
@@ -249,6 +251,7 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 ## 참고 자료
 
 - 슬림 룰북 (monolith 전용): [`references/quick-rules.md`](references/quick-rules.md) — S1·S2 핵심 패턴 + 자체검증 체크리스트
+- 사용자 피드백 규칙 (런타임 3종 공통): [`references/human-guide.md`](references/human-guide.md) — HG-N 규칙, 루트 `human-guide.md` 심링크. quick-rules와 충돌 시 우선
 - 진단 인덱스 (diagnostician 전용): [`references/diagnosis-rules.md`](references/diagnosis-rules.md) — 71패턴 전수 ID·정의·시그니처. `build_diagnosis_rules.py`가 taxonomy에서 자동 생성(직접 편집 금지)
 - 정량 점수 shim: `scripts/prepare_monolith_input.py` — `references/metrics_v2.py`(실패 시 `metrics.py` fallback) + `references/baseline.json` 기반 사전 점수 + `route_hint` 산출
 - 분류 체계 본진 (SSOT — 유지보수·taxonomist 전용): [`references/ai-tell-taxonomy.md`](references/ai-tell-taxonomy.md) — 10대분류 × 활성 70 패턴 (+A-17 hold 1건) 전수. 런타임 콜은 이 파일을 직접 읽지 않는다

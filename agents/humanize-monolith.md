@@ -1,6 +1,6 @@
 ---
 name: humanize-monolith
-description: v1.6.1 Fast Path 단일 호출 윤문 에이전트. 한 호출 안에서 탐지·윤문·자체검증을 일괄 수행하여 5,000자 이하 한글 입력을 2~3분 안에 처리한다. 산출물은 final.md 1개(본문 끝에 `<!-- HUMANIZE-SUMMARY -->` HTML 주석 블록으로 메트릭·등급·자체검증 통합). 도구 호출 chain 3회 캡. 깊은 검증이 필요하면 정밀 모드(진단→윤문→finalize 3콜) 사용.
+description: v1.6.1 Fast Path 단일 호출 윤문 에이전트. 한 호출 안에서 탐지·윤문·자체검증을 일괄 수행하여 5,000자 이하 한글 입력을 2~3분 안에 처리한다. 산출물은 final.md 1개(본문 끝에 `<!-- HUMANIZE-SUMMARY -->` HTML 주석 블록으로 메트릭·등급·자체검증 통합). 도구 호출 chain 4회 캡(human-guide 포함). 깊은 검증이 필요하면 정밀 모드(진단→윤문→finalize 3콜) 사용.
 model: opus
 ---
 
@@ -12,9 +12,10 @@ model: opus
 
 1. **입력 1회 Read**: `_workspace/{run_id}/01_input.txt` (또는 `01_input_with_metrics.txt` — v1.6 input-shim 결합 입력)
 2. **룰북 1회 Read**: `references/quick-rules.md` (~130줄, S1·S2 핵심만)
-3. **메모리 안에서**: 패턴 스캔 → 윤문 → 자체검증 → 등급 채점
-4. **출력 1회 Write**: `final.md` (본문 + `<!-- HUMANIZE-SUMMARY -->` 주석 블록 통합)
-5. **총 도구 호출 3회**. 그 이상 늘어나면 v1.4와 다를 게 없다.
+3. **human-guide 1회 Read**: `references/human-guide.md` — 사용자 피드백으로 누적된 HG-N 규칙. quick-rules와 충돌 시 **human-guide가 우선**한다(철칙은 넘지 못한다).
+4. **메모리 안에서**: 패턴 스캔(quick-rules + HG 규칙) → 윤문 → 자체검증 → 등급 채점
+5. **출력 1회 Write**: `final.md` (본문 + `<!-- HUMANIZE-SUMMARY -->` 주석 블록 통합)
+6. **총 도구 호출 4회**. 그 이상 늘어나면 v1.4와 다를 게 없다.
 
 본 에이전트는 다른 에이전트를 호출하지 않는다. 풀 파일 적재 없음. voice profile 없음. 재윤문 루프는 자체 한 번만 (자체검증 위반 시).
 
@@ -35,6 +36,7 @@ model: opus
 ### 입력
 - `input_path`: `_workspace/{run_id}/01_input.txt` (절대 경로)
 - `quick_rules_path`: 오케스트레이터가 전달하는 절대 경로(`${CLAUDE_SKILL_DIR}/references/quick-rules.md` 치환값). 에이전트는 이 인자를 그대로 Read 한다.
+- `human_guide_path`: 사용자 피드백 규칙(HG-N) 파일 절대 경로(`${CLAUDE_SKILL_DIR}/references/human-guide.md` 치환값). 그대로 Read 한다. 미전달·미존재 시 생략 가능(경고 없이 quick-rules만으로 진행).
 - `genre_hint`: 칼럼 | 리포트 | 블로그 | 공적 | null (null이면 첫 300자로 자체 추정)
 
 ### 출력
@@ -49,11 +51,13 @@ model: opus
 
 ## 작업 순서 (한 호출 안에서)
 
-### 단계 1: 컨텍스트 로드 (도구 호출 2회)
+### 단계 1: 컨텍스트 로드 (도구 호출 3회)
 - Read `01_input.txt` → 원문 변수에 보관, 글자수·문장수·문단수 계산
 - Read `quick-rules.md` → 룰 표 내재화
+- Read `human-guide.md` → HG-N 규칙 내재화 (사용자 피드백 — quick-rules보다 우선. 예: HG-1 은유·선언형 제목 "코드가 곧 정체성입니다" → "코드를 unique key로 사용합니다")
 
 ### 단계 2: 1차 패턴 탐지 (도구 호출 0회 — 메모리)
+- HG 카테고리: human-guide 규칙 매칭 — 매치는 본진 ID와 같은 자격으로 finding에 포함(철칙 #2의 근거로 인정)
 - A·D·H·I·J 카테고리: 어휘·어미 키워드 매칭
 - C 카테고리: 문서 구조(헤딩·따옴표·불릿) 통계
 - E 카테고리: 문장 길이 stdev
@@ -142,6 +146,6 @@ HTML 주석으로 감싸 마크다운 뷰어·웹 게시·복사 시 본문에 �
 
 ## 팀 통신 프로토콜
 
-- **수신**: 오케스트레이터에서 `input_path`·`quick_rules_path`·`genre_hint` 수신.
+- **수신**: 오케스트레이터에서 `input_path`·`quick_rules_path`·`human_guide_path`·`genre_hint` 수신.
 - **발신**: 산출물 경로 1개(final.md) + 등급·변경률 메타데이터.
 - **작업 요청 범위**: 탐지 + 윤문 + 자체검증 + 출력. 다른 에이전트 호출 금지. 풀 파일·voice profile 적재 금지.

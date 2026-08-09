@@ -21,6 +21,12 @@ v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard
 5. **register 보존 — 양방향** — 격식체 입력은 격식체 출력, 구어 입력은 구어 출력. 원문보다 딱딱하게 만들지 않는다: **'-했-' → '-하였-' 치환 금지**, '~인데요/~거든요/~한 겁니다' 구어 종결 보존. (하향 금지만 있던 기존 단방향 규칙으로는 합쇼체가 유지되는 '했→하였' 상향을 못 잡았다.) AI 티는 문법·수사이지 격식 자체가 아니다.
 6. **AI 티는 빼기만 하고 넣지 않는다 (No New Tells)** — 원문에 없던 상투구("기록적인 성과를 거두었다"·"괄목할 만한"·"~로 평가된다") 신규 삽입 금지. 살아있는 구어는 사람 글의 증거이므로 보존한다. 철칙 #2가 "탐지 없는 구간은 손대지 않는다"라면, #6은 "손대는 구간에도 새 AI 티를 심지 않는다" — 모순이 아니라 보완이다.
 
+## 사용자 피드백 가이드 (human-guide.md)
+
+윤문 결과에 대한 사용자 피드백은 루트 `human-guide.md`에 **HG-N** 규칙으로 누적한다 (예: HG-1 "코드가 곧 정체성입니다" 같은 은유·선언형 제목 → "코드를 unique key로 사용합니다"처럼 담백한 기술 서술로). 아래 임포트로 매 세션 자동 로드되며, 런타임 3종(diagnostician·monolith·finalizer)도 각자의 주요 단계에서 `references/human-guide.md`(루트 파일로 향하는 심링크)를 직접 Read 한다. 우선순위: 철칙 > human-guide > quick-rules. 새 피드백을 받으면 이 파일에 항목을 추가하는 것까지가 윤문 세션의 마무리다.
+
+@human-guide.md
+
 ## 디렉토리 구조
 
 ```
@@ -29,6 +35,7 @@ im-not-ai/
 ├── README.md / INSTALL.md         # 사용·설치 안내
 ├── RELEASING.md                   # 릴리스 체크리스트 (버전 문자열 전수 + 글로벌 심링크 동기화)
 ├── CONTRIBUTORS.md
+├── human-guide.md                 # 사용자 피드백 윤문 규칙 SSOT (HG-N) — CLAUDE.md가 임포트, 런타임 3종이 참조
 ├── .claude-plugin/                # Claude 플러그인 + 마켓플레이스 매니페스트
 │   ├── plugin.json                # skills: ./.claude/skills/ · 에이전트는 루트 agents/ 자동탐색
 │   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
@@ -56,6 +63,7 @@ im-not-ai/
 │   └── humanize-korean/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
+│           ├── human-guide.md          # → 루트 human-guide.md 심링크 (사용자 피드백 HG-N 규칙, 런타임 전달 경로)
 │           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
 │           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (+ _quick 빌드 메타)
@@ -106,9 +114,11 @@ im-not-ai/
 
 **런타임 3종** (스킬 실행 중 호출):
 
-1. **humanize-monolith** — 전 경로 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 3회 캡 (v1.6.1).
-2. **humanize-diagnostician** — standard·heavy P1 진단. 글 전체의 지배 패턴 3~6개를 본진 ID로 진단 → `02_diagnosis.md`.
-3. **humanize-finalizer** — heavy P3 마무리. 원문 직접 대조로 의미 15항 + 자연성(잔존·과윤문 양방향) 판정, 문제 구간만 국소 보정 → `09_finalize.json`. 도구 호출 4회 캡.
+1. **humanize-monolith** — 전 경로 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 4회 캡 (human-guide 포함).
+2. **humanize-diagnostician** — standard·heavy P1 진단. 글 전체의 지배 패턴 3~6개를 본진 ID(+HG ID)로 진단 → `02_diagnosis.md`. 도구 호출 4회 캡.
+3. **humanize-finalizer** — heavy P3 마무리. 원문 직접 대조로 의미 15항 + 자연성(잔존·과윤문 양방향 + HG 위반) 판정, 문제 구간만 국소 보정 → `09_finalize.json`. 도구 호출 5회 캡.
+
+런타임 3종 모두 각자의 로드 단계에서 `references/human-guide.md`(사용자 피드백 HG-N 규칙)를 함께 읽는다.
 
 **유지보수 1종** (별도 명령으로만):
 
@@ -181,6 +191,7 @@ im-not-ai/
 ## 참고
 
 - 오케스트레이터: `.claude/skills/humanize-korean/SKILL.md`
+- 사용자 피드백 규칙: `human-guide.md` (HG-N — 런타임 3종 공통 참조, quick-rules보다 우선)
 - 분류 체계: `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`
 - 윤문 처방: `.claude/skills/humanize-korean/references/rewriting-playbook.md`
 - 슬림 룰북(monolith): `.claude/skills/humanize-korean/references/quick-rules.md`

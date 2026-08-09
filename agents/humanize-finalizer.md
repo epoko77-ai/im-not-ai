@@ -1,6 +1,6 @@
 ---
 name: humanize-finalizer
-description: 정밀(strict) 모드 3단계 마무리 에이전트. 원문과 윤문본을 직접 대조해 ①의미 보존(15항 — 각주·제목·없던 주장 주입 포함) ②자연성(잔존 AI 티 + 과윤문 양방향)을 한 콜로 병합 판정하고, 문제 구간만 국소 보정한다. 전체 재작성 금지 — 의미 드리프트(빈 수사를 없던 주장으로 대체)를 막는 게 존재 이유. 은퇴한 content-fidelity-auditor·naturalness-reviewer 2인을 대체한다. 산출물은 final.md + 09_finalize.json. 도구 호출 4회 캡.
+description: 정밀(strict) 모드 3단계 마무리 에이전트. 원문과 윤문본을 직접 대조해 ①의미 보존(15항 — 각주·제목·없던 주장 주입 포함) ②자연성(잔존 AI 티 + 과윤문 양방향)을 한 콜로 병합 판정하고, 문제 구간만 국소 보정한다. 전체 재작성 금지 — 의미 드리프트(빈 수사를 없던 주장으로 대체)를 막는 게 존재 이유. 은퇴한 content-fidelity-auditor·naturalness-reviewer 2인을 대체한다. 산출물은 final.md + 09_finalize.json. 도구 호출 5회 캡(human-guide 포함).
 model: opus
 ---
 
@@ -24,15 +24,16 @@ model: opus
 - `original_path`: `_workspace/{run_id}/01_input.txt` — **원문**(shim 결합 전 순수 원문). 의미 대조의 기준.
 - `rewritten_path`: `_workspace/{run_id}/final.md` — monolith(또는 청크 재조립)가 만든 윤문본.
 - `diagnosis_path`: `_workspace/{run_id}/02_diagnosis.md` — 진단(무엇을 겨냥했는지. 보존 지침 포함).
+- `human_guide_path`: `.../references/human-guide.md` — 사용자 피드백 규칙(HG-N). 자연성 검사의 잔존 기준에 포함한다. 미전달·미존재 시 생략 가능.
 
 ### 출력
 - `_workspace/{run_id}/final.md` — 보정된 최종본으로 덮어쓴다(원본은 `final_pre_finalize.md`로 백업). 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 블록 갱신.
 - `_workspace/{run_id}/09_finalize.json` — 판정 결과(아래).
 
-## 작업 순서 (한 콜, 도구 호출 4회 캡)
+## 작업 순서 (한 콜, 도구 호출 5회 캡)
 
-### 단계 1: 로드 (Read 3회)
-- Read `01_input.txt`(원문), `final.md`(윤문본), `02_diagnosis.md`(진단·보존 지침).
+### 단계 1: 로드 (Read 4회)
+- Read `01_input.txt`(원문), `final.md`(윤문본), `02_diagnosis.md`(진단·보존 지침), `human-guide.md`(사용자 피드백 HG-N 규칙).
 
 ### 단계 2: 의미 보존 검사 (메모리) — 15항
 원문↔윤문본을 문단 단위로 나란히 대조한다. **diff가 아니라 직접 대조.**
@@ -51,6 +52,7 @@ model: opus
 
 ### 단계 3: 자연성 검사 (메모리) — 양방향
 - **잔존**: 진단(`02_diagnosis.md`)이 겨냥한 지배 패턴이 실제로 완화됐는가. 안 됐으면 그 구간만 추가 윤문.
+- **HG 잔존**: human-guide의 HG-N 규칙 위반이 윤문본에 남아 있는가(예: HG-1 은유·선언형 제목). 남았으면 해당 구간만 HG 처방대로 국소 보정하고 `residual`에 HG ID로 기록.
 - **과윤문(역방향)**:
   - 격식 상향: 원문에 없던 '-하였-' 출현, 구어 종결('~인데요/~거든요') 소실 → 롤백
   - 상투구 주입: 원문에 없던 D 계열 관용구('기록적인 성과·~로 평가된다') 출현 → 제거
@@ -83,6 +85,6 @@ model: opus
 
 ## 협업
 
-- **수신**: 오케스트레이터에서 원문·윤문본·진단 경로.
+- **수신**: 오케스트레이터에서 원문·윤문본·진단·human-guide 경로.
 - **발신**: 보정된 `final.md` + `09_finalize.json`. 오케스트레이터가 이후 `verify_change_rate.py`(Phase 2.5 게이트)를 한 번 더 돌려 최종 변경률을 확정한다.
 - 다른 에이전트를 호출하지 않는다.
