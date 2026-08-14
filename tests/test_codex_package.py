@@ -116,7 +116,7 @@ class CodexPackageTests(unittest.TestCase):
             )
             self.assertEqual(gate.returncode, 0, gate.stdout + gate.stderr)
 
-    def test_copy_install_replaces_existing_repo_symlink(self) -> None:
+    def test_copy_install_backs_up_existing_symlink_outside_skills(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             fake_home = Path(td) / "home"
             codex_home = fake_home / ".codex"
@@ -134,7 +134,34 @@ class CodexPackageTests(unittest.TestCase):
             )
             self.assertTrue(installed.is_dir())
             self.assertFalse(installed.is_symlink())
-            self.assertTrue(list(installed.parent.glob("humanize-korean.bak.*")))
+            self.assertEqual(list(installed.parent.glob("humanize-korean*")), [installed])
+            backups = list((codex_home / "backups").glob("*/skills/humanize-korean"))
+            self.assertEqual(len(backups), 1)
+            self.assertTrue(backups[0].is_symlink())
+
+    def test_force_install_backs_up_directory_outside_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            fake_home = Path(td) / "home"
+            codex_home = fake_home / ".codex"
+            installed = codex_home / "skills" / "humanize-korean"
+            installed.mkdir(parents=True)
+            (installed / "sentinel.txt").write_text("keep me", encoding="utf-8")
+            env = os.environ.copy()
+            env.update({"HOME": str(fake_home), "CODEX_HOME": str(codex_home)})
+            subprocess.run(
+                ["bash", str(ROOT / "install.sh"), "--codex-only", "--force"],
+                env=env,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertTrue(installed.is_symlink())
+            self.assertEqual(list(installed.parent.glob("humanize-korean*")), [installed])
+            backups = list((codex_home / "backups").glob("*/skills/humanize-korean"))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(
+                (backups[0] / "sentinel.txt").read_text(encoding="utf-8"), "keep me"
+            )
 
 
 if __name__ == "__main__":

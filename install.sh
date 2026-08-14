@@ -42,7 +42,7 @@ Options:
   --all-agents    agents/ 전체를 전역 설치(개발용 1회성 정의 포함).
                   기본은 스킬이 실제로 쓰는 4종만 — 런타임 3(monolith·
                   diagnostician·finalizer) + 유지보수 1(taxonomist).
-  --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
+  --force         대상에 일반 파일/디렉토리가 있어도 {CLI_HOME}/backups/<ts>/에 백업 후 덮어씀
   --dry-run       실제 변경 없이 수행할 작업만 출력
   -h, --help      이 도움말
 
@@ -69,18 +69,31 @@ done
 run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
 
 # rc: 0=대상 비었음(설치 진행) / 1=이미 우리 심링크(스킵) / 2=충돌(거부)
+backup_target() {
+  local dest="$1" backup_root rel backup
+  case "$dest" in
+    "$CLAUDE_HOME"/*) backup_root="$CLAUDE_HOME/backups/$TS"; rel="${dest#"$CLAUDE_HOME"/}" ;;
+    "$CODEX_HOME"/*)  backup_root="$CODEX_HOME/backups/$TS"; rel="${dest#"$CODEX_HOME"/}" ;;
+    *) echo "refuse: 백업 루트를 결정할 수 없는 경로: $dest" >&2; return 2 ;;
+  esac
+  backup="$backup_root/$rel"
+  run mkdir -p "$(dirname "$backup")"
+  run mv "$dest" "$backup"
+  echo "backup: $backup"
+}
+
 prepare_target() {
   local dest="$1" src="$2"
   if [ -L "$dest" ]; then
     if [ "$(readlink "$dest")" = "$src" ] && [ "$MODE" = symlink ]; then
       echo "ok (already linked): $dest"; return 1
     fi
-    run mv "$dest" "$dest.bak.$TS"
+    backup_target "$dest" || return 2
   elif [ -e "$dest" ]; then
     if [ "$FORCE" != 1 ]; then
       echo "refuse: $dest 가 이미 있음 (--force 로 백업 후 덮어쓰기 또는 --copy)"; return 2
     fi
-    run mv "$dest" "$dest.bak.$TS"
+    backup_target "$dest" || return 2
   fi
   return 0
 }

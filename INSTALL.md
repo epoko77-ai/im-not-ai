@@ -103,7 +103,7 @@ cd im-not-ai
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
 | `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
-| `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
+| `--force` | 대상에 일반 파일/디렉토리가 있어도 `~/.claude/backups/<ts>/` 또는 `~/.codex/backups/<ts>/`에 원래 상대경로로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
 | `-h`, `--help` | 도움말 |
 
@@ -128,7 +128,7 @@ cd im-not-ai
 
 ## 제거
 
-- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존).
+- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·각 CLI 홈의 `backups/`·`--copy` 설치본은 보존).
 - **Claude 마켓플레이스** — `/plugin uninstall humanize-korean`.
 - **GitHub Copilot 마켓플레이스 플러그인** — `copilot plugin uninstall humanize-korean@im-not-ai`.
 
