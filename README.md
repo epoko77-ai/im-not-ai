@@ -316,7 +316,7 @@ Heavy는 body 청크가 하나여도 재조립 단계를 생략하지 않습니�
 | Codex | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Gemini CLI | ✅ | — | — | — | 자체검증 | 제한적 |
 
-Codex 포트는 결정적 회귀 190개, 패키지·독립 복사 설치 테스트 4개, light/heavy 독립 전방 테스트를 통과했습니다. 테스트 방법은 [`tests/test_codex_package.py`](tests/test_codex_package.py)와 [`INSTALL.md`](INSTALL.md)를 참고하세요.
+Codex 포트는 결정적 회귀, 패키지·독립 복사 설치, light/heavy 독립 전방 테스트를 통과했습니다. 현재 검증 항목과 재현 방법은 [`tests/test_codex_package.py`](tests/test_codex_package.py)와 [`INSTALL.md`](INSTALL.md)를 참고하세요.
 
 ### 5. 결과가 맘에 안 들면
 
