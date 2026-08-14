@@ -44,7 +44,7 @@ cd im-not-ai
 - Claude: `/humanize-korean` · Codex: `$humanize-korean`
 - 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
 - **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
-- Codex는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
+- Codex도 **light·standard·heavy 전체 경로**를 제공합니다. 협업 에이전트가 있으면 진단·윤문·finalize를 독립 실행하고, 없으면 같은 역할을 순차 실행합니다.
 
 ## 왜 한글 특화인가
 
@@ -219,11 +219,11 @@ copilot skill list
 
 새 Copilot 세션에서 `humanize-korean 스킬로 이 글을 자연스럽게 윤문해줘:` 또는 `이 글 AI 티 없애줘:`처럼 요청합니다. `/skills list`에서도 스킬을 확인할 수 있습니다. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`을 사용하세요.
 
-Copilot은 Codex와 같은 **단일 호출 경로**를 사용합니다. Claude Code 전용 `route_hint` 3경로 오케스트레이션과 진단·finalize 서브에이전트는 Copilot에서 실행되지 않습니다.
+Copilot은 별도의 **단일 호출 경로**를 사용합니다. Claude Code와 Codex가 제공하는 `route_hint` 3경로 오케스트레이션과 진단·finalize 역할 실행은 Copilot에서 수행하지 않습니다.
 
 > 저장소 직접 설치 명령 `copilot plugin install epoko77-ai/im-not-ai`은 1.0.79-5에서 동작하지만 사용 중단 예정 경고가 표시되는 호환성 경로입니다.
 
-**방법 E — Codex CLI (공식, 단일 콜 경로)**
+**방법 E — Codex CLI (공식, 전체 경로)**
 
 본체가 이제 Codex CLI Skills를 **공식 지원**합니다. 리포 클론 후 한 줄이면 `~/.codex/skills/`에 연결됩니다:
 
@@ -232,7 +232,7 @@ git clone https://github.com/epoko77-ai/im-not-ai.git && cd im-not-ai
 ./install.sh --codex-only
 ```
 
-Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). Codex는 **단일 콜 경로만** 제공하며, 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용입니다. (Codex Desktop용 별도 어댑터로는 community 포트 [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)도 있습니다.)
+Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). `route_hint`가 light·standard·heavy를 선택하며 `--strict`로 heavy를 강제할 수 있습니다. Codex 협업 에이전트가 있으면 진단·윤문·finalize와 장문 청크를 역할별로 실행합니다.
 
 **방법 F — Web UI (비공식)**
 

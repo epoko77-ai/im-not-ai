@@ -6,10 +6,10 @@ Humanize KR은 **Claude Code**, **GitHub Copilot CLI**, **OpenAI Codex CLI**, **
 |---|---|---|
 | Claude Code | 3경로 전체 — light 1콜 · standard 2콜 · heavy 3+콜 | ① 플러그인 마켓플레이스(권장) / ② 클론 + `install.sh` |
 | GitHub Copilot CLI | 단일 호출 경로만 | 플러그인 마켓플레이스(권장) / 저장소 직접 설치(호환성 전용) |
-| Codex CLI | 단일 콜 경로만 | 클론 + `install.sh` |
+| Codex CLI | light·standard·heavy 전체 경로 | 클론 + `install.sh` |
 | Gemini CLI | 단일 콜 경로만 | ① `gemini extensions install`(권장) / ② 클론 + `install.sh` |
 
-> GitHub Copilot CLI, Codex, Gemini는 Claude식 다중 서브에이전트 파이프라인 대신 단일 호출 경로를 제공합니다. 진단·finalize가 포함된 heavy(정밀) 검증이 필요하면 Claude Code의 `--strict`를 사용하세요.
+> Codex는 협업 에이전트가 있으면 진단·윤문·finalize를 독립 컨텍스트로 실행하고, 없는 실행 환경에서는 같은 역할 계약을 주 에이전트가 순차 실행합니다. GitHub Copilot CLI와 Gemini는 단일 호출 경로입니다.
 
 ---
 
@@ -61,7 +61,7 @@ copilot skill list
 - 업데이트: `copilot plugin update humanize-korean@im-not-ai`
 - 제거: `copilot plugin uninstall humanize-korean@im-not-ai`
 
-Copilot은 마켓플레이스의 `source: "./"`를 저장소 루트 `plugin.json`으로 해석해 `codex/skills/humanize-korean`의 단일 호출 스킬과 공유 `references/`를 로드합니다. Claude Code 전용 `route_hint` 3경로 오케스트레이션, diagnostician, finalizer는 포함하지 않습니다.
+Copilot은 마켓플레이스의 `source: "./"`를 저장소 루트 `plugin.json`으로 해석해 `copilot/skills/humanize-korean`의 단일 호출 스킬을 로드합니다. 룰북은 Codex 패키지와 같은 SSOT를 참조하지만 `route_hint` 3경로 오케스트레이션, diagnostician, finalizer는 포함하지 않습니다.
 
 ### 방법 ② 저장소에서 직접 설치 — 호환성 전용
 
@@ -83,7 +83,7 @@ cd im-not-ai
 ./install.sh --codex-only
 ```
 
-`~/.codex/skills/humanize-korean`에 Fast Path 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요.
+`~/.codex/skills/humanize-korean`에 전체 스킬을 심링크합니다. Codex에서 `$humanize-korean`으로 발동하거나, `/skills` 메뉴에서 선택하세요. `--strict` 또는 “정밀 모드”로 heavy 경로를 강제할 수 있습니다.
 
 ---
 

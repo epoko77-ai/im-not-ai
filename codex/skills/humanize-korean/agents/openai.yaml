@@ -1,0 +1,4 @@
+interface:
+  display_name: "Humanize Korean"
+  short_description: "한글 AI 문체를 정밀 진단하고 자연스럽게 윤문·검증합니다"
+  default_prompt: "Use $humanize-korean to preserve this Korean text's meaning and register while removing AI writing patterns."

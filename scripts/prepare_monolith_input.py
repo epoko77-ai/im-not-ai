@@ -51,7 +51,9 @@ from pathlib import Path
 #   {project_root}/skills/humanize-korean/references/metrics.py
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
-METRICS_DIR = PROJECT_ROOT / "skills" / "humanize-korean" / "references"
+_PLUGIN_REFS = PROJECT_ROOT / "skills" / "humanize-korean" / "references"
+_CODEX_REFS = PROJECT_ROOT / "references"
+METRICS_DIR = _PLUGIN_REFS if _PLUGIN_REFS.is_dir() else _CODEX_REFS
 
 # Make metrics.py importable without polluting global state.
 sys.path.insert(0, str(METRICS_DIR))

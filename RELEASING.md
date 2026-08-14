@@ -47,6 +47,10 @@ sed -n '1,40p' README.md
 - [ ] **테스트**: `python3 -m pytest tests/ -q` 전체 통과 (pytest 미설치 환경이면 `pip install pytest` 후 실행)
 - [ ] **shim 스모크**: `python3 scripts/prepare_monolith_input.py --text "테스트 문장입니다." --genre essay` 가 `00_metrics.json` + `01_input_with_metrics.txt`를 만드는지 확인 (생성된 임시 run 디렉토리는 삭제)
 - [ ] **버전 문자열**: §1 표의 #1~#12 전수 갱신 — 특히 **SKILL.md frontmatter·배너** (과거 2회 누락 지점). #10~#12 매니페스트는 `python3 -m pytest tests/test_version_sync.py -q`가 대사
+- [ ] **Codex 패키지**: `codex/skills/humanize-korean` 구조 검증, 실행 래퍼 스모크, `agents/openai.yaml` 정합 확인
+- [ ] **Codex copy 설치**: 임시 `CODEX_HOME`에 `./install.sh --codex-only --copy` 후 저장소 밖 cwd에서 shim·gate 실행
+- [ ] **Codex 전체 경로**: light·standard·heavy 및 후속 재실행 산출물 계약을 E2E로 확인
+- [ ] **Copilot 패키지**: 루트 `plugin.json`이 `copilot/skills/humanize-korean` 단일 호출 스킬만 노출하고 Codex 3경로 스킬과 분리됐는지 확인
 - [ ] **문서 정합**: 도구 호출 캡·산출물 목록(fast=`final.md` 1개, strict=`final.md`+`summary.md`)이 SKILL.md·README·CLAUDE.md·에이전트 정의에서 일치하는지
 - [ ] **발행 노트**: README에 `## vX.Y` 절 작성, 검증 결과는 실측 수치만 (추정 금지)
 - [ ] **부속물**: 썸네일·social preview 갱신이 있으면 태그 전에 머지

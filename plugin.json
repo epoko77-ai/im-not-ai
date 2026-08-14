@@ -9,5 +9,5 @@
   "repository": "https://github.com/epoko77-ai/im-not-ai",
   "license": "MIT",
   "keywords": ["korean", "humanize", "ai-detector", "translationese", "윤문", "번역투"],
-  "skills": ["./codex/skills/"]
+  "skills": ["./copilot/skills/"]
 }

@@ -72,7 +72,7 @@ run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
 prepare_target() {
   local dest="$1" src="$2"
   if [ -L "$dest" ]; then
-    if [ "$(readlink "$dest")" = "$src" ]; then
+    if [ "$(readlink "$dest")" = "$src" ] && [ "$MODE" = symlink ]; then
       echo "ok (already linked): $dest"; return 1
     fi
     run mv "$dest" "$dest.bak.$TS"
@@ -138,6 +138,22 @@ install_one() {
   echo "installed: $dest"
 }
 
+install_codex_bundle() {
+  local src="$REPO/codex/skills/humanize-korean"
+  local dest="$CODEX_HOME/skills/humanize-korean"
+  install_one "$src" "$dest" || return 1
+  if [ "$MODE" = copy ] && [ "$DRYRUN" != 1 ]; then
+    # Codex copy installs must work after the repository is moved or removed.
+    mkdir -p "$dest/scripts" "$dest/references"
+    cp "$REPO/scripts/prepare_monolith_input.py" "$dest/scripts/"
+    cp "$REPO/scripts/reassemble_chunks.py" "$dest/scripts/"
+    cp "$REPO/scripts/verify_change_rate.py" "$dest/scripts/"
+    cp "$REPO/scripts/verify_gates.py" "$dest/scripts/"
+    cp "$REPO/scripts/checks.py" "$dest/scripts/"
+    cp "$REPO/scripts/console.py" "$dest/scripts/"
+  fi
+}
+
 # CLI 명령 또는 홈 디렉터리(앱만 설치한 사용자)로 대상 감지
 has_claude_target() { command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME" ]; }
 has_codex_target()  { command -v codex  >/dev/null 2>&1 || [ -d "$CODEX_HOME" ]; }
@@ -184,7 +200,7 @@ fi
 if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || has_codex_target; }; then
   echo "== Codex =="
   run mkdir -p "$CODEX_HOME/skills"
-  install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
+  install_codex_bundle
 else
   echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지) =="
 fi
