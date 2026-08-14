@@ -104,7 +104,7 @@ cd im-not-ai
 | `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
 | `--extras` | opt-in 부속 스킬(`extras/skills/`, 현재 commit-ko만)도 함께 설치 |
-| `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
+| `--force` | 대상에 일반 파일/디렉토리가 있어도 `~/.claude/backups/<ts>/` 또는 `~/.codex/backups/<ts>/`에 원래 상대경로로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
 | `-h`, `--help` | 도움말 |
 
@@ -143,7 +143,7 @@ cd im-not-ai
 
 ## 제거
 
-- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존). `--extras`로 설치한 commit-ko도 함께 정리됩니다.
+- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·각 CLI 홈의 `backups/`·`--copy` 설치본은 보존). `--extras`로 설치한 commit-ko도 함께 정리됩니다.
 - **Claude 마켓플레이스** — `/plugin uninstall humanize-korean`.
 - **GitHub Copilot 마켓플레이스 플러그인** — `copilot plugin uninstall humanize-korean@im-not-ai`.
 
