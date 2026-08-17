@@ -19,6 +19,22 @@ tests/golden_commit/
 tests/test_golden_commit.py    # pytest / unittest 겸용
 ```
 
+## commit-msg 훅 (opt-in)
+
+`scripts/commit_msg_lint.py`는 이 골든 게이트와 같은 lexicon(§1~5)을 정규식으로
+직접 실행 가능하게 파생시킨 것으로, 실제 커밋 시점에 경고만 띄운다(차단 없음).
+저장소에 `.githooks/commit-msg`로 커밋되어 있지만 기본으로 켜져 있지는 않다 —
+저장소별로 한 번 옵트인해야 한다:
+
+```bash
+git config core.hooksPath .githooks   # 활성화
+git config --unset core.hooksPath      # 비활성화
+```
+
+건너뛰기(옵트인 상태에서): 커밋 메시지에 `[skip-commit-ko]` 포함, 또는
+`COMMIT_KO_HOOK_SKIP=1 git commit ...`. Merge·Revert·fixup!·squash! 커밋은
+자동으로 건너뛴다.
+
 ## 실행
 
 ```bash
