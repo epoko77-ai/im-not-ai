@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """commit-ko 커밋 메시지 경고 린터 — git commit-msg 훅 전용, 경고만 하고 절대 커밋을 막지 않는다.
 
-`.claude/skills/commit-ko/references/commit-lexicon.md`(SSOT)의 1~5절 패턴을
+`extras/skills/commit-ko/references/commit-lexicon.md`(SSOT)의 1~5절 패턴을
 직접 실행 가능한 정규식으로 파생시킨 것이다. lexicon이 갱신되면 이 목록도 함께
 점검할 것 — LLM 없이 도는 스크립트라 lexicon의 "표에 없어도 같은 원칙 적용"
 같은 일반화는 흉내낼 수 없고, 여기 등록된 패턴만 잡는다.

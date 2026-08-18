@@ -28,11 +28,15 @@ import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_SKILLS = os.path.abspath(os.path.join(_HERE, "..", ".claude", "skills"))
+_REPO = os.path.abspath(os.path.join(_HERE, ".."))
 _TAXONOMY = os.path.join(
-    _SKILLS, "humanize-korean", "references", "ai-tell-taxonomy.md"
+    _REPO, ".claude", "skills", "humanize-korean", "references", "ai-tell-taxonomy.md"
 )
-_LEXICON = os.path.join(_SKILLS, "commit-ko", "references", "commit-lexicon.md")
+# commit-ko는 기본 플러그인(.claude/skills/)에서 제외된 opt-in 스킬이라
+# extras/skills/ 아래 산다 — 위치가 바뀌어도 taxonomy와의 드리프트 결박은 유지한다.
+_LEXICON = os.path.join(
+    _REPO, "extras", "skills", "commit-ko", "references", "commit-lexicon.md"
+)
 
 # `\b`는 쓸 수 없다 — Python re의 `\w`는 한글 음절도 단어 문자로 취급해서
 # "F-4를"처럼 조사가 공백 없이 바로 붙으면 경계가 사라져 매치가 실패한다.

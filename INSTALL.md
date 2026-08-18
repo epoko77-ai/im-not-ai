@@ -72,6 +72,7 @@ cd im-not-ai
 | `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
 | `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
+| `--extras` | opt-in 부속 스킬(`extras/skills/`, 현재 commit-ko만)도 함께 설치 |
 | `--force` | 대상에 일반 파일/디렉토리가 있어도 `.bak.<ts>`로 백업 후 덮어씀 |
 | `--dry-run` | 실제 변경 없이 수행할 작업만 출력 |
 | `-h`, `--help` | 도움말 |
@@ -94,9 +95,23 @@ cd im-not-ai
   ```
   알림만 원하면 `./update.sh --check`를 사용하세요. ⚠️ 자동 적용은 upstream 코드를 자동으로 받아 연결하므로 **신뢰하는 저장소에만** 거세요.
 
+## commit-ko (opt-in 부속 스킬)
+
+AI가 제안한 한글 커밋 메시지의 사무적·번역투 어휘를 다듬는 별도 스킬입니다. humanize-korean과 무관한 독립 기능이라 기본 설치·마켓플레이스 플러그인 범위(`.claude/skills/`) 밖 — `extras/skills/`에 따로 두고 명시 요청 시에만 설치합니다.
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+./install.sh --claude-only --extras
+```
+
+`~/.claude/skills/commit-ko`에 심링크됩니다. 이미 스크립트로 설치했다면 옵션만 더해 재실행해도 됩니다(`./install.sh --extras`). 수동 설치를 원하면 직접 심링크하세요: `ln -s "$(pwd)/extras/skills/commit-ko" ~/.claude/skills/commit-ko`.
+
+새 세션에서 커밋 메시지 초안에 "커밋 메시지 자연스럽게" 요청하면 발동합니다.
+
 ## 제거
 
-- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존).
+- **스크립트 설치** — `./uninstall.sh`: 이 저장소를 가리키는 심링크만 제거(직접 둔 파일·`.bak.*`·`--copy` 설치본은 보존). `--extras`로 설치한 commit-ko도 함께 정리됩니다.
 - **마켓플레이스** — `/plugin uninstall humanize-korean`.
 
 ---
