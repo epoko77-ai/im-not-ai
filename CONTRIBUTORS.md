@@ -283,7 +283,40 @@ v1.2 회차 기여는 위 「v1.2 외부 기여자」 항목에 있습니다. �
 
 - [PR #66](https://github.com/epoko77-ai/im-not-ai/pull/66) — 배선 방식(심사 게이트 없는 파일이 quick-rules 보다 높은 우선순위 + 매 세션 임포트)이 SSOT 단일성·슬림성과 충돌해 닫았습니다. **HG-1 콘텐츠 자체는 정확한 관찰**이라 D-5 보강 또는 `estimated` 신규 패턴으로 taxonomy 재제출을 요청드렸습니다.
 
-> (기존 v2.3 섹션 안, `### 검토 중` 앞에 삽입)
+> (기존 v2.3 섹션 안, `### [@jckproduct-ai](https://github.com/jckproduct-ai)
+
+**기여**: [#84](https://github.com/epoko77-ai/im-not-ai/issues/84) 수정이 **절반만 됐다는 것**을 잡아냄. 플러그인 설치 환경에서 직접 태워보고 서브에이전트 3개의 실패 보고까지 확인했습니다.
+
+**반영**:
+- [PR #88](https://github.com/epoko77-ai/im-not-ai/pull/88) — `scripts/*.py` 는 `${SKILL_ROOT}` 로 절대화됐지만 `references/*` 는 상대경로로 남아, 마켓플레이스 설치에서 `humanize-diagnostician` 이 룰북(`references/diagnosis-rules.md`)을 못 찾고 있었습니다.
+- **실패 양상이 더 중요했습니다.** 진단이 로드에 실패하면 스스로 경로를 추측해 탐색하다 **진단 없이 넘어갑니다.** 파이프라인은 계속 돌아 결과물이 나오므로 품질이 떨어진 것을 아무도 모릅니다. `${SKILL_ROOT}` 절에는 "조용히 건너뛰면 아무도 모른다"는 경고를 넣어두고 references 에는 같은 보호를 두지 않은 것이 원인이었습니다.
+- 두 기준을 분리해 명문화한 것이 이 PR 의 핵심입니다 — `${SKILL_ROOT}`(설치 루트, `scripts/*`) vs `${CLAUDE_SKILL_DIR}`(스킬 디렉터리, `references/*`), **섞지 않는다.** monolith 에 "인자가 비었으면 추측 탐색하지 말고 절대 경로를 요구한다"를 넣어 조용한 실패의 원인 자체를 막았습니다.
+- 마크다운 링크 대상은 상대경로로 남겨 GitHub 웹뷰 링크가 깨지지 않게 한 것도 세심했습니다.
+
+### [@hyeonsangjeon](https://github.com/hyeonsangjeon)
+
+**기여**: GitHub Copilot CLI 를 커뮤니티 지원 런타임으로 추가.
+
+**반영**:
+- [PR #65](https://github.com/epoko77-ai/im-not-ai/pull/65) — 루트 `plugin.json` 매니페스트로 Copilot CLI 네이티브 플러그인 설치 지원, README·INSTALL 문서화.
+- 리뷰에서 "마켓플레이스 설치 시 루트 `plugin.json` 과 `.claude-plugin/plugin.json` 중 어느 쪽이 로드되는가" 를 물었는데, **격리된 `COPILOT_HOME` 에 원격 마켓플레이스로 직접 등록해 실행 결과로 답**해 주셨습니다(`loaded_skill=.../codex/skills/humanize-korean`, `remote_skill_matches_codex=true`). 추론이 아니라 실측이었기에 안심하고 받을 수 있었습니다.
+
+### [@ted794](https://github.com/ted794) (TAEEON KOO)
+
+**기여**: **플러그인 스킬이 관례 위치에 없다는 것**을 진단해 제보. Cowork 에 설치해 쓰다 스킬이 하나도 안 잡히는 것을 발견하고, 원인까지 정확히 짚어 알려주셨습니다.
+
+> Cowork 로더는 스킬을 플러그인 루트 `skills/` 에서 찾는데 원본은 `.claude/skills/` 에 두고 매니페스트 `skills` 필드로 가리켜서, 디렉터리 깊이가 한 칸 어긋납니다.
+
+**반영**: [PR #91](https://github.com/epoko77-ai/im-not-ai/pull/91) → **v2.3.2** 발행
+
+- 확인 결과 스펙의 예외 조항에 걸려 있었습니다 — `skills` 필드는 보통 기본 `skills/` 스캔에 *더해지지만*, **marketplace 항목의 `source` 가 마켓플레이스 루트로 풀리면 선언한 디렉터리가 기본 스캔을 대체**합니다. 우리 `source` 는 `"./"` 라 정확히 그 경우였고, 관례 위치는 비어 있었습니다.
+- **파급이 Cowork 에 그치지 않았습니다.** 조사 과정에서, CLI 마켓플레이스로 설치한 사용자는 스킬이 로드는 됐지만 **정량 shim 과 철칙 #4 게이트가 조용히 빠진 채로** 쓰고 있었다는 것이 함께 드러났습니다. 결과물은 정상적으로 나오기 때문에 품질 저하를 알아채기 어려운 상태였습니다.
+- 스킬 3종을 루트 `skills/` 로 옮기고 `plugin.json` 의 `skills` 필드를 제거했습니다. 겸사겸사 `${SKILL_ROOT}` 유도도 고정 깊이(`cd ../../..`)에서 **`.claude-plugin/` 마커 탐색**으로 바꿔, 앞으로 레이아웃이 바뀌어도 깨지지 않게 했습니다.
+- 에이전트는 같은 이유로 이미 루트 `agents/` 에 있었습니다([#26](https://github.com/epoko77-ai/im-not-ai/pull/26)). **스킬만 남아 있었던 것**을 짚어주신 셈입니다.
+
+이 회차의 경로 문제 세 건([#84](https://github.com/epoko77-ai/im-not-ai/issues/84) · [#88](https://github.com/epoko77-ai/im-not-ai/pull/88) · 이 건) 은 모두 **실제로 설치해 쓴 분들**이 찾아주셨습니다. 저장소 안에서만 테스트하면 원리적으로 보이지 않는 것들입니다.
+
+### 검토 중` 앞에 삽입)
 
 ### [@hs85-newbie](https://github.com/hs85-newbie)
 
@@ -302,7 +335,7 @@ v1.2 회차 기여는 위 「v1.2 외부 기여자」 항목에 있습니다. �
 
 ### 검토 중
 
-[@eungwonkim](https://github.com/eungwonkim) ([PR #56](https://github.com/epoko77-ai/im-not-ai/pull/56) C-8 발동 조건) · [@nhleeclaw](https://github.com/nhleeclaw) ([PR #60](https://github.com/epoko77-ai/im-not-ai/pull/60) D-8·F-6 신설) · [@hyeonsangjeon](https://github.com/hyeonsangjeon) ([PR #65](https://github.com/epoko77-ai/im-not-ai/pull/65) Copilot CLI) · [@junhwanjang](https://github.com/junhwanjang) ([PR #64](https://github.com/epoko77-ai/im-not-ai/pull/64) commit-ko)
+[@eungwonkim](https://github.com/eungwonkim) ([PR #56](https://github.com/epoko77-ai/im-not-ai/pull/56) C-8 발동 조건) · [@nhleeclaw](https://github.com/nhleeclaw) ([PR #60](https://github.com/epoko77-ai/im-not-ai/pull/60) D-8·F-6 신설) · [@junhwanjang](https://github.com/junhwanjang) ([PR #64](https://github.com/epoko77-ai/im-not-ai/pull/64) commit-ko)
 
 
 ## 이슈로 기여해 주신 분들

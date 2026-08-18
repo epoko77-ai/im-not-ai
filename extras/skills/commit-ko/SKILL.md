@@ -41,5 +41,5 @@ description: >
 
 ## 참고
 
-- 이 스킬의 치환표는 `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`의 A-7·A-8·A-9·A-12(번역투 구문)·F-4(한자어 명사화 -성/-적/-화) 처방을 커밋 메시지 register로 특화한 파생본이다(전체 ID 목록은 `references/commit-lexicon.md` 상단 참고). taxonomy가 갱신되면 `references/commit-lexicon.md`도 함께 점검할 것 — `python3 scripts/check_commit_lexicon_ids.py`로 헤더-본문 ID 정합과 taxonomy 실재 여부를 검사할 수 있다.
+- 이 스킬의 치환표는 `skills/humanize-korean/references/ai-tell-taxonomy.md`의 A-7·A-8·A-9·A-12(번역투 구문)·F-4(한자어 명사화 -성/-적/-화) 처방을 커밋 메시지 register로 특화한 파생본이다(전체 ID 목록은 `references/commit-lexicon.md` 상단 참고). taxonomy가 갱신되면 `references/commit-lexicon.md`도 함께 점검할 것 — `python3 scripts/check_commit_lexicon_ids.py`로 헤더-본문 ID 정합과 taxonomy 실재 여부를 검사할 수 있다.
 - 문단 단위 산문(리포트·칼럼·블로그 등)을 윤문할 때는 이 스킬이 아니라 `humanize-korean`을 쓴다.

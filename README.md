@@ -2,15 +2,27 @@
   <img src="assets/social-preview.png" alt="im-not-ai — 한글 AI 티 제거기" width="820">
 </p>
 
-# Humanize KR — 한글 AI 티 제거기 v2.3.1
+# Humanize KR — 한글 AI 티 제거기 v2.3.2
 
-AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 Claude Code 스킬입니다. 
+AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
 
 번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 70 서브 패턴**(+검증 대기 hold 1건)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
 
 ## 설치 (Install)
 
-> **Claude Code**와 **OpenAI Codex CLI** 양쪽을 지원합니다. 전체 가이드: [`INSTALL.md`](INSTALL.md)
+> **Claude Code**, **GitHub Copilot CLI**, **OpenAI Codex CLI**, **Gemini CLI**를 지원합니다. 전체 가이드: [`INSTALL.md`](INSTALL.md)
+
+**GitHub Copilot CLI — 플러그인 마켓플레이스 (클론 불필요, 권장)**
+
+```bash
+copilot plugin marketplace add epoko77-ai/im-not-ai
+copilot plugin install humanize-korean@im-not-ai
+copilot plugin list
+```
+
+Copilot에서 `humanize-korean 스킬로 이 글의 AI 티를 없애줘:`처럼 요청하거나 `/skills list`로 로드 여부를 확인하세요. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`입니다. Copilot은 **단일 호출 경로만** 제공하며 Claude Code 전용 진단·finalize 다중 호출 경로는 실행하지 않습니다.
+
+> 호환성 참고: 1.0.79-5에서는 `copilot plugin install epoko77-ai/im-not-ai`도 동작하지만, CLI가 저장소 직접 설치의 사용 중단 예정 경고를 표시합니다. 신규 설치 경로로는 권장하지 않습니다.
 
 **Claude Code — 플러그인 마켓플레이스 (클론 불필요, 권장)**
 
@@ -108,7 +120,7 @@ cd im-not-ai
 | I | 형식명사 과다 | "것이다", "점", "수", "바", "~할 필요가 있다" |
 | J | 시각 장식 남용 | 과도한 **볼드**, "따옴표", 대시(—) 남발 |
 
-전체 70 서브 패턴(+hold 1건)과 처방: [`ai-tell-taxonomy.md`](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](.claude/skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](.claude/skills/humanize-korean/references/scholarship.md) (v2.0 신규)
+전체 70 서브 패턴(+hold 1건)과 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
 
 ## 심각도 & 품질 등급
 
@@ -129,14 +141,14 @@ cd im-not-ai
 
 ### 0. 전제
 
-[Claude Code](https://claude.com/claude-code)가 설치돼 있어야 합니다. Mac · Windows · Linux 모두 지원합니다.
+아래 1~4단계는 3경로 전체를 제공하는 [Claude Code](https://claude.com/claude-code) 기준입니다. GitHub Copilot CLI·Codex CLI·Gemini CLI의 단일 호출 경로는 아래 각 도구별 방법을 참고하세요. Mac · Windows · Linux 모두 지원합니다.
 
 설치 확인:
 ```bash
 claude --version
 ```
 
-> Claude Code는 터미널에서 Claude(Anthropic의 AI)와 대화하며 파일을 같이 편집하는 CLI입니다. 이 리포의 스킬·에이전트는 Claude Code에서만 작동합니다. (웹 버전 Claude.ai나 일반 ChatGPT에서는 안 됩니다.)
+> Claude Code는 터미널에서 Claude(Anthropic의 AI)와 대화하며 파일을 같이 편집하는 CLI입니다. 웹 버전 Claude.ai나 일반 ChatGPT에서는 이 저장소의 스킬이 자동 로드되지 않습니다.
 
 ### 1. 리포 받기
 
@@ -156,7 +168,7 @@ claude
 
 ### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
 
-Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Codex 사용자는 아래 **방법 D**의 community port를 참고하세요.
+Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. GitHub Copilot CLI·Codex CLI 사용자는 아래 **방법 D·E**를 참고하세요.
 
 **방법 A — 자연어 한 문장 (가장 쉬움)**
 
@@ -181,7 +193,7 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 /humanize [윤문할 텍스트 또는 파일 경로]
 ```
 
-옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 두 진입점은 이제 스킬입니다: [`humanize`](.claude/skills/humanize/SKILL.md) · [`humanize-redo`](.claude/skills/humanize-redo/SKILL.md)
+옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 두 진입점은 이제 스킬입니다: [`humanize`](skills/humanize/SKILL.md) · [`humanize-redo`](skills/humanize-redo/SKILL.md)
 
 **방법 C — Plugin / 마켓플레이스 (공식)**
 
@@ -194,7 +206,24 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 
 스킬 3개 + 서브에이전트 9개가 함께 설치됩니다. 자세한 옵션·스크립트 설치는 [설치](#설치-install) 섹션과 [`INSTALL.md`](INSTALL.md) 참고. (초기 패키징을 탐색한 [`gaebalai/im-not-ai`](https://github.com/gaebalai/im-not-ai) 포크도 있습니다.)
 
-**방법 D — Codex CLI (공식, 단일 콜 경로)**
+**방법 D — GitHub Copilot CLI (공식, 단일 호출 경로)**
+
+GitHub Copilot CLI 1.0.79-5에서 마켓플레이스 설치와 스킬 탐색을 확인했습니다.
+
+```bash
+copilot plugin marketplace add epoko77-ai/im-not-ai
+copilot plugin install humanize-korean@im-not-ai
+copilot plugin list
+copilot skill list
+```
+
+새 Copilot 세션에서 `humanize-korean 스킬로 이 글을 자연스럽게 윤문해줘:` 또는 `이 글 AI 티 없애줘:`처럼 요청합니다. `/skills list`에서도 스킬을 확인할 수 있습니다. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`을 사용하세요.
+
+Copilot은 Codex와 같은 **단일 호출 경로**를 사용합니다. Claude Code 전용 `route_hint` 3경로 오케스트레이션과 진단·finalize 서브에이전트는 Copilot에서 실행되지 않습니다.
+
+> 저장소 직접 설치 명령 `copilot plugin install epoko77-ai/im-not-ai`은 1.0.79-5에서 동작하지만 사용 중단 예정 경고가 표시되는 호환성 경로입니다.
+
+**방법 E — Codex CLI (공식, 단일 콜 경로)**
 
 본체가 이제 Codex CLI Skills를 **공식 지원**합니다. 리포 클론 후 한 줄이면 `~/.codex/skills/`에 연결됩니다:
 
@@ -205,7 +234,7 @@ git clone https://github.com/epoko77-ai/im-not-ai.git && cd im-not-ai
 
 Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). Codex는 **단일 콜 경로만** 제공하며, 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용입니다. (Codex Desktop용 별도 어댑터로는 community 포트 [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)도 있습니다.)
 
-**방법 E — Web UI (비공식)**
+**방법 F — Web UI (비공식)**
 
 opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 - 접속: [im-not-ai-ocx.illuwa.click](https://im-not-ai-ocx.illuwa.click/)
@@ -283,7 +312,55 @@ Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩�
 
 ## 웹 서비스 확장 (옵션)
 
-웹 버전은 별도 코드베이스로 운영 중입니다. 본 리포의 설계 문서 [`web-service-spec.md`](.claude/skills/humanize-korean/references/web-service-spec.md)는 산출물로 보존합니다 (설계 담당이던 `humanize-web-architect` 에이전트는 v2.1에서 은퇴).
+웹 버전은 별도 코드베이스로 운영 중입니다. 본 리포의 설계 문서 [`web-service-spec.md`](skills/humanize-korean/references/web-service-spec.md)는 산출물로 보존합니다 (설계 담당이던 `humanize-web-architect` 에이전트는 v2.1에서 은퇴).
+
+## v2.3.2 — 플러그인 스킬 위치 정정 (2026-08)
+
+**마켓플레이스·플러그인으로 설치하셨다면 업데이트를 권합니다.** 스킬은 로드됐지만 내부에서 두 층이 조용히 빠지고 있었습니다.
+
+### 무엇이 문제였나
+
+플러그인 로더는 스킬을 **플러그인 루트 `skills/`** 에서 기본 스캔합니다. 그런데 이 저장소는 `.claude/skills/` 에 두고 `plugin.json` 의 `skills` 필드로 가리키고 있었습니다.
+
+스펙에 예외가 있습니다 — **marketplace 항목의 `source` 가 마켓플레이스 루트로 풀리면, 선언한 디렉터리가 기본 `skills/` 스캔을 대체합니다.** 우리 `source` 는 `"./"` 라 정확히 그 경우였고, 관례 위치는 비어 있었습니다.
+
+결과가 로더마다 갈렸습니다.
+
+| 환경 | 이전 |
+|---|---|
+| CLI 심링크 설치 | 정상 |
+| CLI 마켓플레이스 설치 | 로드는 됐지만 **정량 shim·진단이 조용히 누락** |
+| 관례 위치만 스캔하는 로더(Cowork 등) | **스킬 자체를 못 찾음** |
+
+두 번째가 특히 문제였습니다. `route_hint` 와 철칙 #4 게이트가 사라진 채로도 **결과물은 정상적으로 나오기 때문에** 품질이 떨어진 것을 알아채기 어려웠습니다.
+
+### 고친 것
+
+- 스킬 3종을 **`.claude/skills/` → `skills/`** (관례 위치)로 이동. `plugin.json` 의 `skills` 필드 제거 — 루트 `skills/` 는 기본 스캔 대상이라 선언이 불필요하고, 선언하면 오히려 예외 조항에 걸립니다.
+- **`${SKILL_ROOT}` 유도를 깊이 비의존으로.** `.claude-plugin/` 마커를 만날 때까지 거슬러 올라갑니다. 고정 횟수(`cd ../../..`)는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킵니다.
+- 끊어져 있던 `codex/skills/.../references` 심링크 복구.
+
+에이전트는 같은 이유로 이미 루트 `agents/` 에 있었습니다([#26](https://github.com/epoko77-ai/im-not-ai/pull/26)). 스킬만 남아 있었던 것입니다.
+
+### 업데이트 방법
+
+```bash
+# 플러그인
+/plugin update humanize-korean
+
+# 스크립트 설치
+./update.sh          # 또는 ./install.sh
+```
+
+⚠️ **심링크로 설치하셨다면 링크가 끊어집니다.** `.claude/skills/` 가 사라졌기 때문입니다. `./install.sh` 를 다시 돌리면 복구됩니다.
+
+### 검증
+
+- `pytest` **236 passed** (레이아웃 회귀 4건 신설 — 구 위치 부활 금지, `skills` 필드 재도입 금지, 고정 깊이 유도 금지)
+- `claude plugin validate .` 통과
+- 격리 환경 설치 실측 · `${SKILL_ROOT}` 유도 4종(저장소 직접·심링크·깊이 2·깊이 3) 검증
+
+제보해주신 분들 덕에 잡혔습니다. 세 건 모두 **실제로 설치해 쓴 분들**에게서 왔고, 저장소 안에서만 테스트하면 원리적으로 보이지 않는 것들이었습니다.
 
 ## v2.3.1 — 경로 해석 · 런타임 경계 · 계약 정합 (2026-08)
 
@@ -365,7 +442,7 @@ v1.6이 KatFish/LREAD 정량 결정타로 잔존 약점을 잡았다면, v2.0은
 - **본진 신규 4건** — `A-16` 영어 대명사 직역(그/그녀/그것/그들 강박적 매핑) [S1, 김도훈 2009 + Cho et al. 2019 ACL] · `A-18` 관계대명사절 좌향 수식(관형구 3중 중첩) [S2, 박옥수 2018] · `A-19` 이중 조사 결합(-에서의·-에로의·-으로의·-에의) [S2, 김정우 2007, 단순 ~의 명시 제외] · `E-7` 청자 경어법 4단계 일관성 손실 [S2 estimated, 김혜영 2019, dialogue 가드]
 - **본진 보강 4건** — `A-15` 사역·인지·발화 동사 분리 구문 처방 / `A-7` light verb construction 일반화(have/make/take/give + 명사) / `F-4` 영어 명사화 접미사 4종 통합(-tion·-ment·-ness·-ity) / `E-2` 진행형 '~고 있다' 자동 매핑 처방
 - **post-editese metric-only 트랙** — Baker 1993·Toury 1995·Toral 2019의 단순화·정규화·간섭 3축을 14개 신규 metric으로 코드화(`metrics_v2.py`). 본진 패턴 ID 미부여 — caveat C3(한국어 정량 검증 부재)에 따라 metric only 트랙으로 분리. `interference_index` 합성 지표가 T1~T8 8개 시그널 가중 합산
-- **학술 인용 양면 보존** — 본진 `taxonomy.md` 패턴마다 `source_anchor` 한 줄(≤25자) + 학자 29명·Caveat 6건 verbatim은 외부 SSOT [`scholarship.md`](.claude/skills/humanize-korean/references/scholarship.md)에 보존. 룰북 슬림성 유지
+- **학술 인용 양면 보존** — 본진 `taxonomy.md` 패턴마다 `source_anchor` 한 줄(≤25자) + 학자 29명·Caveat 6건 verbatim은 외부 SSOT [`scholarship.md`](skills/humanize-korean/references/scholarship.md)에 보존. 룰북 슬림성 유지
 - **rewriting-playbook §1.X 신설** — Toral 2019 + 한국 PE 가이드라인(윤미선 외 2018·김혜림 2022·이상빈 2017·2018a·2018b·마승혜 2018) 통합 15항목 PE 체크리스트(PE1~PE15), 본진 패턴 ID 부착
 - **monolith·5인 정의 무수정 + 도구 호출 3회 캡 보존** — `humanize-monolith`·detector·rewriter·auditor·reviewer git diff 0줄. 헤더 토큰 +0.6KB만 차이
 
@@ -527,7 +604,7 @@ v1.3 발행 직후, 사용자께서 직접 Gemini API 키를 제공해 회차 3 
 | 3 | Gemini 직접 호출 4건 | C-10·D-7 (2) | D-4·J-2·I-4 (3) | 모델 분산 확보 + GPT/Gemini 차이 발견 |
 | **합계** | 8건 (3 모델 × 다양 장르) | **3건** | **6건** | v1.2 멈춤 → v1.3.1 풍부 |
 
-전체 v1.3.1 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+전체 v1.3.1 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
 
 ## v1.3 — 서브 패턴 발굴 운영 체계 + 본진 신규 1건·보강 3건 (2026-04-25)
 
@@ -563,9 +640,9 @@ v1.1까지의 패턴 7건 승격은 사람이 한 번에 작업한 결과였습�
 
 회차 2의 핵심 발견은 **Gate 1.3 분산 보호장치가 진짜 외부 데이터에서도 정확히 작동했다**는 점입니다. occurrences·source distinct 정량 기준은 모두 통과한 강력 후보 3건이, 같은 모델·같은 기자 시리즈라는 정성 분산 검사로 hold 처리되어 단일 출처 노이즈가 본진을 오염시키지 않았습니다. v1.2 워크플로였다면 5개 후보 모두 reviewer JSON에 기록됐다가 run 종료 후 묻혔을 정보입니다. v1.3에서는 본진 보강 2건이 즉시 영구 반영되고, 강력 후보 3건이 풀에 hold로 누적되어 다음 회차의 자동 승격 트리거가 마련됐습니다.
 
-회차별 점검 로그는 운영 산출물이라 `_workspace/taxonomy_changelog.md`에 누적되며 (gitignored), 본진 변경은 [`ai-tell-taxonomy.md` 버전 관리](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)에 영구 기록됩니다.
+회차별 점검 로그는 운영 산출물이라 `_workspace/taxonomy_changelog.md`에 누적되며 (gitignored), 본진 변경은 [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)에 영구 기록됩니다.
 
-전체 v1.3 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+전체 v1.3 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
 
 ## v1.2 — 작가 voice profile (2026-04-25)
 
@@ -613,7 +690,7 @@ v1.2는 [Issue #1](https://github.com/epoko77-ai/im-not-ai/issues/1)에서 8.5�
 
 v1.2는 코드 변경이 거의 없고 대부분 문서·정책·schema 추가입니다. voice profile 미주입 모드(default)에서는 v1.1과 동일한 6인 에이전트가 동일한 입출력으로 동작합니다. voice profile 주입 모드는 신기능이라 회귀 대상이 아니며, 외부 회귀 케이스 검증 결과는 v1.2.1에서 별도 hotfix로 반영합니다(외부 케이스 모집은 별도 Issue로 진행 예정).
 
-전체 v1.2 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+전체 v1.2 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
 
 ---
 
@@ -627,7 +704,7 @@ v1.2는 코드 변경이 거의 없고 대부분 문서·정책·schema 추가�
 
 ## 기여
 
-새로운 AI 티 패턴이나 회귀 사례를 발견했다면 [Issue](https://github.com/epoko77-ai/im-not-ai/issues)로 보고해 주세요. 실증 사례 2건 이상(가능하면 서로 다른 모델·장르·작가)이 함께면 분류학자 에이전트가 점검 회차에서 본진([`ai-tell-taxonomy.md`](.claude/skills/humanize-korean/references/ai-tell-taxonomy.md))으로 승격합니다. v1.3에서 운영했던 candidate pool은 핫패스 비용 문제로 v1.5에서 제거됐고, 외부 보고는 Issue 채널로 단순화됐습니다.
+새로운 AI 티 패턴이나 회귀 사례를 발견했다면 [Issue](https://github.com/epoko77-ai/im-not-ai/issues)로 보고해 주세요. 실증 사례 2건 이상(가능하면 서로 다른 모델·장르·작가)이 함께면 분류학자 에이전트가 점검 회차에서 본진([`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md))으로 승격합니다. v1.3에서 운영했던 candidate pool은 핫패스 비용 문제로 v1.5에서 제거됐고, 외부 보고는 Issue 채널로 단순화됐습니다.
 
 **외부 데이터 raw text 보존 정책 (v1.5~)** — 외부 매체 글(예: 뉴스 기사·블로그)을 검증 데이터로 제출할 때, 직접 raw text 인용이 저작권상 부담스러우면 **분석 노트만 보존하지 말고 안전한 인용 단위(문단 1~2개) + 출처 URL을 같이** 남겨주세요. v1.3 회차 2 뉴스핌 GPT 데이터가 분석 노트만 보존되고 raw text가 떨어져 v1.5 회귀 검증에서 재사용 불가했던 사례가 있었습니다. URL이 만료되면 검증 자산 자체가 사라지므로, fair use 범위의 짧은 인용 + URL 동시 보존이 권장됩니다.
 

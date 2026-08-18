@@ -32,7 +32,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REFS = os.path.abspath(
-    os.path.join(_HERE, "..", ".claude", "skills", "humanize-korean", "references")
+    os.path.join(_HERE, "..", "skills", "humanize-korean", "references")
 )
 _TAXONOMY = os.path.join(_REFS, "ai-tell-taxonomy.md")
 _HEADER = os.path.join(_REFS, "quick-rules.header.md")

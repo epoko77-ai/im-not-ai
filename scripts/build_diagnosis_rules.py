@@ -45,7 +45,7 @@ from build_quick_rules import (  # noqa: E402
 )
 
 _REFS = os.path.abspath(
-    os.path.join(_HERE, "..", ".claude", "skills", "humanize-korean", "references")
+    os.path.join(_HERE, "..", "skills", "humanize-korean", "references")
 )
 _TAXONOMY = os.path.join(_REFS, "ai-tell-taxonomy.md")
 _OUT = os.path.join(_REFS, "diagnosis-rules.md")

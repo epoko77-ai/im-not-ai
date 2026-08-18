@@ -68,8 +68,8 @@ class RuntimeBoundaryTests(unittest.TestCase):
             (d / "scripts").mkdir()
             for f in _SCRIPTS.glob("*.py"):
                 (d / "scripts" / f.name).write_bytes(f.read_bytes())
-            refs_src = _ROOT / ".claude" / "skills" / "humanize-korean" / "references"
-            refs_dst = d / ".claude" / "skills" / "humanize-korean" / "references"
+            refs_src = _ROOT / "skills" / "humanize-korean" / "references"
+            refs_dst = d / "skills" / "humanize-korean" / "references"
             refs_dst.mkdir(parents=True)
             for f in refs_src.iterdir():
                 if f.is_file():
@@ -110,8 +110,66 @@ class FinalizeContractTests(unittest.TestCase):
         self.assertIn("Light 경로는 진단을 생략하므로", t)
 
     def test_skill_documents_light_escalation(self) -> None:
-        t = (_ROOT / ".claude" / "skills" / "humanize-korean" / "SKILL.md").read_text(
+        t = (_ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(
             encoding="utf-8"
         )
         self.assertIn("진단 파일이 없을 때(Light 승급)", t)
         self.assertIn("`diagnosis_path` 없이", t)
+
+
+class PluginLayoutTests(unittest.TestCase):
+    """플러그인 스킬이 관례 위치에 있는지 검증.
+
+    ## 배경
+
+    공식 스펙: `skills/` 는 **플러그인 루트**에 있어야 하고, 로더는 그곳을 기본 스캔한다.
+    `plugin.json` 의 `skills` 필드로 다른 경로를 가리킬 수 있지만 예외가 있다 —
+    **marketplace 항목의 `source` 가 마켓플레이스 루트로 풀리면, 선언한 하위
+    디렉터리가 기본 `skills/` 스캔을 대체한다.**
+
+    우리 `marketplace.json` 의 `source` 는 `"./"` 라 정확히 그 예외에 해당했다.
+    그래서 `.claude/skills/` 에 두고 매니페스트로 가리키던 구조에서는, 매니페스트를
+    읽는 로더(Claude Code CLI)는 찾지만 관례 위치만 스캔하는 로더는 스킬을 하나도
+    못 찾았다(Cowork 사용자 제보).
+
+    에이전트는 같은 이유로 이미 루트 `agents/` 로 옮긴 적이 있다(#26). 스킬만
+    남아 있었다.
+    """
+
+    def test_skills_live_at_plugin_root(self) -> None:
+        self.assertTrue(
+            (_ROOT / "skills").is_dir(),
+            "스킬은 플러그인 루트 skills/ 에 있어야 한다 (로더 기본 스캔 위치)",
+        )
+        for name in ("humanize-korean", "humanize", "humanize-redo"):
+            with self.subTest(skill=name):
+                self.assertTrue((_ROOT / "skills" / name / "SKILL.md").is_file())
+
+    def test_old_location_is_gone(self) -> None:
+        self.assertFalse(
+            (_ROOT / ".claude" / "skills").exists(),
+            ".claude/skills/ 가 되살아남 — 두 곳에 있으면 로더마다 다른 사본을 읽는다",
+        )
+
+    def test_manifest_does_not_override_default_scan(self) -> None:
+        """`skills` 필드를 다시 넣으면 기본 스캔이 대체돼 같은 사고가 재발한다."""
+        import json  # noqa: PLC0415
+
+        manifest = json.loads(
+            (_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+        )
+        self.assertNotIn(
+            "skills", manifest,
+            "plugin.json 에 skills 필드를 두지 않는다 — 루트 skills/ 기본 스캔에 맡긴다",
+        )
+
+    def test_skill_root_derivation_is_depth_independent(self) -> None:
+        """SKILL.md 의 SKILL_ROOT 유도가 고정 깊이(../../..)를 쓰면 안 된다."""
+        skill = (_ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(".claude-plugin", skill, "마커 기반 탐색이 명시돼야 함")
+        self.assertNotIn(
+            "cd ../../..", skill,
+            "고정 깊이 유도 잔존 — 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다",
+        )

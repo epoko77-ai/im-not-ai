@@ -2,7 +2,7 @@
 
 살아있는 스킬을 돌려 갓 나온 윤문본을 얻는다. test_humanize_live.py와
 generate_fixtures.py가 공유한다. `claude` CLI(Claude Code, 구독 인증)만 있으면 되고
-별도 API 키는 필요 없다. 스킬은 이 레포의 .claude/skills/humanize-korean 에서 탐색됨
+별도 API 키는 필요 없다. 스킬은 이 레포의 skills/humanize-korean 에서 탐색됨
 (claude 를 레포 루트에서 실행).
 """
 from __future__ import annotations

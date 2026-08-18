@@ -42,12 +42,12 @@ rm -rf "$TMP_HOME/.codex"
 
 claude_without_target_output="$(run_installer --claude-only)"
 assert_contains "$claude_without_target_output" "== Claude Code: 건너뜀"
-assert_not_contains "$claude_without_target_output" "+ ln -s $ROOT/.claude/skills/humanize-korean"
+assert_not_contains "$claude_without_target_output" "+ ln -s $ROOT/skills/humanize-korean"
 
 mkdir -p "$TMP_HOME/.claude"
 claude_output="$(run_installer --claude-only)"
 assert_contains "$claude_output" "== Claude Code =="
-assert_contains "$claude_output" "+ ln -s $ROOT/.claude/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
+assert_contains "$claude_output" "+ ln -s $ROOT/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
 assert_not_contains "$claude_output" "Claude Code: "
 rm -rf "$TMP_HOME/.claude"
 
@@ -61,7 +61,7 @@ rm -rf "$TMP_HOME/.codex"
 mkdir -p "$TMP_HOME/.claude"
 claude_desktop_output="$(run_installer)"
 assert_contains "$claude_desktop_output" "== Claude Code =="
-assert_contains "$claude_desktop_output" "+ ln -s $ROOT/.claude/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
+assert_contains "$claude_desktop_output" "+ ln -s $ROOT/skills/humanize-korean $TMP_HOME/.claude/skills/humanize-korean"
 assert_not_contains "$claude_desktop_output" "Claude Code: "
 rm -rf "$TMP_HOME/.claude"
 

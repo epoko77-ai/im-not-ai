@@ -18,7 +18,7 @@ Versioning:
   plus `change_rate()` — the SSOT for 철칙 #4 change-rate gating.
 
 This file ships next to metrics.py at
-`.claude/skills/humanize-korean/references/`.
+`skills/humanize-korean/references/`.
 
 CLI:
     python metrics_v2.py --input run/01_input.txt \

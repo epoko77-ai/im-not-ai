@@ -20,11 +20,11 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 # 윤문 계약이 실려야 하는 배포 경로 전수.
 _CONTRACT_PATHS = (
-    ".claude/skills/humanize-korean/SKILL.md",
+    "skills/humanize-korean/SKILL.md",
     "agents/humanize-monolith.md",
     "agents/humanize-finalizer.md",
-    ".claude/skills/humanize-korean/references/quick-rules.header.md",
-    ".claude/skills/humanize-korean/references/quick-rules.footer.md",
+    "skills/humanize-korean/references/quick-rules.header.md",
+    "skills/humanize-korean/references/quick-rules.footer.md",
 )
 
 

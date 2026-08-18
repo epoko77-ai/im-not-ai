@@ -48,7 +48,7 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 sys.path.insert(0, str(_ROOT / "tests"))
-sys.path.insert(0, str(_ROOT / ".claude" / "skills" / "humanize-korean" / "references"))
+sys.path.insert(0, str(_ROOT / "skills" / "humanize-korean" / "references"))
 
 import humanize_asserts as ha  # noqa: E402
 import humanize_runner as hr  # noqa: E402

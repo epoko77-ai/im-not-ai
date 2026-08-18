@@ -15,12 +15,12 @@ def _find_ref() -> str:
     """metrics.py 위치를 레이아웃 무관하게 탐색.
 
     - 스킬-로컬 설치: tests/ 옆 ../references
-    - 포크 레포 루트: tests/../.claude/skills/humanize-korean/references
+    - 포크 레포 루트: tests/../skills/humanize-korean/references
     """
     here = os.path.dirname(os.path.abspath(__file__))
     candidates = (
         "../references",
-        "../.claude/skills/humanize-korean/references",
+        "../skills/humanize-korean/references",
     )
     for rel in candidates:
         cand = os.path.abspath(os.path.join(here, rel))

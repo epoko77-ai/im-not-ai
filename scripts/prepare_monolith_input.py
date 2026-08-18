@@ -48,10 +48,10 @@ from pathlib import Path
 # Resolve project layout. This file lives at:
 #   {project_root}/scripts/prepare_monolith_input.py
 # metrics.py is at:
-#   {project_root}/.claude/skills/humanize-korean/references/metrics.py
+#   {project_root}/skills/humanize-korean/references/metrics.py
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
-METRICS_DIR = PROJECT_ROOT / ".claude" / "skills" / "humanize-korean" / "references"
+METRICS_DIR = PROJECT_ROOT / "skills" / "humanize-korean" / "references"
 
 # Make metrics.py importable without polluting global state.
 sys.path.insert(0, str(METRICS_DIR))

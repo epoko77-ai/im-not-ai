@@ -174,6 +174,6 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 
 ## 참고 자료
 
-- 분류 체계 본진: `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`
-- 윤문 처방: `.claude/skills/humanize-korean/references/rewriting-playbook.md`
-- 슬림 룰북: `.claude/skills/humanize-korean/references/quick-rules.md`
+- 분류 체계 본진: `skills/humanize-korean/references/ai-tell-taxonomy.md`
+- 윤문 처방: `skills/humanize-korean/references/rewriting-playbook.md`
+- 슬림 룰북: `skills/humanize-korean/references/quick-rules.md`

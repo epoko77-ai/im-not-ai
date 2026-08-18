@@ -16,7 +16,7 @@ import unittest
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, ".."))
 _AGENTS_DIR = os.path.join(_ROOT, "agents")
-_SKILL = os.path.join(_ROOT, ".claude", "skills", "humanize-korean", "SKILL.md")
+_SKILL = os.path.join(_ROOT, "skills", "humanize-korean", "SKILL.md")
 
 # SKILL.md "에이전트 호출 규칙" 절이 선언하는 총 개수. 문구를 바꾸더라도
 # `agents/`에 N종` 형태만 유지하면 이 테스트가 계속 따라간다.

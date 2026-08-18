@@ -1,7 +1,7 @@
 """Tests for humanize-ko v1.6 metrics module.
 
 Runs under either pytest or unittest. Imports the metrics module from its
-location under .claude/skills/humanize-korean/references/.
+location under skills/humanize-korean/references/.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(HERE, ".."))
 METRICS_DIR = os.path.join(
-    PROJECT_ROOT, ".claude", "skills", "humanize-korean", "references"
+    PROJECT_ROOT, "skills", "humanize-korean", "references"
 )
 sys.path.insert(0, METRICS_DIR)
 

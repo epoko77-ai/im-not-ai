@@ -22,7 +22,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(HERE, ".."))
 
 # Deployed module location — metrics.py and metrics_v2.py ship together here.
 REFERENCES_DIR = os.path.join(
-    PROJECT_ROOT, ".claude", "skills", "humanize-korean", "references"
+    PROJECT_ROOT, "skills", "humanize-korean", "references"
 )
 sys.path.insert(0, REFERENCES_DIR)
 

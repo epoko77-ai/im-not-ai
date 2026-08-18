@@ -1,9 +1,9 @@
 """패키징 매니페스트 버전 동기화 — 결정적, CI에서 항상 실행.
 
 RELEASING.md는 "SKILL.md frontmatter가 런타임 SSOT"라고 못박고, 버전 문자열이
-등장하는 위치를 §1 표로 전수 관리한다. 그런데 그 표에 배포 매니페스트
-(`.claude-plugin/*.json`)가 빠져 있어 마켓플레이스 설치 사용자가 보는 버전만
-갱신 대상에서 누락돼 왔다.
+등장하는 위치를 §1 표로 전수 관리한다. Claude 배포 매니페스트
+(`.claude-plugin/*.json`)와 Copilot 배포 매니페스트(`plugin.json`)가
+런타임 SSOT와 어긋나지 않도록 함께 검증한다.
 
 이 테스트는 그 누락을 사람의 체크리스트 대신 코드가 막는다 —
 `build_quick_rules.py --check`가 룰북 drift를 막는 것과 같은 방식.
@@ -19,8 +19,9 @@ import unittest
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, ".."))
-_SKILL = os.path.join(_ROOT, ".claude", "skills", "humanize-korean", "SKILL.md")
-_PLUGIN = os.path.join(_ROOT, ".claude-plugin", "plugin.json")
+_SKILL = os.path.join(_ROOT, "skills", "humanize-korean", "SKILL.md")
+_CLAUDE_PLUGIN = os.path.join(_ROOT, ".claude-plugin", "plugin.json")
+_COPILOT_PLUGIN = os.path.join(_ROOT, "plugin.json")
 _MARKETPLACE = os.path.join(_ROOT, ".claude-plugin", "marketplace.json")
 
 # frontmatter의 version 한 줄. PyYAML 의존을 만들지 않기 위해 직접 뽑는다
@@ -46,12 +47,21 @@ class ManifestVersionSyncTests(unittest.TestCase):
     def setUp(self) -> None:
         self.expected = skill_version()
 
-    def test_plugin_json_matches_skill(self) -> None:
-        actual = json.loads(_read(_PLUGIN))["version"]
+    def test_claude_plugin_json_matches_skill(self) -> None:
+        actual = json.loads(_read(_CLAUDE_PLUGIN))["version"]
         self.assertEqual(
             actual,
             self.expected,
             f".claude-plugin/plugin.json version={actual} != SKILL.md {self.expected} "
+            f"— RELEASING.md §1 표대로 함께 갱신할 것",
+        )
+
+    def test_copilot_plugin_json_matches_skill(self) -> None:
+        actual = json.loads(_read(_COPILOT_PLUGIN))["version"]
+        self.assertEqual(
+            actual,
+            self.expected,
+            f"root plugin.json version={actual} != SKILL.md {self.expected} "
             f"— RELEASING.md §1 표대로 함께 갱신할 것",
         )
 
@@ -83,9 +93,13 @@ class ManifestDescriptionTests(unittest.TestCase):
     RETIRED_TERMS = ("5인 파이프라인", "strict 5인")
 
     def _descriptions(self) -> list[tuple[str, str]]:
-        plugin = json.loads(_read(_PLUGIN))
+        claude_plugin = json.loads(_read(_CLAUDE_PLUGIN))
+        copilot_plugin = json.loads(_read(_COPILOT_PLUGIN))
         market = json.loads(_read(_MARKETPLACE))
-        out = [("plugin.json", plugin["description"])]
+        out = [
+            (".claude-plugin/plugin.json", claude_plugin["description"]),
+            ("plugin.json", copilot_plugin["description"]),
+        ]
         out.append(("marketplace.json metadata", market["metadata"]["description"]))
         out += [(f"marketplace.json {e['name']}", e["description"]) for e in market["plugins"]]
         return out

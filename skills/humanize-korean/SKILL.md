@@ -1,14 +1,15 @@
 ---
 name: humanize-korean
-version: "2.3.1"
+version: "2.3.2"
 description: AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 오케스트레이터 스킬. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 70개 AI 티 패턴을 탐지·분류해 내용은 한 글자도 건드리지 않고 문체·리듬·표현만 자연스러운 한국어로 재작성한다. shim의 route_hint(light|standard|heavy)로 경로를 정해 잘 쓴 글은 1콜, 표준은 2콜, 중증·장문만 3+콜(진단→겨냥 윤문→finalize)로 처리한다. 트리거 — "AI 티 없애줘", "AI 같은 글 자연스럽게", "GPT/ChatGPT 문체", "AI 번역투 고쳐", "사람이 쓴 것처럼 윤문", "AI 윤문", "ChatGPT 티 제거", "한글 AI 탐지·윤문", "AI 글 사람처럼", "번역투 제거", "영어 인용 많은 글 윤문", "AI 글 티 안 나게", "휴머나이저", "humanize Korean", "AI detector bypass 한글". 후속 작업 — "특정 카테고리만 다시", "윤문 강도 조정", "장르 바꿔서", "이 문단만", "2차 윤문" 도 모두 이 스킬. 단순 맞춤법·오탈자 교정은 직접 처리, 번역은 번역 스킬, 내용 추가·삭제를 동반한 재작성은 별도 집필 스킬.
 ---
 
 # Humanize Korean — AI 한글 티 제거 오케스트레이터 (v2.3)
 
+> **v2.3.2** — 플러그인 스킬을 관례 위치(루트 `skills/`)로 이동. 마켓플레이스 설치에서 shim·진단이 조용히 누락되던 경로 문제 해소.
 > **v2.3.1** — 경로 해석·런타임 경계·계약 정합 수정 회차(외부 제보 반영). 기능 변경 없음.
 > **v2.3.0** — 구조 수렴 게이트(`verify_gates.py` 4축: 목표달성·대구 전멸·수치·golden) + 진단 슬림 인덱스(`diagnosis-rules.md`, taxonomy 83%↓). (v2.2: route_hint 3경로 + 단일 콜 우선)
-> 버전 히스토리·실측 근거·테스트 시나리오: [`references/design-notes.md`](references/design-notes.md)
+> 버전 히스토리·실측 근거·테스트 시나리오: [`${CLAUDE_SKILL_DIR}/references/design-notes.md`](references/design-notes.md)
 
 ## Phase 0: 컨텍스트 확인 및 경로 결정
 
@@ -47,15 +48,18 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 
 **스크립트는 절대경로로 부른다. cwd 기준 상대경로로 부르면 안 된다.**
 
+`references/*` 는 **스킬 디렉터리** 기준이라 `${CLAUDE_SKILL_DIR}` 를 쓴다 — `${SKILL_ROOT}` 와 기준이 다르니 섞지 않는다. 룰북·taxonomy 경로도 맨앞 접두어 없이 쓰면 cwd 로 풀려 `No such file or directory` 가 난다.
+
 `scripts/*.py`는 설치 루트에 있고 cwd 는 사용자 작업 디렉터리다. 마켓플레이스 설치에서 둘은 **절대 일치하지 않는다.** 반면 `_workspace/` 같은 데이터 경로는 cwd 기준이다(run_id 규칙 참조). 두 기준이 한 명령줄에 섞이므로 스크립트 쪽만 절대경로로 고정한다.
 
 Phase 1 시작 전에 한 번 정한다.
 
 ```bash
-SKILL_ROOT="$(cd -P "${CLAUDE_SKILL_DIR}" && cd ../../.. && pwd)"
+SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
+  while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ]; do d="$(dirname "$d")"; done; echo "$d")"
 ```
 
-`${CLAUDE_SKILL_DIR}`는 `<설치루트>/.claude/skills/humanize-korean` 이므로 상위 3단계가 설치 루트다.
+`.claude-plugin/` 디렉터리를 만날 때까지 거슬러 올라간다. **고정된 횟수로 올라가지 않는 이유**는 스킬 위치가 배포 방식마다 다를 수 있어서다 — 고정 깊이는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다.
 
 **`cd -P` 가 핵심이다.** 심링크 설치(`install.sh` 기본)에서는 스킬 디렉터리가 저장소를 가리키는 심링크라, 그냥 `cd` 하면 셸이 논리 경로를 유지해 엉뚱한 곳(홈 디렉터리)으로 올라간다. `-P` 로 물리 경로를 먼저 푼 뒤 올라가야 심링크·플러그인 양쪽에서 같은 답이 나온다. 이후 모든 스크립트 호출에 `${SKILL_ROOT}/scripts/...` 를 쓴다.
 
@@ -96,7 +100,7 @@ SKILL_ROOT="$(cd -P "${CLAUDE_SKILL_DIR}" && cd ../../.. && pwd)"
 ## Standard 경로 (2콜) — 보통의 AI 초안
 
 1. **진단 1콜**: `humanize-diagnostician`을 `Agent` 도구로 1회 호출.
-   - 입력: `input_path=01_input_with_metrics.txt`, `taxonomy_path=references/diagnosis-rules.md` (진단 전용 슬림 인덱스 — 71패턴 전수, taxonomy에서 자동 생성)
+   - 입력: `input_path=01_input_with_metrics.txt`, `taxonomy_path=${CLAUDE_SKILL_DIR}/references/diagnosis-rules.md` (진단 전용 슬림 인덱스 — 71패턴 전수, taxonomy에서 자동 생성)
    - 출력: `02_diagnosis.md` — 글 전체의 **지배 패턴 3~6개**(본진 ID + 근거 + 처방) + 장르·격식 + 보존 지침.
    - 진단은 span을 세지 않는다. "무엇이 이 글을 지배하는가"를 판단한다(안정적).
 2. shim으로 진단을 monolith 입력 앞에 결합 (Bash — LLM 콜 아님):
@@ -263,7 +267,7 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 **유지보수 1종 (별도 명령으로만 트리거)**
 - `korean-ai-tell-taxonomist` — 분류 체계(SSOT) 유지·확장. 본 스킬 실행 중에는 호출되지 않음
 
-(개발용 1회성 5종·v2.1 은퇴 5종의 계보와 테스트 시나리오는 `references/design-notes.md` 참조.)
+(개발용 1회성 5종·v2.1 은퇴 5종의 계보와 테스트 시나리오는 `${CLAUDE_SKILL_DIR}/references/design-notes.md` 참조.)
 
 ## 주의 사항
 
@@ -279,11 +283,11 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 
 ## 참고 자료
 
-- 슬림 룰북 (monolith 전용): [`references/quick-rules.md`](references/quick-rules.md) — S1·S2 핵심 패턴 + 자체검증 체크리스트
-- 진단 인덱스 (diagnostician 전용): [`references/diagnosis-rules.md`](references/diagnosis-rules.md) — 71패턴 전수 ID·정의·시그니처. `build_diagnosis_rules.py`가 taxonomy에서 자동 생성(직접 편집 금지)
-- 정량 점수 shim: `scripts/prepare_monolith_input.py` — `references/metrics_v2.py`(실패 시 `metrics.py` fallback) + `references/baseline.json` 기반 사전 점수 + `route_hint` 산출
-- 텍스트 위생: `scripts/sanitize_text.py` — shim이 자동 호출(끄려면 `--no-sanitize`). 제로폭·bidi·특수공백 제거 + 한글 NFD→NFC 정규화를 `01_input.txt`에 반영해 이후 변경률 게이트·diff·글자수가 같은 기준을 쓰게 한다. 결정적 처리, LLM 0콜. 변경이 있으면 `00_sanitize.json` 기록. **AI 워터마크 제거 기능이 아니다** (CLAUDE.md 「AI 워터마킹에 대한 입장」 참조)
-- 분류 체계 본진 (SSOT — 유지보수·taxonomist 전용): [`references/ai-tell-taxonomy.md`](references/ai-tell-taxonomy.md) — 10대분류 × 활성 70 패턴 (+A-17 hold 1건) 전수. 런타임 콜은 이 파일을 직접 읽지 않는다
-- 윤문 처방 (진단 전용): [`references/rewriting-playbook.md`](references/rewriting-playbook.md) — 카테고리별 치환 레시피·장르별 허용 표
-- 학술 인용 외부 SSOT: [`references/scholarship.md`](references/scholarship.md) — v2.0 학자 인용·caveat verbatim 보존
-- 웹 서비스 스펙 (옵션): [`references/web-service-spec.md`](references/web-service-spec.md) — 웹 확장 시 로드
+- 슬림 룰북 (monolith 전용): [`${CLAUDE_SKILL_DIR}/references/quick-rules.md`](references/quick-rules.md) — S1·S2 핵심 패턴 + 자체검증 체크리스트
+- 진단 인덱스 (diagnostician 전용): [`${CLAUDE_SKILL_DIR}/references/diagnosis-rules.md`](references/diagnosis-rules.md) — 71패턴 전수 ID·정의·시그니처. `build_diagnosis_rules.py`가 taxonomy에서 자동 생성(직접 편집 금지)
+- 정량 점수 shim: `${SKILL_ROOT}/scripts/prepare_monolith_input.py` — `${CLAUDE_SKILL_DIR}/references/metrics_v2.py`(실패 시 `metrics.py` fallback) + `${CLAUDE_SKILL_DIR}/references/baseline.json` 기반 사전 점수 + `route_hint` 산출
+- 텍스트 위생: `${SKILL_ROOT}/scripts/sanitize_text.py` — shim이 자동 호출(끄려면 `--no-sanitize`). 제로폭·bidi·특수공백 제거 + 한글 NFD→NFC 정규화를 `01_input.txt`에 반영해 이후 변경률 게이트·diff·글자수가 같은 기준을 쓰게 한다. 결정적 처리, LLM 0콜. 변경이 있으면 `00_sanitize.json` 기록. **AI 워터마크 제거 기능이 아니다** (CLAUDE.md 「AI 워터마킹에 대한 입장」 참조)
+- 분류 체계 본진 (SSOT — 유지보수·taxonomist 전용): [`${CLAUDE_SKILL_DIR}/references/ai-tell-taxonomy.md`](references/ai-tell-taxonomy.md) — 10대분류 × 활성 70 패턴 (+A-17 hold 1건) 전수. 런타임 콜은 이 파일을 직접 읽지 않는다
+- 윤문 처방 (진단 전용): [`${CLAUDE_SKILL_DIR}/references/rewriting-playbook.md`](references/rewriting-playbook.md) — 카테고리별 치환 레시피·장르별 허용 표
+- 학술 인용 외부 SSOT: [`${CLAUDE_SKILL_DIR}/references/scholarship.md`](references/scholarship.md) — v2.0 학자 인용·caveat verbatim 보존
+- 웹 서비스 스펙 (옵션): [`${CLAUDE_SKILL_DIR}/references/web-service-spec.md`](references/web-service-spec.md) — 웹 확장 시 로드

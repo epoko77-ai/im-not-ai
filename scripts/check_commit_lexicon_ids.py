@@ -30,9 +30,9 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.abspath(os.path.join(_HERE, ".."))
 _TAXONOMY = os.path.join(
-    _REPO, ".claude", "skills", "humanize-korean", "references", "ai-tell-taxonomy.md"
+    _REPO, "skills", "humanize-korean", "references", "ai-tell-taxonomy.md"
 )
-# commit-ko는 기본 플러그인(.claude/skills/)에서 제외된 opt-in 스킬이라
+# commit-ko는 기본 플러그인(skills/)에서 제외된 opt-in 스킬이라
 # extras/skills/ 아래 산다 — 위치가 바뀌어도 taxonomy와의 드리프트 결박은 유지한다.
 _LEXICON = os.path.join(
     _REPO, "extras", "skills", "commit-ko", "references", "commit-lexicon.md"

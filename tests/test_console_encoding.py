@@ -100,7 +100,14 @@ class SkillRootDerivationTests(unittest.TestCase):
     설치에서 둘은 절대 일치하지 않아, cwd 상대경로 호출은 항상 실패했다.
     """
 
-    DERIVE = 'cd -P "$CLAUDE_SKILL_DIR" && cd ../../.. && pwd'
+    # 고정 횟수가 아니라 `.claude-plugin/` 마커를 만날 때까지 거슬러 올라간다.
+    # 스킬 위치가 배포 방식마다 다를 수 있어(플러그인 루트 skills/ vs 그 밖),
+    # 고정 깊이는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다.
+    DERIVE = (
+        'd="$(cd -P "$CLAUDE_SKILL_DIR" && pwd)"; '
+        'while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ]; do d="$(dirname "$d")"; done; '
+        'echo "$d"'
+    )
 
     def _derive(self, skill_dir: Path) -> str:
         proc = subprocess.run(
@@ -114,10 +121,11 @@ class SkillRootDerivationTests(unittest.TestCase):
         """복사·플러그인 설치(실디렉터리) 레이아웃."""
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "install-root"
-            (root / ".claude" / "skills" / "humanize-korean").mkdir(parents=True)
+            (root / ".claude-plugin").mkdir(parents=True)
+            (root / "skills" / "humanize-korean").mkdir(parents=True)
             (root / "scripts").mkdir()
             (root / "scripts" / "prepare_monolith_input.py").touch()
-            got = self._derive(root / ".claude" / "skills" / "humanize-korean")
+            got = self._derive(root / "skills" / "humanize-korean")
             self.assertTrue(
                 (Path(got) / "scripts" / "prepare_monolith_input.py").is_file(),
                 f"플러그인 레이아웃에서 유도 실패: {got}",
@@ -127,9 +135,9 @@ class SkillRootDerivationTests(unittest.TestCase):
         """심링크 설치 — `cd -P` 없이는 홈 디렉터리로 올라가 실패하던 케이스."""
         with tempfile.TemporaryDirectory() as td:
             home = Path(td) / "home"
-            (home / ".claude" / "skills").mkdir(parents=True)
-            link = home / ".claude" / "skills" / "humanize-korean"
-            link.symlink_to(_ROOT / ".claude" / "skills" / "humanize-korean")
+            (home / "skills").mkdir(parents=True)
+            link = home / "skills" / "humanize-korean"
+            link.symlink_to(_ROOT / "skills" / "humanize-korean")
             got = self._derive(link)
             self.assertEqual(
                 Path(got).resolve(), _ROOT.resolve(),
@@ -138,7 +146,7 @@ class SkillRootDerivationTests(unittest.TestCase):
 
     def test_skill_md_uses_absolute_script_paths(self) -> None:
         """SKILL.md 에 cwd 상대 `python3 scripts/` 호출이 남아 있으면 안 된다."""
-        skill = (_ROOT / ".claude" / "skills" / "humanize-korean" / "SKILL.md").read_text(
+        skill = (_ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(
             encoding="utf-8"
         )
         self.assertNotIn(

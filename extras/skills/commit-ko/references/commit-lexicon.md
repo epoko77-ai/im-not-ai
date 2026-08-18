@@ -1,6 +1,6 @@
 # commit-ko 치환표
 
-> 이 표는 `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`의 A-7("가지고 있다" / light verb construction)·A-8(이중 피동)·A-9(by-passive "~에 의해")·A-12("만들어지다"/"이루어지다", 자동화된 피동)·F-4(과잉 접두·접미, 한자어 명사화 -성·-적·-화)를 **원본 SSOT**로 삼아, 커밋 메시지처럼 짧고 명사형 종결이 관용인 register에 맞게 파생시킨 소형 참조표다. taxonomy 본진이 갱신되면(신규 패턴 승격 등) 이 표도 함께 점검할 것 — 중복 관리가 아니라 파생 관계임에 유의. `scripts/check_commit_lexicon_ids.py`가 이 헤더 선언과 아래 표 본문의 ID 인용이 정확히 일치하는지 검사한다.
+> 이 표는 `skills/humanize-korean/references/ai-tell-taxonomy.md`의 A-7("가지고 있다" / light verb construction)·A-8(이중 피동)·A-9(by-passive "~에 의해")·A-12("만들어지다"/"이루어지다", 자동화된 피동)·F-4(과잉 접두·접미, 한자어 명사화 -성·-적·-화)를 **원본 SSOT**로 삼아, 커밋 메시지처럼 짧고 명사형 종결이 관용인 register에 맞게 파생시킨 소형 참조표다. taxonomy 본진이 갱신되면(신규 패턴 승격 등) 이 표도 함께 점검할 것 — 중복 관리가 아니라 파생 관계임에 유의. `scripts/check_commit_lexicon_ids.py`가 이 헤더 선언과 아래 표 본문의 ID 인용이 정확히 일치하는지 검사한다.
 >
 > 1~4절은 한국 업무 문서투 격식(사무적 표현) 문제고, **5절이 진짜 "영어 직역 번역투"**(by-passive·이중피동·have 직역 등 구문 계열) 문제다. 둘은 원인이 달라 구분해서 다룬다.
 

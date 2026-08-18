@@ -1,4 +1,4 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.3.1)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.3.2)
 
 ## 프로젝트 개요
 
@@ -44,7 +44,7 @@ im-not-ai/
 ├── RELEASING.md                   # 릴리스 체크리스트 (버전 문자열 전수 + 글로벌 심링크 동기화)
 ├── CONTRIBUTORS.md
 ├── .claude-plugin/                # Claude 플러그인 + 마켓플레이스 매니페스트
-│   ├── plugin.json                # skills: ./.claude/skills/ · 에이전트는 루트 agents/ 자동탐색
+│   ├── plugin.json                # skills: ./skills/ · 에이전트는 루트 agents/ 자동탐색
 │   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
 ├── gemini-extension.json          # Gemini CLI Extension 매니페스트
 ├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
@@ -69,7 +69,7 @@ im-not-ai/
 │   ├── humanize-finalizer.md      # heavy P3 마무리 (의미 15항 + 자연성)
 │   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
 │   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
-├── .claude/skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
+├── skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
 │   └── humanize-korean/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
@@ -197,9 +197,9 @@ im-not-ai/
 
 ## 참고
 
-- 오케스트레이터: `.claude/skills/humanize-korean/SKILL.md`
-- 분류 체계: `.claude/skills/humanize-korean/references/ai-tell-taxonomy.md`
-- 윤문 처방: `.claude/skills/humanize-korean/references/rewriting-playbook.md`
-- 슬림 룰북(monolith): `.claude/skills/humanize-korean/references/quick-rules.md`
-- 학술 인용 SSOT: `.claude/skills/humanize-korean/references/scholarship.md`
-- 웹 스펙: `.claude/skills/humanize-korean/references/web-service-spec.md`
+- 오케스트레이터: `skills/humanize-korean/SKILL.md`
+- 분류 체계: `skills/humanize-korean/references/ai-tell-taxonomy.md`
+- 윤문 처방: `skills/humanize-korean/references/rewriting-playbook.md`
+- 슬림 룰북(monolith): `skills/humanize-korean/references/quick-rules.md`
+- 학술 인용 SSOT: `skills/humanize-korean/references/scholarship.md`
+- 웹 스펙: `skills/humanize-korean/references/web-service-spec.md`

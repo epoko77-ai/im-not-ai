@@ -8,9 +8,9 @@ grep 전수 조사(2026-07-17, v2.0.1 기준)로 확정한 목록입니다.
 
 | # | 파일 | 위치 | 형식 |
 |---|------|------|------|
-| 1 | `.claude/skills/humanize-korean/SKILL.md` | frontmatter `version:` | `"X.Y.Z"` — **런타임 SSOT. 여기가 누락되면 사용자는 구버전을 실행합니다** |
-| 2 | `.claude/skills/humanize-korean/SKILL.md` | 제목(H1) + 상단 "버전 요약" 블록 | `vX.Y` |
-| 3 | `.claude/skills/humanize-korean/SKILL.md` | Phase 0 런타임 배너 (`humanize-korean vX.Y — {fast\|strict} 모드 …`) | `vX.Y` — 실행 시 사용자에게 그대로 출력됨 |
+| 1 | `skills/humanize-korean/SKILL.md` | frontmatter `version:` | `"X.Y.Z"` — **런타임 SSOT. 여기가 누락되면 사용자는 구버전을 실행합니다** |
+| 2 | `skills/humanize-korean/SKILL.md` | 제목(H1) + 상단 "버전 요약" 블록 | `vX.Y` |
+| 3 | `skills/humanize-korean/SKILL.md` | Phase 0 런타임 배너 (`humanize-korean vX.Y — {fast\|strict} 모드 …`) | `vX.Y` — 실행 시 사용자에게 그대로 출력됨 |
 | 4 | `README.md` | 제목(H1) + "아키텍처" 헤더 | `vX.Y.Z` / `vX.Y` |
 | 5 | `README.md` | 신규 릴리스 노트 절 (`## vX.Y — …`) | 절 추가 |
 | 6 | `CLAUDE.md` | 제목(H1) | `vX.Y.Z` |
@@ -19,9 +19,10 @@ grep 전수 조사(2026-07-17, v2.0.1 기준)로 확정한 목록입니다.
 | 9 | `references/quick-rules.md` | 제목(H1) | 분류 체계 버전 트랙과 동행 |
 | 10 | `.claude-plugin/plugin.json` | `version` + `description` | `"X.Y.Z"` — **마켓플레이스 설치 사용자가 보는 버전.** `tests/test_version_sync.py`가 SKILL.md와 대사 |
 | 11 | `.claude-plugin/marketplace.json` | `metadata.version` + `plugins[].version` + `plugins[].description` | `"X.Y.Z"` — 동일 테스트가 대사 |
-| 12 | git tag | `vX.Y.Z` | 아래 §3 시점 규칙 준수 |
+| 12 | `plugin.json` | `version` + `description` | `"X.Y.Z"` — GitHub Copilot CLI가 읽는 루트 매니페스트. 동일 테스트가 대사 |
+| 13 | git tag | `vX.Y.Z` | 아래 §3 시점 규칙 준수 |
 
-**#10·#11은 사람이 기억하지 않아도 됩니다** — `tests/test_version_sync.py`가 SKILL.md frontmatter를 SSOT로 삼아 두 매니페스트를 대사하고, 어긋나면 CI에서 막습니다. description에 은퇴한 구조 표기(`5인 파이프라인` 등)가 남아 있는 경우도 같은 테스트가 잡습니다.
+**#10~#12는 사람이 기억하지 않아도 됩니다** — `tests/test_version_sync.py`가 SKILL.md frontmatter를 SSOT로 삼아 세 매니페스트를 대사하고, 어긋나면 CI에서 막습니다. description에 은퇴한 구조 표기(`5인 파이프라인` 등)가 남아 있는 경우도 같은 테스트가 잡습니다.
 
 **별개 트랙**: `gemini-extension.json` + `GEMINI.md`는 자체 룰북(패턴 47종)을 embed한 독립 배포물이라 스킬 버전과 동행하지 않습니다. 내용을 갱신하는 회차에만 함께 올립니다.
 
@@ -31,7 +32,7 @@ grep 전수 조사(2026-07-17, v2.0.1 기준)로 확정한 목록입니다.
 
 ```bash
 grep -rn "v[0-9]\.[0-9]" \
-  .claude/skills/humanize-korean/SKILL.md \
+  skills/humanize-korean/SKILL.md \
   commands/ CLAUDE.md \
   | grep -v "역사\|이력\|변경 고지\|버전 요약"
 # README.md는 과거 릴리스 노트가 많으므로 제목·아키텍처 헤더만 육안 확인:
@@ -45,7 +46,7 @@ sed -n '1,40p' README.md
 
 - [ ] **테스트**: `python3 -m pytest tests/ -q` 전체 통과 (pytest 미설치 환경이면 `pip install pytest` 후 실행)
 - [ ] **shim 스모크**: `python3 scripts/prepare_monolith_input.py --text "테스트 문장입니다." --genre essay` 가 `00_metrics.json` + `01_input_with_metrics.txt`를 만드는지 확인 (생성된 임시 run 디렉토리는 삭제)
-- [ ] **버전 문자열**: §1 표의 #1~#11 전수 갱신 — 특히 **SKILL.md frontmatter·배너** (과거 2회 누락 지점). #10·#11 매니페스트는 `python3 -m pytest tests/test_version_sync.py -q`가 대사
+- [ ] **버전 문자열**: §1 표의 #1~#12 전수 갱신 — 특히 **SKILL.md frontmatter·배너** (과거 2회 누락 지점). #10~#12 매니페스트는 `python3 -m pytest tests/test_version_sync.py -q`가 대사
 - [ ] **문서 정합**: 도구 호출 캡·산출물 목록(fast=`final.md` 1개, strict=`final.md`+`summary.md`)이 SKILL.md·README·CLAUDE.md·에이전트 정의에서 일치하는지
 - [ ] **발행 노트**: README에 `## vX.Y` 절 작성, 검증 결과는 실측 수치만 (추정 금지)
 - [ ] **부속물**: 썸네일·social preview 갱신이 있으면 태그 전에 머지

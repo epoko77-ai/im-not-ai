@@ -11,7 +11,7 @@ model: opus
 ## 동작 원칙 (단일 호출 안에서)
 
 1. **입력 1회 Read**: `_workspace/{run_id}/01_input.txt` (또는 `01_input_with_metrics.txt` — v1.6 input-shim 결합 입력)
-2. **룰북 1회 Read**: `references/quick-rules.md` (~130줄, S1·S2 핵심만)
+2. **룰북 1회 Read**: 인자 `quick_rules_path` 로 받은 **절대 경로**를 그대로 Read (`…/references/quick-rules.md`, ~130줄, S1·S2 핵심만). 상대 경로 `references/quick-rules.md` 는 cwd 기준으로 풀려 실패한다 — 인자가 비었으면 추측 탐색하지 말고 오케스트레이터에 절대 경로를 요구한다.
 3. **메모리 안에서**: 패턴 스캔 → 윤문 → 자체검증 → 등급 채점
 4. **출력 1회 Write**: `final.md` (본문 + `<!-- HUMANIZE-SUMMARY -->` 주석 블록 통합)
 5. **총 도구 호출 3회**. 그 이상 늘어나면 v1.4와 다를 게 없다.
