@@ -1,0 +1,1 @@
+../../../../scripts/verify_change_rate.py

@@ -32,10 +32,26 @@ import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_REFS = os.path.join(
-    _HERE, "..", ".claude", "skills", "humanize-korean", "references"
+_REF_CANDIDATES = (
+    # Codex/Copilot standalone skill package:
+    #   humanize-korean/{scripts,references}/
+    os.path.abspath(os.path.join(_HERE, "..", "references")),
+    # Repository/Claude runtime:
+    #   {repo}/scripts + {repo}/.claude/skills/humanize-korean/references
+    os.path.abspath(
+        os.path.join(
+            _HERE, "..", ".claude", "skills", "humanize-korean", "references"
+        )
+    ),
 )
-_REFS = os.path.abspath(_REFS)
+_REFS = next(
+    (
+        path
+        for path in _REF_CANDIDATES
+        if os.path.isfile(os.path.join(path, "metrics_v2.py"))
+    ),
+    _REF_CANDIDATES[-1],
+)
 if _REFS not in sys.path:
     sys.path.insert(0, _REFS)
 
