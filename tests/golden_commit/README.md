@@ -8,7 +8,7 @@ LLM 없이 순수 Python으로 "commit-ko가 하지 말아야 할 것"을 회귀
 
 ```
 tests/golden_commit/
-├── checks.py                  # 결정적 채점기 (stdlib only)
+├── commit_checks.py           # 결정적 채점기 (stdlib only)
 ├── fixtures/
 │   └── <NN_실패모드-이름>/
 │       ├── input.txt              # 윤문 전 커밋 메시지 원문
@@ -43,7 +43,7 @@ pytest tests/test_golden_commit.py
 python3 -m unittest tests.test_golden_commit
 
 # 채점기 단독 — 실제 윤문 결과를 게이트에 통과시킬 때
-python3 tests/golden_commit/checks.py fixtures/01_prefix_altered/input.txt <윤문결과.txt>
+python3 tests/golden_commit/commit_checks.py fixtures/01_prefix_altered/input.txt <윤문결과.txt>
 ```
 
 ## 설계 원칙 — 방향성 게이트
@@ -81,7 +81,7 @@ humanize-korean의 골든셋과 동일하게, "정확히 이 문자열"이 아�
 4. `good_output.txt` — SKILL.md 철칙(의미·범위·타입 불변, 새 내용 삽입 금지,
    과공손 방향 금지)을 지킨 정상 윤문.
 5. `expected_failures.json` — `{"description": "...", "bad_must_fail": [코드들]}`.
-   코드 목록은 `checks.py` 상단 docstring 참조.
+   코드 목록은 `commit_checks.py` 상단 docstring 참조.
 6. `python3 -m unittest tests.test_golden_commit`이 통과하는지 확인합니다.
    새 실패 모드가 기존 체크로 안 잡히면 `checks.py`에 방향성 체크를 추가하되,
    반드시 무변경(identity)·정상 윤문이 PASS함을 함께 증명하세요.

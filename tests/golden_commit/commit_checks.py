@@ -1,6 +1,6 @@
 """Deterministic golden-fixture scorer for commit-ko.
 
-Same philosophy as tests/golden/checks.py (humanize-korean), scaled down to
+Same philosophy as scripts/checks.py (humanize-korean), scaled down to
 the commit-message register: LLM output is non-deterministic, so every check
 is a DIRECTIONAL GATE ("did a known regression appear?"), never an exact
 string match. A legitimate rewrite always passes; only documented failure
@@ -8,13 +8,13 @@ modes fail.
 
 stdlib only. Usage as a library:
 
-    from checks import run_checks
+    from commit_checks import run_checks
     failures = run_checks(original_text, rewritten_text)
     # empty list == PASS
 
 or from the CLI:
 
-    python3 checks.py input.txt output.txt
+    python3 commit_checks.py input.txt output.txt
 
 Failure codes (stable API — tests and fixtures reference these):
     empty_output            output is blank
@@ -226,7 +226,7 @@ def run_checks(original: str, output: str) -> list[Failure]:
 
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
-        print("usage: python3 checks.py <original.txt> <rewritten.txt>", file=sys.stderr)
+        print("usage: python3 commit_checks.py <original.txt> <rewritten.txt>", file=sys.stderr)
         return 2
     with open(argv[1], encoding="utf-8") as f:
         original = f.read()

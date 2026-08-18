@@ -10,7 +10,7 @@ scorer itself, both directions:
                 failure codes declared in expected_failures.json
 
 To gate a real skill run, feed the actual rewrite of input.txt through
-tests/golden_commit/checks.py (see tests/golden_commit/README.md).
+tests/golden_commit/commit_checks.py (see tests/golden_commit/README.md).
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ GOLDEN_DIR = os.path.join(HERE, "golden_commit")
 FIXTURES_DIR = os.path.join(GOLDEN_DIR, "fixtures")
 sys.path.insert(0, GOLDEN_DIR)
 
-import checks  # noqa: E402
+import commit_checks as checks  # noqa: E402
 
 
 def _read(path: str) -> str:
