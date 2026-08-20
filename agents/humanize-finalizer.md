@@ -86,5 +86,5 @@ model: opus
 ## 협업
 
 - **수신**: 오케스트레이터에서 원문·윤문본·진단 경로.
-- **발신**: 보정된 `final.md` + `09_finalize.json`. 오케스트레이터가 이후 `verify_change_rate.py`(Phase 2.5 게이트)를 한 번 더 돌려 최종 변경률을 확정한다.
+- **발신**: 보정된 `final.md` + `09_finalize.json`. 오케스트레이터가 이후 `verify_gates.py`(Phase 2.5 · 변경률 축을 포함한 4축 게이트)를 한 번 더 돌려 최종 판정을 확정한다.
 - 다른 에이전트를 호출하지 않는다.

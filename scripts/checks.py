@@ -77,7 +77,9 @@ CLICHE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 
 # Sentence-final 요 (해요체/구어 종결). Counts "~인데요." "~거든요?" etc.
-YO_ENDING_RE = re.compile(r"요\s*(?:[.?!…]|$)", re.MULTILINE)
+# 명사 '필요/중요/개요/주요/수요/소요/강요'의 끝 음절 '요'는 해요체가 아니다.
+# 개조식 문어("보완 필요.")를 구어로 오인해 colloquial_erased 오탐을 내는 것을 막는다.
+YO_ENDING_RE = re.compile(r"(?<![필중개주수소강])요\s*(?:[.?!…]|$)", re.MULTILINE)
 
 # colloquial_erased fires only when the original is clearly colloquial
 # (>= MIN_YO endings) AND the output keeps less than KEEP_RATIO of them.

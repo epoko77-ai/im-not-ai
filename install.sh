@@ -15,6 +15,7 @@ DO_GEMINI=auto
 FORCE=0
 DRYRUN=0
 ALL_AGENTS=0
+CONFLICTS=0
 TS="$(date +%Y%m%d-%H%M%S)"
 
 # 스킬 런타임이 호출하는 3종 + 별도 명령으로만 트리거되는 유지보수 1종.
@@ -72,9 +73,11 @@ run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
 prepare_target() {
   local dest="$1" src="$2"
   if [ -L "$dest" ]; then
-    if [ "$(readlink "$dest")" = "$src" ]; then
+    if [ "$(readlink "$dest")" = "$src" ] && [ "$MODE" = symlink ]; then
       echo "ok (already linked): $dest"; return 1
     fi
+    # copy 모드에서 기존 심링크는 '설치됨'이 아니다. 치우고 실체 복사로 대체해야
+    # 저장소 삭제 시 링크가 끊어지는 사고를 막는다.
     run mv "$dest" "$dest.bak.$TS"
   elif [ -e "$dest" ]; then
     if [ "$FORCE" != 1 ]; then
@@ -147,7 +150,17 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   echo "== Claude Code =="
   run mkdir -p "$CLAUDE_HOME/skills" "$CLAUDE_HOME/agents"
   for s in humanize-korean humanize humanize-redo; do
-    install_one "$REPO/skills/$s" "$CLAUDE_HOME/skills/$s"
+    if install_one "$REPO/skills/$s" "$CLAUDE_HOME/skills/$s"; then
+      if [ "$s" = humanize-korean ] && [ "$MODE" = copy ]; then
+        # 복사 설치는 SKILL_ROOT 탐색이 저장소로 돌아갈 수 없다. 스킬 사본 안에
+        # scripts/ 와 .claude-plugin/ 표식을 함께 실체화해야 shim·게이트가 산다.
+        run cp -RL "$REPO/scripts" "$CLAUDE_HOME/skills/$s/scripts"
+        run cp -RL "$REPO/.claude-plugin" "$CLAUDE_HOME/skills/$s/.claude-plugin"
+      fi
+    else
+      CONFLICTS=$((CONFLICTS + 1))
+      echo "skip: skills/$s (충돌 · --force 로 재실행)" >&2
+    fi
   done
   agents=()
   if [ "$ALL_AGENTS" = 1 ]; then
@@ -165,7 +178,8 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   fi
   if [ "${#agents[@]}" -gt 0 ]; then
     for a in "${agents[@]}"; do
-      install_one "$a" "$CLAUDE_HOME/agents/$(basename "$a")"
+      install_one "$a" "$CLAUDE_HOME/agents/$(basename "$a")" \
+        || { CONFLICTS=$((CONFLICTS + 1)); echo "skip: agents/$(basename "$a") (충돌 · --force 로 재실행)" >&2; }
     done
   fi
   # 설치 후 정리 — 구버전 설치본이 남긴 범위 밖·은퇴 링크 제거 (#73).
@@ -184,7 +198,8 @@ fi
 if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || has_codex_target; }; then
   echo "== Codex =="
   run mkdir -p "$CODEX_HOME/skills"
-  install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
+  install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean" \
+    || { CONFLICTS=$((CONFLICTS + 1)); echo "skip: codex 스킬 (충돌 · --force 로 재실행)" >&2; }
 else
   echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지) =="
 fi
@@ -209,4 +224,8 @@ echo "  Claude: 새 세션에서 /humanize-korean (또는 /humanize)"
 echo "  Codex : \$humanize-korean"
 echo "  Gemini: 새 세션에서 /humanize-korean (또는 /humanize)"
 echo "  업데이트: ./update.sh (새 버전 자동 감지 + 적용) · 제거: ./uninstall.sh"
+if [ "$CONFLICTS" -gt 0 ]; then
+  echo "경고: 충돌로 건너뛴 대상 ${CONFLICTS}건 · --force 로 재실행하면 백업 후 덮어쓴다." >&2
+  exit 1
+fi
 exit 0

@@ -42,7 +42,10 @@ _OUT = os.path.join(_REFS, "quick-rules.md")
 # ## A. 번역투 (Translation-ese) — S1~S2
 _CATEGORY_RE = re.compile(r"^## ([A-J])\.\s+(.+?)\s*$")
 # ### A-1. "~에 대하여" 남발 [S1]
-_PATTERN_RE = re.compile(r"^### ([A-J]-\d+)\.\s+(.+?)\s*(?:\[([^\]]+)\])?\s*$")
+# 심각도 태그 뒤에 " · v1.1 신규" 같은 이력 접미가 붙어도 태그를 놓치지 않는다.
+# 접미는 태그 뒤에서만 허용한다 · 태그 없는 제목("D-1. 종결·요약류")의 가운뎃점을
+# 접미로 오인해 제목이 잘리는 일을 막기 위해서다.
+_PATTERN_RE = re.compile(r"^### ([A-J]-\d+)\.\s+(.+?)\s*(?:\[([^\]]+)\](?:\s*·.*)?)?\s*$")
 # - _quick: true · quick_pattern: X · quick_fix: Y_
 # - _quick: false_   (false는 pattern/fix 없이 값+밑줄로 끝나는 형식도 허용)
 # `\b` 대신 명시적 경계(공백···밑줄)를 써야 `false_`를 놓치지 않는다.
