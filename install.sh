@@ -69,18 +69,24 @@ done
 run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
 
 # rc: 0=대상 비었음(설치 진행) / 1=이미 우리 심링크(스킵) / 2=충돌(거부)
+# 성공 시 옮겨진 백업 경로를 PREPARED_BACKUP 에 남긴다 — 심링크 생성이 뒤에서
+# 실패하면 install_one 이 이 경로로 기존 설치를 원위치 복원한다.
+PREPARED_BACKUP=""
 prepare_target() {
   local dest="$1" src="$2"
+  PREPARED_BACKUP=""
   if [ -L "$dest" ]; then
     if [ "$(readlink "$dest")" = "$src" ]; then
       echo "ok (already linked): $dest"; return 1
     fi
     run mv "$dest" "$dest.bak.$TS"
+    PREPARED_BACKUP="$dest.bak.$TS"
   elif [ -e "$dest" ]; then
     if [ "$FORCE" != 1 ]; then
       echo "refuse: $dest 가 이미 있음 (--force 로 백업 후 덮어쓰기 또는 --copy)"; return 2
     fi
     run mv "$dest" "$dest.bak.$TS"
+    PREPARED_BACKUP="$dest.bak.$TS"
   fi
   return 0
 }
@@ -135,6 +141,22 @@ install_one() {
     symlink) run ln -s "$src" "$dest" ;;
     copy)    run cp -RL "$src" "$dest" ;;   # -L: references 심링크를 실체로 복사
   esac
+  # symlink 모드 사후 검증 — Windows Git Bash(MSYS)는 심링크 생성 권한이 없으면
+  # ln -s 가 조용히 일반 복사로 전락해 exit 0 을 반환한다. dry-run 은 run() 이
+  # 실제 명령을 실행하지 않으므로 검증 대상에서 제외한다(오탐 방지).
+  if [ "$MODE" = symlink ] && [ "$DRYRUN" != 1 ] && [ ! -L "$dest" ]; then
+    run rm -rf "$dest"
+    if [ -n "$PREPARED_BACKUP" ] && [ -e "$PREPARED_BACKUP" ]; then
+      run mv "$PREPARED_BACKUP" "$dest"
+      echo "restored: $dest (기존 설치 복원됨)"
+    fi
+    echo "error: $dest 심링크 생성 실패 — 일반 파일/디렉토리로 조용히 복사됐습니다." >&2
+    echo "  원인: Windows Git Bash(MSYS)는 관리자 권한/개발자 모드 없이 ln -s 를 실행하면" >&2
+    echo "  심링크 대신 일반 복사를 만듭니다." >&2
+    echo "  대안: ① ./install.sh --copy  ② MSYS=winsymlinks:nativestrict 로 재실행  ③ WSL 에서 설치(권장, INSTALL.md 참고)" >&2
+    echo "  참고: 이 항목 이전에 성공한 설치는 그대로 유지됩니다(되돌리지 않음)." >&2
+    return 1
+  fi
   echo "installed: $dest"
 }
 
