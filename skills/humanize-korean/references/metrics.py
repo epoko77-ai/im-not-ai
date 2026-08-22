@@ -91,6 +91,15 @@ def _strip_punct(token: str) -> str:
     return _PUNCT_STRIP_RE.sub("", token)
 
 
+# 숫자 안의 천 단위 구분 콤마("1,200")는 수사적 쉼표가 아니다. 쉼표 지표 계산 전에
+# 제거해야 숫자가 많은 문서의 쉼표 점수가 부풀지 않는다.
+_NUM_COMMA_RE = re.compile(r"(?<=\d),(?=\d)")
+
+
+def _strip_numeric_commas(text: str) -> str:
+    return _NUM_COMMA_RE.sub("", text)
+
+
 # ---------------------------------------------------------------------------
 # 6 + 2 metric functions (signatures requested in the brief)
 # ---------------------------------------------------------------------------
@@ -98,6 +107,7 @@ def _strip_punct(token: str) -> str:
 
 def comma_inclusion_rate(text: str) -> float:
     """Ratio of sentences containing 1+ commas (0~1)."""
+    text = _strip_numeric_commas(text)
     sents = _split_sentences(text)
     if not sents:
         return 0.0
@@ -107,6 +117,7 @@ def comma_inclusion_rate(text: str) -> float:
 
 def comma_usage_rate(text: str) -> float:
     """Average comma count per sentence."""
+    text = _strip_numeric_commas(text)
     sents = _split_sentences(text)
     if not sents:
         return 0.0
@@ -140,6 +151,7 @@ def ending_comma_rate(text: str) -> float:
 
 def comma_segment_length(text: str) -> float:
     """Average eojeol-count of comma-delimited segments across sentences."""
+    text = _strip_numeric_commas(text)
     sents = _split_sentences(text)
     seg_lens: list[int] = []
     for s in sents:

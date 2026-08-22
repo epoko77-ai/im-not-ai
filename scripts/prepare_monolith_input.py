@@ -52,6 +52,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent
 METRICS_DIR = PROJECT_ROOT / "skills" / "humanize-korean" / "references"
+if not (METRICS_DIR / "metrics.py").exists():
+    # copy 설치 레이아웃: install.sh --copy 는 scripts/ 를 스킬 사본 안에 실체화하므로
+    # references/ 가 저장소 경로가 아니라 형제 디렉터리에 있다.
+    _ALT_REFS = PROJECT_ROOT / "references"
+    if (_ALT_REFS / "metrics.py").exists():
+        METRICS_DIR = _ALT_REFS
 
 # Make metrics.py importable without polluting global state.
 sys.path.insert(0, str(METRICS_DIR))
@@ -252,13 +258,20 @@ def _fmt_z(z: float | None) -> str:
     return f"z={sign}{z:.2f}"
 
 
-def _z_marker(z: float | None) -> str:
-    """Emit a small star for values clearly above the AI band."""
+# 방향이 반대인 지표: 값이 높을수록 '사람다움'이라 낮은 쪽(z 음수)이 AI 신호다.
+# _classify_risk 는 이미 방향을 반영하는데 렌더링이 반영하지 않으면, 가장 사람다운
+# 특성(어휘 다양성 높음)에 '★ S1 트리거'가 찍혀 역방향 윤문을 유도한다.
+_INVERTED_METRICS = frozenset({"lexical_diversity"})
+
+
+def _z_marker(z: float | None, key: str | None = None) -> str:
+    """Emit a small star for values clearly on the AI side of the band."""
     if z is None:
         return ""
-    if z >= 1.5:
+    signed = -z if key in _INVERTED_METRICS else z
+    if signed >= 1.5:
         return "  ★ S1 트리거"
-    if z >= 1.0:
+    if signed >= 1.0:
         return "  · S2 시그널"
     return ""
 
@@ -335,7 +348,7 @@ def _render_block(metrics_obj: dict) -> str:
             return f"- {key}: n/a"
         z_part = ""
         if with_z:
-            z_part = f"  ({_fmt_z(z.get(key))} vs {metrics_obj.get('genre','essay')} 인간 baseline){_z_marker(z.get(key))}"
+            z_part = f"  ({_fmt_z(z.get(key))} vs {metrics_obj.get('genre','essay')} 인간 baseline){_z_marker(z.get(key), key)}"
         return f"- {key}: {value_fmt.format(val)}{z_part}{suffix}"
 
     lines.append(row("comma_inclusion_rate", "{:.2f}"))
@@ -433,6 +446,9 @@ HEADING_LINE_RE = re.compile(
 # 각주 정의 줄. \d+\) 는 헤딩 정규식과 겹치지만 각주 판정은 문서 말미의
 # 연속 블록에만 적용되고 그 구간은 본문 청킹에서 제외되므로 충돌 없음.
 FOOTNOTE_LINE_RE = re.compile(r"^(?:\d+\)\s|\[\d+\]\s)")
+# 번호 매김이 같아도 한국어 종결어미로 끝나는 줄은 본문 나열(결론 목록)이다.
+# 각주(서지·URL·연도 종결)와 구분해 본문 결말이 passthrough 로 새는 것을 막는다.
+_BODY_SENT_END_RE = re.compile(r"[다요죠함임음까]\s*[.!?…]?\s*$")
 
 _PARA_SEP_RE = re.compile(r"\n{2,}")
 # 문장 경계: 종결 부호(+닫는 따옴표류) 뒤 공백. 컷은 공백 런 끝 = 다음 문장 시작.
@@ -470,7 +486,7 @@ def find_footnote_block_start(text: str) -> int | None:
         line = text[ls:le]
         if not line.strip():
             continue
-        if FOOTNOTE_LINE_RE.match(line):
+        if FOOTNOTE_LINE_RE.match(line) and not _BODY_SENT_END_RE.search(line.rstrip()):
             start = ls
             continue
         break

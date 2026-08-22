@@ -108,16 +108,16 @@ im-not-ai/
     └─ heavy ────→ [humanize-diagnostician] → 02_diagnosis.md
                      ↓ [shim --diagnosis] (청킹 필요 시에만 --chunk)
                    [humanize-monolith — shim이 청크 2+개 만든 경우에만 청크 병렬]
-                     ↓ [verify_change_rate.py] (P2.5)
+                     ↓ [verify_gates.py] (P2.5)
                    [humanize-finalizer — 의미 15항 + 자연성, 국소 보정]
                    final.md(보정) + 09_finalize.json
-    ↓ [scripts/verify_change_rate.py — 변경률 게이트 (exit code)] — 모든 경로 공통
+    ↓ [scripts/verify_gates.py — 4축 게이트(변경률·S1·fidelity·golden) (exit code)] — 모든 경로 공통
 ```
 
 - shim은 graceful degrade 내장 — metrics 실패 시 점수 블록 없는 결합 파일을 쓰고 `00_metrics.error`를 남긴다. 이 경우 route_hint 부재 → **standard로 간주**.
 - **청킹 남발 금지** — `--chunk`는 heavy 전용, 15,000자 이하 비권장. 그때도 shim이 실제로 청크를 2개 이상 만들었을 때만 병렬(청크 1개면 단일 콜). 재조립은 `reassemble_chunks.py`.
 - light·standard 결과가 등급 C/D면 heavy 재실행을 사용자에게 권고한다(자동 전환 아님 — opt-in).
-- finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_change_rate.py`(결정적, exit code)가 내린다.
+- finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_gates.py`(결정적, exit code)가 내린다.
 
 ## 에이전트 구성 (9개 — 역할 구분 필수)
 
@@ -139,7 +139,7 @@ im-not-ai/
 8. **post-editese-metric-engineer** — post-editese 3축을 metrics_v2.py로 코드화.
 9. **quick-rules-integrator** — v2.0 변경 묶음의 quick-rules 안착 + 캡 회귀 검증 + PR 준비.
 
-**은퇴 (v2.1)**: 옛 strict 5인 파이프라인의 `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 v2.1에서 은퇴(정의 파일 삭제). 탐지·감사·리뷰 역할은 diagnostician·finalizer와 `verify_change_rate.py` 게이트가 대체했다.
+**은퇴 (v2.1)**: 옛 strict 5인 파이프라인의 `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 v2.1에서 은퇴(정의 파일 삭제). 탐지·감사·리뷰 역할은 diagnostician·finalizer와 `verify_gates.py` 게이트가 대체했다.
 
 ## 심각도 기준
 
@@ -167,7 +167,7 @@ im-not-ai/
 ## 파일 시스템 접근 규칙
 
 에이전트가 파일·디렉토리에 접근할 때는 전용 도구를 우선 사용한다.
-`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`verify_change_rate.py`(변경률 게이트)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
+`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`verify_gates.py`(4축 게이트)·`verify_change_rate.py`(변경률 게이트)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
 
 | 작업 | 올바른 방법 | 피할 방법 |
 |---|---|---|

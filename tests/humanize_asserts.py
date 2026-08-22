@@ -33,8 +33,12 @@ _REF = _find_ref()
 
 
 def change_rate(src: str, out: str) -> float:
-    """문자 단위 변경률 [0,1]. 0=동일. difflib 유사도의 여집합."""
-    return 1.0 - difflib.SequenceMatcher(None, src, out).ratio()
+    """문자 단위 변경률 [0,1]. 0=동일. difflib 유사도의 여집합.
+
+    autojunk=False 는 SSOT(metrics_v2.change_rate)와 동일 조건이다. 켜진 채 두면
+    200자 이상 반복 텍스트에서 빈출 문자가 정크 처리돼 게이트와 전혀 다른 값이 나온다.
+    """
+    return 1.0 - difflib.SequenceMatcher(None, src, out, autojunk=False).ratio()
 
 
 def missing_protected_tokens(out: str, tokens: list[str]) -> list[str]:
@@ -71,4 +75,11 @@ def signal(text: str, name: str) -> float:
         sys.path.insert(0, _REF)
     import metrics  # noqa: E402 (sys.path mutation intentional)
 
-    return float(getattr(metrics, name)(text))
+    fn = getattr(metrics, name, None)
+    if fn is None:
+        # v2 전용 시그널(double_passive_count·by_passive_count 등)은 metrics_v2 에만
+        # 있다. v1 에서 못 찾으면 v2 로 넘어가야 eval 스냅샷에서 통째로 빠지지 않는다.
+        import metrics_v2  # noqa: E402
+
+        fn = getattr(metrics_v2, name)
+    return float(fn(text))
