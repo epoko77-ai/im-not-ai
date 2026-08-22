@@ -6,6 +6,8 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 
 v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
 
+v2.3부터 `verify_gates.py`가 문자율·진단 목표달성·대구 전멸·golden/수치의 4축을 검증한다. Codex도 같은 route_hint와 결정적 게이트를 사용해 light·standard·heavy 전체 경로를 제공한다.
+
 - **light (1콜)** — 잘 쓴 글(어휘 티 거의 0). 진단·finalize 생략, 보수 강도 단일 윤문. 손댈 게 거의 없으면 "이미 좋습니다" 조기 종료.
 - **standard (2콜)** — 보통의 AI 초안. 진단 1콜 + 겨냥 윤문 1콜. finalize 생략이 기본(결정적 변경률 게이트로 대체). 1만자급도 청킹 없이 단일 윤문 콜.
 - **heavy (3+콜)** — 중증 AI 슬롭 밀집 or 초장문(15,000자 초과) or 검증 증적 필요. 진단 → 윤문(shim이 청크를 2개 이상 만든 경우에만 청크 병렬) → finalize. `--strict`·"정밀 모드"는 이 경로를 강제.
@@ -56,7 +58,8 @@ im-not-ai/
 │   ├── eval_baseline.py           # 품질 기준선 촬영 — 픽스처 × 모델 × K회 반복 스냅샷
 │   ├── eval_compare.py            # 스냅샷 2개 대조 — 자체 분산을 잡음 바닥 삼아 유의한 변화만 표시
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
-│   ├── verify_change_rate.py      # 변경률 게이트 — 철칙 #4의 결정적 판정 (exit code)
+│   ├── verify_gates.py            # v2.3 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치
+│   ├── verify_change_rate.py      # 하위 호환 문자 변경률 게이트
 │   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
 │   ├── build_social_preview_v2.py
 │   └── make_thumbnail.py
@@ -80,8 +83,13 @@ im-not-ai/
 │           ├── metrics.py · metrics_v2.py     # v1.6 8종 + v2.0 post-editese 14종
 │           ├── baseline.json · baseline_v2.json   # v1.6 baseline · v2.0(placeholder — calibration 대기)
 │           ├── scholarship.md          # v2.0 학술 인용 외부 SSOT
+│           ├── roles/                  # Codex 런타임 역할 계약 3종
 │           └── web-service-spec.md     # 웹 확장 스펙 (옵션)
-├── codex/skills/humanize-korean/  # Codex Fast Path 스킬 (references → SSOT 공유 심링크)
+├── codex/skills/humanize-korean/  # Codex 전체 경로 오케스트레이터
+│   ├── SKILL.md                   # light·standard·heavy + 협업 에이전트/순차 폴백
+│   ├── agents/openai.yaml         # Codex UI 메타데이터
+│   ├── references → ../../../skills/humanize-korean/references
+│   └── scripts/                   # 공용 런타임 스크립트 실행 래퍼
 └── _workspace/                    # 런타임 산출물 (run_id별, gitignored)
     └── {YYYY-MM-DD-NNN}/
         ├── 01_input.txt · 00_metrics.json · 01_input_with_metrics.txt  # 원문·점수·결합
@@ -108,16 +116,16 @@ im-not-ai/
     └─ heavy ────→ [humanize-diagnostician] → 02_diagnosis.md
                      ↓ [shim --diagnosis] (청킹 필요 시에만 --chunk)
                    [humanize-monolith — shim이 청크 2+개 만든 경우에만 청크 병렬]
-                     ↓ [verify_change_rate.py] (P2.5)
+                     ↓ [verify_gates.py] (P2.5)
                    [humanize-finalizer — 의미 15항 + 자연성, 국소 보정]
                    final.md(보정) + 09_finalize.json
-    ↓ [scripts/verify_change_rate.py — 변경률 게이트 (exit code)] — 모든 경로 공통
+    ↓ [scripts/verify_gates.py — 구조 수렴 게이트 (exit code)] — 모든 경로 공통
 ```
 
 - shim은 graceful degrade 내장 — metrics 실패 시 점수 블록 없는 결합 파일을 쓰고 `00_metrics.error`를 남긴다. 이 경우 route_hint 부재 → **standard로 간주**.
 - **청킹 남발 금지** — `--chunk`는 heavy 전용, 15,000자 이하 비권장. 그때도 shim이 실제로 청크를 2개 이상 만들었을 때만 병렬(청크 1개면 단일 콜). 재조립은 `reassemble_chunks.py`.
 - light·standard 결과가 등급 C/D면 heavy 재실행을 사용자에게 권고한다(자동 전환 아님 — opt-in).
-- finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_change_rate.py`(결정적, exit code)가 내린다.
+- finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_gates.py`(결정적, exit code)가 내린다. `verify_change_rate.py`는 기존 연동을 위해 보존한다.
 
 ## 에이전트 구성 (9개 — 역할 구분 필수)
 
@@ -139,7 +147,7 @@ im-not-ai/
 8. **post-editese-metric-engineer** — post-editese 3축을 metrics_v2.py로 코드화.
 9. **quick-rules-integrator** — v2.0 변경 묶음의 quick-rules 안착 + 캡 회귀 검증 + PR 준비.
 
-**은퇴 (v2.1)**: 옛 strict 5인 파이프라인의 `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 v2.1에서 은퇴(정의 파일 삭제). 탐지·감사·리뷰 역할은 diagnostician·finalizer와 `verify_change_rate.py` 게이트가 대체했다.
+**은퇴 (v2.1)**: 옛 strict 5인 파이프라인의 `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 v2.1에서 은퇴(정의 파일 삭제). 탐지·감사·리뷰 역할은 diagnostician·finalizer가 대체했고, v2.3부터 결정적 수렴 판정은 `verify_gates.py`가 담당한다.
 
 ## 심각도 기준
 
@@ -167,7 +175,7 @@ im-not-ai/
 ## 파일 시스템 접근 규칙
 
 에이전트가 파일·디렉토리에 접근할 때는 전용 도구를 우선 사용한다.
-`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`verify_change_rate.py`(변경률 게이트)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
+`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`verify_gates.py`(구조 수렴 게이트)·`verify_change_rate.py`(하위 호환)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
 
 | 작업 | 올바른 방법 | 피할 방법 |
 |---|---|---|
