@@ -110,4 +110,34 @@ assert_not_contains "$all_prune_output" "pruned: $TMP_HOME/.claude/agents/quick-
 assert_contains "$all_prune_output" "pruned: $TMP_HOME/.claude/agents/naturalness-reviewer.md"
 rm -rf "$TMP_HOME/.claude"
 
+# ── 실설치 절 — 심링크 사후 검증 (M20) ────────────────────────────────
+# 위 케이스는 전부 --dry-run 이라 run() 이 실제로 실행되지 않아 설치 결과물이
+# 없다(dry-run 은 출력 문자열만 단정 가능). 이 절만 --dry-run 없이 실제로
+# 설치해 [ -L ] 로 심링크 여부를 단정한다.
+#
+# 선행 능력 탐침: 이 환경이 심링크를 만들 수 있는지 먼저 확인한다. 만들 수
+# 없는 환경(예: Windows Git Bash 기본 상태)에서는 install.sh 가 명시 실패로
+# 반응하는 게 정상 동작이지 조용한 심링크 성공이 아니므로, 여기서 성공을
+# 단정하면 그 환경의 기여자 테스트가 통째로 빨개진다 — skip 처리한다.
+SYMLINK_PROBE_DIR="$(mktemp -d)"
+symlink_capable=1
+if ! ln -s "$SYMLINK_PROBE_DIR" "$SYMLINK_PROBE_DIR.link" 2>/dev/null || [ ! -L "$SYMLINK_PROBE_DIR.link" ]; then
+  symlink_capable=0
+fi
+rm -rf "$SYMLINK_PROBE_DIR" "$SYMLINK_PROBE_DIR.link"
+
+if [ "$symlink_capable" = 1 ]; then
+  REAL_TMP_HOME="$(mktemp -d)"
+  mkdir -p "$REAL_TMP_HOME/.claude"
+  env -i HOME="$REAL_TMP_HOME" PATH="$MINIMAL_PATH" bash "$ROOT/install.sh" --claude-only --no-gemini >/dev/null
+  if [ ! -L "$REAL_TMP_HOME/.claude/skills/humanize-korean" ]; then
+    printf 'expected real install to produce a symlink: %s\n' "$REAL_TMP_HOME/.claude/skills/humanize-korean" >&2
+    exit 1
+  fi
+  rm -rf "$REAL_TMP_HOME"
+  echo "real install symlink check passed"
+else
+  echo "skip: 이 환경은 심링크 생성 권한이 없어 실설치 절을 건너뜀 (fail-closed 동작은 install.sh 사후 검증이 담당)"
+fi
+
 echo "install flag tests passed"
