@@ -1,0 +1,4 @@
+{
+  "description": "코드 스팬(함수명) 백틱 소실 + Co-authored-by 트레일러 소실 + 이슈 번호 오기(#482→#480) — 고유 토큰·트레일러·수치는 윤문 대상이 아니다",
+  "bad_must_fail": ["code_span_altered", "trailer_lost", "trailer_altered", "number_injected"]
+}

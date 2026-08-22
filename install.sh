@@ -15,6 +15,7 @@ DO_GEMINI=auto
 FORCE=0
 DRYRUN=0
 ALL_AGENTS=0
+EXTRAS=0
 TS="$(date +%Y%m%d-%H%M%S)"
 
 # 스킬 런타임이 호출하는 3종 + 별도 명령으로만 트리거되는 유지보수 1종.
@@ -42,6 +43,9 @@ Options:
   --all-agents    agents/ 전체를 전역 설치(개발용 1회성 정의 포함).
                   기본은 스킬이 실제로 쓰는 4종만 — 런타임 3(monolith·
                   diagnostician·finalizer) + 유지보수 1(taxonomist).
+  --extras        opt-in 부속 스킬(extras/skills/) 설치.
+                  기본 플러그인 범위 밖 — humanize-korean과 무관한 별도 기능이라
+                  명시 요청 시에만 설치.
   --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
   --dry-run       실제 변경 없이 수행할 작업만 출력
   -h, --help      이 도움말
@@ -58,6 +62,7 @@ while [ $# -gt 0 ]; do
     --gemini-only) DO_CLAUDE=no; DO_CODEX=no; DO_GEMINI=yes ;;
     --no-gemini) DO_GEMINI=no ;;
     --all-agents) ALL_AGENTS=1 ;;
+    --extras) EXTRAS=1 ;;
     --force) FORCE=1 ;;
     --dry-run) DRYRUN=1 ;;
     -h|--help) print_help; exit 0 ;;
@@ -149,6 +154,13 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   for s in humanize-korean humanize humanize-redo; do
     install_one "$REPO/skills/$s" "$CLAUDE_HOME/skills/$s"
   done
+  if [ "$EXTRAS" = 1 ]; then
+    for s in "$REPO/extras/skills"/*/; do
+      [ -d "$s" ] || continue
+      n="$(basename "$s")"
+      install_one "$REPO/extras/skills/$n" "$CLAUDE_HOME/skills/$n"
+    done
+  fi
   agents=()
   if [ "$ALL_AGENTS" = 1 ]; then
     for a in "$REPO/agents"/*.md; do
@@ -175,6 +187,9 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   fi
   if [ "$ALL_AGENTS" != 1 ]; then
     echo "note: 릴리스 회차용 개발 에이전트는 설치하지 않음 (전체 설치는 --all-agents)"
+  fi
+  if [ "$EXTRAS" != 1 ]; then
+    echo "note: opt-in 부속 스킬(commit-ko 등)은 설치하지 않음 (설치하려면 --extras)"
   fi
 else
   echo "== Claude Code: 건너뜀 (claude 또는 $CLAUDE_HOME 미감지) =="
