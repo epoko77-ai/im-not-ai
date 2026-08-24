@@ -32,6 +32,7 @@ Format: one line per pattern — `ID [severity] trigger → prescription`. No ex
 - **A-16** `그/그녀/그것/그들` 3+ per paragraph — literal English pronouns → drop 50%+ (Korean's zero pronoun) or use a name/noun phrase
 - **A-18** pre-nominal modifier or relative clause of 3+ eojeol, left-branching from English → split the sentence, or postpose as an appositive (`X를 만났는데, 그 X는 ~`)
 - **A-19** stacked particles `~에서의/~에로의/~으로의/~에의/~으로부터의` → unfold into a clause or phrase; plain `~의` is not a target
+- **A-20** inanimate or abstract subject + `~게 만들다` causative (`가격이 검토를 시작하게 만들다`) → recast as a cause adverbial (`가격 때문에 검토를 시작했다`); human subjects are not targets
 
 ## B. English over-quoting — S2
 

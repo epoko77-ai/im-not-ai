@@ -1,8 +1,8 @@
-# Korean AI-Tell Taxonomy (English edition) — all 71 patterns
+# Korean AI-Tell Taxonomy (English edition) — all 72 patterns
 
 > English reference for `skills/humanize-korean/references/ai-tell-taxonomy.md` (v2.0.1, valid as of 2026-07). **The Korean file is the SSOT**; where the two disagree, it wins.
 >
-> Korean pattern strings are the asset and appear verbatim — translating them would destroy them. Triggers, prescriptions, genre guards and evidence notes are in English. Every ID here maps 1:1 to the Korean SSOT; the fast rulebook ([`quick-rules.en.md`](quick-rules.en.md)) is *generated* from it and carries roughly 49 of these.
+> Korean pattern strings are the asset and appear verbatim — translating them would destroy them. Triggers, prescriptions, genre guards and evidence notes are in English. Every ID here maps 1:1 to the Korean SSOT; the fast rulebook ([`quick-rules.en.md`](quick-rules.en.md)) is *generated* from it and carries roughly 50 of these.
 
 ## Severity
 
@@ -16,7 +16,7 @@
 
 ---
 
-## A. Translationese (A-1 ~ A-19)
+## A. Translationese (A-1 ~ A-20)
 
 Traces of English or Japanese syntax forced through Korean word order and particles. The most decisive AI signature.
 
@@ -41,6 +41,7 @@ Traces of English or Japanese syntax forced through Korean word order and partic
 | **A-17** | — | *(held)* Mechanical `-들` plural marking on inanimate and abstract nouns | **On hold since v2.0** — strong scholarly anchors, but zero positives in our corpora. ID reserved so pattern IDs stay stable; the `deul_overuse_rate` metric keeps measuring it | ❌ |
 | **A-18** | S2 | Left-branching pre-nominal modifier / relative clause, 3+ eojeol | Split the sentence, or postpose as apposition: `X를 만났는데, 그 X는 ~` | ✅ |
 | **A-19** | S2 | Stacked particles `~에서의·~에로의·~으로의·~에의·~으로부터의` | Unfold into a clause or phrase. **Plain `~의` is explicitly excluded** (no scholarly consensus — caveat C5) | ✅ |
+| **A-20** | S2 | Inanimate or abstract subject + periphrastic causative `~게 만들다` — English `X makes Y do` mapped one-to-one (`가격은 검토를 시작하게 만들 뿐`) | Demote the subject to a cause adverbial and restore the human agent: `가격 때문에 검토를 시작했다`. Keep the causative only as `-게 하다`, or compress into one transitive verb. **Human or institutional subjects are not targets.** Genre guard: formal expository prose from the first occurrence, essay/review/spoken copy above 3 per document | ✅ |
 
 **A-16 scope guard (important).** This rule applies **only to translation contexts** — text rendered or summarized from an English source. It must not fire on natively written Korean: in our contrastive measurement humans used `그는/그의` *more* than AI (1.9 vs 0.0 per 1000 eojeol), and even the rule's own triggering event (3+ in a 200-character window) occurred in 3.9% of human texts vs 0.7% of AI. Modern LLMs suppress pronouns when writing Korean natively, so firing this outside translation contexts damages human writing.
 
@@ -201,7 +202,7 @@ Toral's (2019) three post-editese axes — simplification, normalisation, interf
 
 - **Simplification** — `lexical_diversity_ttr`, `lexical_density`, `ending_diversity` (Baker 1993; Toral 2019)
 - **Normalisation** — `normalisation_score`, `da_streak_rate` (Baker 1993)
-- **Interference** — eight detection signals plus `interference_index` (Toury 1995): `inanimate_subject_rate` (↔A-15, D-5), `by_passive_count` / `double_passive_count` (↔A-8, A-9, A-12), `pronoun_density` (↔A-16), `deul_overuse_rate` (↔A-17, held), `relative_clause_nesting` (↔A-18), `have_make_literal_count` (↔A-7, F-4), `double_particle_count` (↔A-19), `progressive_aspect_rate` (↔E-2, E-7)
+- **Interference** — eight detection signals plus `interference_index` (Toury 1995): `inanimate_subject_rate` (↔A-15, D-5), `by_passive_count` / `double_passive_count` (↔A-8, A-9, A-12), `pronoun_density` (↔A-16), `deul_overuse_rate` (↔A-17, held), `relative_clause_nesting` (↔A-18), `have_make_literal_count` (↔A-7, A-20, F-4), `double_particle_count` (↔A-19), `progressive_aspect_rate` (↔E-2, E-7)
 
 The linkage runs both ways: pattern counts over threshold drive the diagnosis and rewrite calls, while metric composites deviating from baseline trigger extra verification in the finalize call.
 
