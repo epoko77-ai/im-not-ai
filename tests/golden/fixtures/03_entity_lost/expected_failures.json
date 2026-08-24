@@ -1,0 +1,4 @@
+{
+  "description": "엔티티 소실 — 라틴 식별자(stop-slop)와 3회 이상 등장하는 한글 핵심어(보존율)를 통째로 빼먹은 실패 모드. 삭제는 축약 부산물일 수 있어 warn 레벨(exit 1)만 적용.",
+  "bad_must_fail": ["entity_lost"]
+}

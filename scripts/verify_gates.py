@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tier 1 구조 게이트 — 5축 통합 결정적 사후 검증 (LLM 콜 0).
+"""Tier 1 구조 게이트 — 6축 통합 결정적 사후 검증 (LLM 콜 0).
 
 `verify_change_rate.py`(문자율 단축 게이트)의 확장판. 문자 diff는 구조
 편집에 눈이 없다 — 실측에서 change_rate 2.77% 뒤에 문장 터치율 29.7%,
@@ -8,19 +8,20 @@ ending_comma -86%, C-8 대구 -75%가 숨어 있었다. 이 스크립트는 문�
 문자율의 사각지대를 보완한다. 기존 verify_change_rate.py는 그대로 두고
 (하위 호환), 신규 게이트는 이 파일이 담당한다.
 
-5축 + 리포트:
+6축 + 리포트:
     P0 문자율   — change_rate() vs WARN 30% / ABORT 50% (기존과 동일 판정)
     P1 목표달성 — before z > +2.0인 어휘 S1 지표가 after에서 z <= +1.0으로
                   내려왔는가. 미달(> +2.0)·과교정(< -1.5)은 WARN.
     P2 전멸    — C-8 대구: before >= 5 AND after == 0 이면 FAIL.
     P3 golden  — scripts/checks.run_checks() 실패 목록 (수치 주입 포함).
-    P4 터치율  — 원문 문장 중 after에 그대로 없는 비율 + 수치 소실 관찰.
-                 게이트 아님, 보고만 (수치 소실은 문장 병합·표기 통합의
-                 정상 부산물일 수 있어 exit code에 기여하지 않는다).
+                 fail 레벨 코드만 출력·집계 (warn은 P6 보존에서만 보고).
+    P4 터치율  — 원문 문장 중 after에 그대로 없는 비율. 게이트 아님, 보고만.
     P5 서법    — 당위("~해야 한다")·추측("~할 수 있다") 표지 총수가 줄면 WARN.
                  줄었다 = 필자가 요구·유보한 것을 단정으로 바꿨을 가능성.
                  I-4 처방은 '이동'만 허용하므로 총수가 보존돼야 정상이다.
                  늘어나는 것은 대상 아님(당위 주입은 P3 golden 소관).
+    P6 보존    — 엔티티·수치 소실 관찰. 1건 이상이면 WARN(exit 1)으로 올린다.
+                 (삭제는 축약 부산물일 수 있어 exit 2는 주지 않는다.)
 
 Exit code (verify_change_rate.py와 의미 동일):
     0 — 수렴 (전 축 통과)
@@ -255,28 +256,29 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[P2 전멸] C-8 대구 {anti_before} → {anti_after} — "
           f"{report['antithesis']['verdict']}")
 
-    # --- P3 golden + 수치 -------------------------------------------------
+    # --- P3 golden --------------------------------------------------------
+    # warn 레벨(entity_lost/number_dropped)은 P6 보존 축에서만 보고한다.
+    # P3는 fail 레벨 코드만 출력·집계 — 중복 경고 방지.
     failures = _checks.run_checks(before, after)
-    warn = warn or bool(failures)
-    report["golden"] = [{"code": f.code, "message": f.message} for f in failures]
-    if failures:
-        print(f"[P3 golden] FAIL — {len(failures)}건:")
-        for f in failures:
-            print(f"    FAIL {f}")
+    fail_failures = [f for f in failures if f.level != "warn"]
+    warn = warn or bool(failures)  # exit 판정은 warn 포함 전체 기준 유지
+    report["golden"] = [
+        {"code": f.code, "message": f.message, "level": f.level}
+        for f in failures
+    ]
+    if fail_failures:
+        print(f"[P3 golden] FAIL — {len(fail_failures)}건:")
+        for f in fail_failures:
+            print(f"    [FAIL] {f}")
     else:
         print("[P3 golden] PASS (수치 주입·각주·인용·register 이상 없음)")
 
-    # --- P4 터치율 + 수치 소실 관찰 (리포트 전용 — 게이트 아님) -----------
+    # --- P4 터치율 (리포트 전용 — 게이트 아님) ----------------------------
     touch_rate, touched, total = sentence_touch_rate(before, after)
     report["sentence_touch"] = {
         "rate": round(touch_rate, 4), "touched": touched, "total": total,
     }
     print(f"[P4 터치율] {touch_rate * 100:.1f}% ({touched}/{total} 문장) — 보고 전용")
-    dropped = _checks.dropped_numbers(before, after)
-    report["numbers_dropped"] = dropped
-    if dropped:
-        print(f"[P4 수치소실] 관찰: {dropped} "
-              f"(문장 병합·표기 통합이면 정상 — exit 미반영, 확인 요망)")
 
     # --- P5 서법 보존 (당위·추측 표지 총수) -------------------------------
     deo_b, hed_b = count_modality(before)
@@ -293,6 +295,21 @@ def main(argv: list[str] | None = None) -> int:
     }
     print(f"[P5 서법] 당위 {deo_b} → {deo_a} / 완곡 {hed_b} → {hed_a} — "
           f"{report['modality']['verdict']}")
+
+    # --- P6 보존 (엔티티·수치 소실 — 1건 이상이면 WARN) ------------------
+    e_lost = _checks.dropped_entities(before, after)
+    n_lost = _checks.dropped_numbers(before, after)
+    report["preservation"] = {"entities_lost": e_lost, "numbers_lost": n_lost}
+    if e_lost or n_lost:
+        warn = True
+    if e_lost:
+        print(f"[P6 보존] 엔티티 소실: {e_lost} "
+              f"(삭제는 축약 부산물일 수 있음 — WARN)")
+    if n_lost:
+        print(f"[P6 보존] 수치 소실: {n_lost} "
+              f"(문장 병합·표기 통합이면 정상 — WARN)")
+    if not e_lost and not n_lost:
+        print("[P6 보존] OK (엔티티·수치 소실 없음)")
 
     # --- 통합 판정 --------------------------------------------------------
     if abort:

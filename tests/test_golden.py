@@ -225,13 +225,19 @@ class NumberCheckTests(unittest.TestCase):
         out = "성장률은 3.1%를 기록했다. 14개월이 걸렸고 비용은 0.00001달러다."
         self.assertEqual(checks.check_numbers(orig, out), [])
 
-    def test_number_dropped_is_not_a_gate(self) -> None:
-        """수치 소실은 문장 병합의 정상 부산물일 수 있다 — run_checks에는
-        안 나오고 dropped_numbers(advisory)로만 잡힌다."""
+    def test_number_dropped_is_warn_not_fail(self) -> None:
+        """수치 소실은 warn 레벨만(exit 1) — run_checks에 number_dropped warn이
+        나오고, check_numbers(주입 전용)와 dropped_numbers(advisory)도 여전히 동작."""
         orig = "성장률은 3.1%였다. 물가는 2.4% 올랐다."
         out = "성장률은 3.1%였다."
         self.assertEqual(checks.check_numbers(orig, out), [])
-        self.assertEqual(checks.run_checks(orig, out), [])
+        failures = checks.run_checks(orig, out)
+        codes = {x.code for x in failures}
+        self.assertIn("number_dropped", codes)
+        self.assertTrue(
+            all(x.level == "warn" for x in failures),
+            "수치 소실은 warn이어야 하는데 fail이 섞였습니다",
+        )
         self.assertEqual(checks.dropped_numbers(orig, out), ["2.4"])
 
     def test_dropped_numbers_empty_when_preserved(self) -> None:
@@ -297,3 +303,42 @@ class EdgeCaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EntityPreservationTests(unittest.TestCase):
+    """extract_entities / dropped_entities 단위 검증."""
+
+    def test_function_words_not_entity_even_at_3plus_occurrences(self) -> None:
+        """그러나·그리고·이와 같은 기능어는 3회 이상 나와도 entity_lost가 뜨지 않는다.
+        _KO_STOPWORDS 차단 + MIN_KO_TERM_FREQ 임계값 모두 통과해야 엔티티가 되므로
+        접속사·조사구는 빈도와 무관하게 제외된다."""
+        # 기능어만 3회 이상 등장, 출력에서 전부 제거
+        orig = (
+            "그러나 이 방법은 효과적이다. 그러나 비용이 크다. 그러나 대안이 없다. "
+            "그리고 결과가 좋다. 그리고 이점이 많다. 그리고 검증됐다. "
+            "이와 관련해 추가 연구가 필요하다. 이와 함께 정책도 바뀐다. 이와 달리 의견이 있다."
+        )
+        out = "이 방법은 효과적이나 비용이 크고 대안이 없다. 결과는 좋고 이점도 많다. 추가 연구와 정책 변화가 필요하다."
+        failures = checks.run_checks(orig, out)
+        codes = {x.code for x in failures}
+        self.assertNotIn(
+            "entity_lost",
+            codes,
+            "기능어(그러나·그리고·이와)가 entity_lost를 잘못 발동시켰습니다",
+        )
+
+    def test_latin_identifier_with_particle_accepted_via_substring(self) -> None:
+        """'stop-slop이'처럼 조사가 붙은 라틴 식별자는 substring 검색으로
+        'stop-slop'이 출력에 있음을 인정한다(word-boundary 매칭은 의도적으로 쓰지 않는다)."""
+        orig = "stop-slop을 사용하라. stop-slop이 최선이다."
+        # 출력에 'stop-slop이'로 등장 — 조사 결합 형태
+        out = "stop-slop이 최선의 도구다."
+        dropped = checks.dropped_entities(orig, out)
+        self.assertNotIn(
+            "stop-slop",
+            dropped,
+            "'stop-slop이' 형태가 substring 매칭으로 보존 인정되어야 합니다",
+        )
+        # run_checks도 entity_lost 없어야 함
+        codes = {x.code for x in checks.run_checks(orig, out)}
+        self.assertNotIn("entity_lost", codes)

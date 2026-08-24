@@ -16,6 +16,11 @@ or from the CLI:
 
     python3 checks.py input.txt output.txt
 
+Exit codes (CLI):
+    0 — PASS (알려진 실패 모드 없음)
+    1 — WARN (warn 레벨 실패만 있음 — 소실 경고)
+    2 — FAIL (fail 레벨 실패 1건 이상)
+
 Failure codes (stable API — tests and fixtures reference these):
     empty_output       output is blank
     hayeot_injection   '하였' count increased vs original
@@ -32,22 +37,35 @@ Failure codes (stable API — tests and fixtures reference these):
     number_injected    a numeric value appears in the output that never
                        occurred in the original (수치 주입)
 
-Advisory (NOT a failure code): 원문 수치의 소실은 문장 병합·표기 통합의
-정상 부산물일 수 있어 게이트하지 않는다. `dropped_numbers()`가 소실 값
-목록을 반환하며, verify_gates.py가 리포트 전용 축(P4)에서 관측만 한다.
+Failure.level field:
+    "fail"  — 기본값. exit 2(FAIL)에 기여한다.
+    "warn"  — exit 1(WARN)에만 기여하고 exit 2는 되지 않는다.
+              삭제는 CONDENSE(축약) 모드의 정상 부산물일 수 있어
+              entity_lost·number_dropped를 warn으로 분리한다.
+
+Warn-level codes (exit 1, not exit 2):
+    entity_lost        a key entity (Latin identifier or Korean keyword
+                       that appeared MIN_KO_TERM_FREQ(3)+ times) is
+                       entirely absent from the output
+    number_dropped     a numeric value from the original is absent from
+                       the output (문장 병합·표기 통합의 정상 부산물)
+
+_KO_STOPWORDS: 형태소 분석기 없이 판별 가능한 접속사·비교 조사구 목록.
+    3회 이상 나오더라도 이 집합 소속이면 엔티티 추출에서 제외한다.
 """
 
 from __future__ import annotations
 
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class Failure:
     code: str
     message: str
+    level: str = "fail"  # "fail" | "warn"  기본값 "fail" — 기존 호출부 호환
 
     def __str__(self) -> str:
         return f"[{self.code}] {self.message}"
@@ -287,7 +305,7 @@ def check_footnotes(original: str, output: str) -> list[Failure]:
 
 # ===========================================================================
 # Number fidelity — 수치는 철칙상 불변. 주입만 FAIL (방향성 게이트).
-# 삭제는 재구성 부산물일 수 있어 advisory(dropped_numbers)로만 관측.
+# 삭제는 재구성 부산물일 수 있어 warn 레벨로 분리(number_dropped).
 # ===========================================================================
 
 # 한글 수사 단위 — 숫자 토큰 직후에 바로 붙은 단일 글자만 환산 ("1만").
@@ -329,11 +347,11 @@ def _number_values(text: str) -> set[str]:
 
 
 def dropped_numbers(original: str, output: str) -> list[str]:
-    """원문에는 있는데 윤문본에서 사라진 수치 값 목록 (advisory 전용).
+    """원문에는 있는데 윤문본에서 사라진 수치 값 목록.
 
-    Failure가 아니다 — 문장 병합·표기 통합에서도 수치가 사라질 수 있어
-    게이트하면 양치기 소년이 된다. run_checks는 호출하지 않으며,
-    verify_gates.py가 P4(리포트 전용 축)에서 관측만 한다.
+    삭제는 문장 병합·표기 통합의 정상 부산물일 수 있어 warn 레벨(exit 1)
+    로만 분류된다. run_checks가 number_dropped warn Failure를 반환하며,
+    verify_gates.py P6(보존 축)에서도 관측한다.
     """
     return sorted(_number_values(original) - _number_values(output))
 
@@ -381,6 +399,126 @@ def check_quotes(original: str, output: str) -> list[Failure]:
 
 
 # ===========================================================================
+# Entity preservation — 주요 엔티티 소실 경고 (warn 레벨)
+# ===========================================================================
+
+# 라틴 식별자: 첫 글자 알파벳, 이후 1+ 글자(알파벳·숫자·._/-), 총 길이 ≥2
+_LATIN_ENTITY_RE = re.compile(r"\b[A-Za-z][A-Za-z0-9_./-]{1,}")
+
+# 한글만으로 된 어절
+_KO_EOJEOL_RE = re.compile(r"[가-힣]+")
+
+# 꼬리 조사 목록 — 가장 긴 것 우선으로 정렬 (한 번만 제거)
+_KO_PARTICLES: list[str] = sorted(
+    ["에서", "으로", "까지", "부터", "처럼", "보다",
+     "은", "는", "이", "가", "을", "를", "의", "에", "로", "와", "과", "도", "만"],
+    key=len,
+    reverse=True,
+)
+
+# 한글 핵심어 최소 출현 횟수. 2면 기능어(접속사 등)가 오탐으로 걸리는 사례가
+# 잦아, 3으로 올려 분야 특화 전문어·반복 핵심어만 잡는다.
+# (라틴 식별자는 빈도 제한 없음 — 고유명은 1회만 나와도 보존 대상)
+MIN_KO_TERM_FREQ: int = 3
+
+# 오탐 방지 — 형태소 분석기 없이 판별 가능한 대표적 한글 기능어.
+# MIN_KO_TERM_FREQ 이상 등장해도 보존 대상 엔티티로 다루지 않는다.
+# (접속사·비교 조사구·일반 기능 동사구 — 재작성 시 자연스럽게 교체되는 어휘)
+_KO_STOPWORDS: frozenset[str] = frozenset({
+    # 접속사
+    "그러나", "그러므로", "따라서", "하지만", "그런데", "그리고", "또한",
+    "그래서", "그러면", "왜냐하면", "결론적으로",
+    # 비교·기능 조사구
+    "비해", "대해", "위해", "통해", "때문", "만큼",
+    # 지시·관계 기능어
+    "이러한", "그러한", "이와", "이를",
+})
+
+
+def _strip_particle(word: str) -> str:
+    """꼬리 조사 하나만 제거 (가장 긴 것 우선, 어근이 빈 문자열이 되면 생략)."""
+    for p in _KO_PARTICLES:
+        if word.endswith(p) and len(word) > len(p):
+            return word[: -len(p)]
+    return word
+
+
+def _quote_short_names(text: str) -> set[str]:
+    """「」『』"" 안의 8자 미만 짧은 고유명을 추출한다.
+
+    MIN_QUOTE_LEN(8자) 이상의 긴 인용은 check_quotes가 담당하므로
+    여기서는 7자 이하만 대상으로 한다.
+    """
+    names: set[str] = set()
+    for op, cl in (("「", "」"), ("『", "』"), ("“", "”")):
+        pat = re.compile(
+            re.escape(op) + r"([^" + re.escape(cl) + r"]{1,7})" + re.escape(cl)
+        )
+        for m in pat.finditer(text):
+            content = m.group(1).strip()
+            if content:
+                names.add(content)
+    return names
+
+
+def extract_entities(text: str) -> set[str]:
+    """원문에서 보존 대상 엔티티 집합을 추출한다.
+
+    - 라틴 식별자: ``[A-Za-z][A-Za-z0-9_./-]{1,}`` (길이 ≥2). 빈도 제한 없음.
+    - 한글 핵심어: 한글만으로 된 어절에서 꼬리 조사를 벗긴 뒤, 길이 2~8이고
+      원문에 *MIN_KO_TERM_FREQ(3)회 이상* 등장하는 것만 포함 (1~2회는 오탐 위험).
+    - 「」『』"" 안의 7자 이하 짧은 고유명.
+    """
+    entities: set[str] = set()
+
+    # 라틴 식별자
+    for m in _LATIN_ENTITY_RE.finditer(text):
+        entities.add(m.group(0))
+
+    # 한글 핵심어: 조사 벗긴 어절의 빈도를 세고 MIN_KO_TERM_FREQ 이상만 채택.
+    # 기능어(접속사·비교 조사구 등)는 _KO_STOPWORDS로 제외.
+    freq: dict[str, int] = {}
+    for eo in _KO_EOJEOL_RE.findall(text):
+        canon = _strip_particle(eo)
+        if 2 <= len(canon) <= 8 and canon not in _KO_STOPWORDS:
+            freq[canon] = freq.get(canon, 0) + 1
+    for word, cnt in freq.items():
+        if cnt >= MIN_KO_TERM_FREQ:
+            entities.add(word)
+
+    # 짧은 인용 고유명
+    entities.update(_quote_short_names(text))
+
+    return entities
+
+
+def dropped_entities(original: str, output: str) -> list[str]:
+    """원문 엔티티 집합 중 출력에 전혀 없는 것을 반환한다.
+
+    출력 판단:
+    - 소문자 변환 후 substring 검색 (대소문자 정리 허용)
+    - 한글: 조사 벗긴 어절 집합에서도 검색
+    """
+    orig_entities = extract_entities(original)
+    if not orig_entities:
+        return []
+
+    out_lower = output.lower()
+    out_eojeols = {_strip_particle(eo) for eo in _KO_EOJEOL_RE.findall(output)}
+
+    missing: list[str] = []
+    for entity in sorted(orig_entities):
+        # 소문자 substring 검색 (라틴·한글 모두 커버)
+        if entity.lower() in out_lower:
+            continue
+        # 한글: 조사 벗긴 어절 집합에서도 확인
+        if entity in out_eojeols:
+            continue
+        missing.append(entity)
+    return missing
+
+
+# ===========================================================================
 # Entry point
 # ===========================================================================
 
@@ -398,6 +536,13 @@ def strip_summary_block(text: str) -> str:
 
 
 def run_checks(original: str, output: str) -> list[Failure]:
+    """원문과 윤문본을 비교해 알려진 실패 모드 목록을 반환한다.
+
+    반환값:
+    - level="fail" 항목: 윤문본 채택을 막는 오류 (exit 2)
+    - level="warn" 항목: 축약 부산물일 수 있는 경고 (exit 1)
+    - 빈 목록: PASS
+    """
     original = strip_summary_block(original)
     output = strip_summary_block(output)
     if not output.strip():
@@ -408,6 +553,26 @@ def run_checks(original: str, output: str) -> list[Failure]:
     fails += check_footnotes(original, output)
     fails += check_quotes(original, output)
     fails += check_numbers(original, output)
+
+    # warn-level: 엔티티 소실
+    lost = dropped_entities(original, output)
+    if lost:
+        fails.append(Failure(
+            "entity_lost",
+            f"원문 엔티티가 윤문본에서 사라졌습니다: {lost} "
+            f"(삭제는 축약 부산물일 수 있음 — warn 전용)",
+            level="warn",
+        ))
+
+    # warn-level: 수치 소실
+    nums_lost = dropped_numbers(original, output)
+    if nums_lost:
+        fails.append(Failure(
+            "number_dropped",
+            f"원문 수치가 윤문본에서 사라졌습니다: {nums_lost} "
+            f"(문장 병합·표기 통합이면 정상 — warn 전용)",
+            level="warn",
+        ))
     return fails
 
 
@@ -420,12 +585,16 @@ def main(argv: list[str]) -> int:
     with open(argv[2], encoding="utf-8") as f:
         output = f.read()
     failures = run_checks(original, output)
-    if failures:
-        for x in failures:
-            print(f"FAIL {x}")
-        return 1
-    print("PASS (알려진 실패 모드 없음)")
-    return 0
+    if not failures:
+        print("PASS (알려진 실패 모드 없음)")
+        return 0
+    fail_found = False
+    for x in failures:
+        prefix = "[WARN]" if x.level == "warn" else "[FAIL]"
+        print(f"{prefix} {x}")
+        if x.level != "warn":
+            fail_found = True
+    return 2 if fail_found else 1
 
 
 # ── 콘솔 하드닝 (#84) ───────────────────────────────────────────────
