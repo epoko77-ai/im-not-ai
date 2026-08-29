@@ -48,7 +48,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, ".."))
-_REFS = os.path.join(_ROOT, "skills", "humanize-korean", "references")
+_PLUGIN_REFS = os.path.join(_ROOT, "skills", "humanize-korean", "references")
+_REFS = _PLUGIN_REFS if os.path.isdir(_PLUGIN_REFS) else os.path.join(_ROOT, "references")
 # checks 는 프로덕션 검사 구현이라 scripts/ 에 둔다(이 파일과 같은 디렉터리).
 # 예전에는 tests/golden/ 에 있어 프로덕션 게이트가 테스트 트리를 런타임 import 했고,
 # tests/ 를 뺀 선별 배포에서는 P3 golden 축이 통째로 죽었다. (#59)

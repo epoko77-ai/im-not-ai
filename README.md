@@ -46,7 +46,7 @@ cd im-not-ai
 - Claude: `/humanize-korean` · Codex: `$humanize-korean`
 - 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
 - **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
-- Codex는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
+- Codex도 **light·standard·heavy 전체 경로**를 제공합니다. 협업 에이전트가 있으면 진단·윤문·finalize를 독립 실행하고, 없으면 같은 역할을 순차 실행합니다.
 
 ## 왜 한글 특화인가
 
@@ -66,7 +66,7 @@ cd im-not-ai
 3. **장르 유지** — 칼럼을 문학으로, 리포트를 에세이로 옮기지 않음.
 4. **과윤문 금지** — 변경률 30% 초과 시 경고, 50% 초과 시 강제 중단.
 
-## 아키텍처 (v2.2) — route_hint 3경로
+## 아키텍처 (v2.3) — route_hint 3경로 + 구조 수렴 게이트
 
 입력을 shim(`prepare_monolith_input.py`)이 먼저 정량 채점하고, 그 점수로 **`route_hint`(light | standard | heavy)** 를 결정적으로 산출합니다. 글의 상태가 경로를 정하고, 경로가 콜 수를 정합니다. 절감은 모델 교체가 아니라 **콜 수 축소**에서 옵니다(모델 선택은 사용자 몫).
 
@@ -85,16 +85,17 @@ cd im-not-ai
     ├─ standard ─→ [humanize-diagnostician] → [monolith 겨냥 윤문] ───→ final.md
     └─ heavy ────→ [diagnostician] → [monolith(필요시 청크 병렬)] → [humanize-finalizer]
     ↓
-[verify_change_rate.py]      ── 변경률 게이트 (결정적 코드 판정, exit code) — 모든 경로 공통
+[verify_gates.py]            ── 문자율·목표달성·대구 전멸·golden/수치 검증 — 모든 경로 공통
 ```
 
 - 사용자 명시가 route_hint를 오버라이드합니다: `--strict`·"정밀 모드" → heavy 고정, "가볍게" → light 고정.
 - **단일 콜 우선**: 청킹은 heavy 전용이며 15,000자 이하는 비권장. 실측으로 1만자 글을 청킹 7콜로 돌리면 610K 토큰, 단일 콜이면 134K(4.5배 절감, 품질 동등)였습니다 — 청크마다 룰북·진단을 재로드하는 비용이 절감분을 다 먹기 때문입니다.
 - 이번 개선의 핵심 가치: **잘 쓴 글은 1콜로 싸게 끝납니다.** 어휘 티 없는 글에 최중량 파이프라인을 돌리던 낭비를 route_hint가 차단합니다.
+- `verify_change_rate.py`는 기존 연동을 위한 하위 호환 도구로 보존하며, 최종 판정의 SSOT는 `verify_gates.py`입니다.
 
 ## 에이전트 구성
 
-윤문 실행에 쓰이는 에이전트는 아래 4개입니다.
+윤문 런타임 역할 3개와 별도 유지보수 역할 1개가 있습니다.
 
 | 에이전트 | 경로 | 역할 |
 |---------|---|------|
@@ -104,6 +105,8 @@ cd im-not-ai
 | `korean-ai-tell-taxonomist` | 별도 명령 | 분류 체계(SSOT) 관리, 신규 패턴 심사 승격 |
 
 이 외에 `agents/`에는 릴리스 회차 전용 개발 도구 5개(`translationese-research-distiller` · `korean-translation-scholar` · `taxonomy-gap-analyzer` · `post-editese-metric-engineer` · `quick-rules-integrator` — v2.0 학술 흡수 작업용, 윤문 실행과 무관)가 함께 들어 있습니다.
+
+Claude Code는 루트 `agents/` 정의를 호출합니다. Codex는 같은 런타임 역할을 `references/roles/{diagnostician,monolith,finalizer}.md` 계약으로 실행합니다. 협업 에이전트를 사용할 수 있으면 역할별 독립 컨텍스트로 실행하고, 사용할 수 없으면 주 에이전트가 같은 계약을 순차 실행합니다.
 
 옛 strict 5인 파이프라인의 `ai-tell-detector` · `korean-style-rewriter` · `content-fidelity-auditor` · `naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 **v2.1에서 은퇴**했습니다(아래 v2.1 릴리스 노트 참조).
 
@@ -143,14 +146,17 @@ cd im-not-ai
 
 ### 0. 전제
 
-아래 1~4단계는 3경로 전체를 제공하는 [Claude Code](https://claude.com/claude-code) 기준입니다. GitHub Copilot CLI·Codex CLI·Gemini CLI의 단일 호출 경로는 아래 각 도구별 방법을 참고하세요. Mac · Windows · Linux 모두 지원합니다.
+사용할 런타임을 하나 이상 설치합니다. Mac · Windows · Linux에서 사용할 수 있습니다.
 
-설치 확인:
 ```bash
+# Claude Code
 claude --version
+
+# 또는 Codex CLI 0.121.0 이상
+codex --version
 ```
 
-> Claude Code는 터미널에서 Claude(Anthropic의 AI)와 대화하며 파일을 같이 편집하는 CLI입니다. 웹 버전 Claude.ai나 일반 ChatGPT에서는 이 저장소의 스킬이 자동 로드되지 않습니다.
+> 웹 버전 Claude.ai나 일반 ChatGPT가 아니라, 파일·셸·에이전트 기능을 제공하는 Claude Code 또는 Codex CLI에서 실행합니다.
 
 ### 1. 리포 받기
 
@@ -159,18 +165,21 @@ git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
 ```
 
-### 2. Claude Code 켜기
+### 2. Claude Code 또는 Codex 실행
 
 ```bash
 claude
+
+# 또는
+codex
 ```
 
-> **전역 설치를 했다면** 아무 폴더에서나 켜도 `/humanize-korean`이 동작합니다([설치](#설치-install) 참고).
-> **설치 없이 체험만 하려면** 방금 클론한 `im-not-ai` 폴더 **안에서** 실행하세요(프로젝트 로컬 스킬이 로드됩니다). 다른 위치에서 켜면 일반 Claude Code처럼 동작합니다.
+> **전역 설치를 했다면** 아무 폴더에서나 Claude Code의 `/humanize-korean` 또는 Codex의 `$humanize-korean`을 사용할 수 있습니다([설치](#설치-install) 참고).
+> **설치 없이 Claude Code로 체험만 하려면** 방금 클론한 `im-not-ai` 폴더 안에서 실행하세요. Codex는 `./install.sh --codex-only`로 스킬을 먼저 연결합니다.
 
 ### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
 
-Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. GitHub Copilot CLI·Codex CLI 사용자는 아래 **방법 D·E**를 참고하세요.
+Claude Code 사용자는 방법 A~C를, GitHub Copilot CLI 사용자는 방법 D를, Codex 사용자는 방법 E를 참고하세요.
 
 **방법 A — 자연어 한 문장 (가장 쉬움)**
 
@@ -221,11 +230,11 @@ copilot skill list
 
 새 Copilot 세션에서 `humanize-korean 스킬로 이 글을 자연스럽게 윤문해줘:` 또는 `이 글 AI 티 없애줘:`처럼 요청합니다. `/skills list`에서도 스킬을 확인할 수 있습니다. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`을 사용하세요.
 
-Copilot은 Codex와 같은 **단일 호출 경로**를 사용합니다. Claude Code 전용 `route_hint` 3경로 오케스트레이션과 진단·finalize 서브에이전트는 Copilot에서 실행되지 않습니다.
+Copilot은 별도의 **단일 호출 경로**를 사용합니다. Claude Code와 Codex가 제공하는 `route_hint` 3경로 오케스트레이션과 진단·finalize 역할 실행은 Copilot에서 수행하지 않습니다.
 
 > 저장소 직접 설치 명령 `copilot plugin install epoko77-ai/im-not-ai`은 1.0.79-5에서 동작하지만 사용 중단 예정 경고가 표시되는 호환성 경로입니다.
 
-**방법 E — Codex CLI (공식, 단일 콜 경로)**
+**방법 E — Codex CLI (공식, 전체 경로)**
 
 본체가 이제 Codex CLI Skills를 **공식 지원**합니다. 리포 클론 후 한 줄이면 `~/.codex/skills/`에 연결됩니다:
 
@@ -234,7 +243,23 @@ git clone https://github.com/epoko77-ai/im-not-ai.git && cd im-not-ai
 ./install.sh --codex-only
 ```
 
-Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). Codex는 **단일 콜 경로만** 제공하며, 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용입니다. (Codex Desktop용 별도 어댑터로는 community 포트 [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)도 있습니다.)
+Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). `route_hint`가 light·standard·heavy를 선택하며 `--strict`로 heavy를 강제할 수 있습니다. Codex 협업 에이전트가 있으면 진단·윤문·finalize와 장문 청크를 역할별로 실행합니다.
+
+```text
+$humanize-korean을 사용해 이 글의 AI 티를 없애줘.
+
+[윤문할 한글 텍스트]
+```
+
+진단→윤문→finalize 전체 경로를 강제하려면:
+
+```text
+$humanize-korean을 사용해 이 글을 --strict 정밀 모드로 윤문해줘.
+
+[윤문할 한글 텍스트]
+```
+
+산출물은 Codex를 시작한 디렉터리의 `_workspace/{실행날짜-번호}/`에 저장됩니다. 별도 환경에서 시험하려면 임시 디렉터리에서 Codex를 시작하세요.
 
 **방법 F — Web UI (비공식)**
 
@@ -243,7 +268,7 @@ opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 
 ### 커뮤니티 포트
 
-공식 지원 런타임은 **Claude Code · Codex · Gemini CLI** 세 가지입니다. 저희가 라이브로 검증할 수 있는 범위를 넘어서면 "공식 지원" 을 표기하지 않는다는 정책이라, 그 밖의 런타임은 커뮤니티 포트로 안내합니다.
+공식 지원 런타임은 **Claude Code · GitHub Copilot CLI · Codex · Gemini CLI** 네 가지입니다. 저희가 라이브로 검증할 수 있는 범위를 넘어서면 "공식 지원" 을 표기하지 않는다는 정책이라, 그 밖의 런타임은 커뮤니티 포트로 안내합니다.
 
 | 포트 | 런타임 | 제작 |
 |---|---|---|
@@ -273,10 +298,27 @@ opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 
 | 파일 | 내용 |
 |------|------|
+| `chunk_manifest.json` | heavy 청킹 경계·입출력 파일명·원문 해시. body 청크가 하나여도 재조립 계약에 사용 |
+| `00_chunk_*_metrics.json` · `01_chunk_*_input_with_metrics.txt` | 청크별 점수와 결합 입력 |
+| `02_chunk_*_rewritten.txt` | 청크별 윤문 결과. body 청크가 2개 이상이면 가능한 범위에서 병렬 실행 |
+| `03_reassembled.md` · `03_reassembly_report.json` | passthrough 복원·문자 수 대사를 거친 재조립본과 검증 리포트 |
 | `final_pre_finalize.md` | finalize 보정 전 윤문본 백업 |
 | `09_finalize.json` | 의미 보존 15항 + 자연성 판정 결과 |
 
+Heavy는 body 청크가 하나여도 재조립 단계를 생략하지 않습니다. 이를 통해 passthrough 블록과 문자 수 대사를 동일한 방식으로 검증합니다.
+
 부분 재실행("이 카테고리만 다시"·"2차 윤문")은 heavy 경로로 자동 전환됩니다.
+
+### 런타임 호환성 및 검증
+
+| 런타임 | Light | Standard | Heavy | 청킹 | 구조 게이트 | 후속 재실행 |
+|---|---:|---:|---:|---:|---:|---:|
+| Claude Code | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GitHub Copilot CLI | ✅ | — | — | — | 자체검증 | 제한적 |
+| Codex | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Gemini CLI | ✅ | — | — | — | 자체검증 | 제한적 |
+
+Codex 포트는 결정적 회귀, 패키지·독립 복사 설치, light/heavy 독립 전방 테스트를 통과했습니다. 현재 검증 항목과 재현 방법은 [`tests/test_codex_package.py`](tests/test_codex_package.py)와 [`INSTALL.md`](INSTALL.md)를 참고하세요.
 
 ### 5. 결과가 맘에 안 들면
 
