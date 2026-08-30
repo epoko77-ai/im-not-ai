@@ -1,0 +1,4 @@
+{
+  "description": "이미 자연스러운 '~함' 종결을 '~하였습니다'로 격상 + 사무적 격식 동사(진행) 재주입 — SKILL.md 철칙 #3(과공손·과격식 방향으로도 바꾸지 않는다) 위반",
+  "bad_must_fail": ["hayeot_injection", "bureaucratic_injection"]
+}

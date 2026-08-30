@@ -300,6 +300,18 @@ Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩�
 - 법률 · 규정 조문
 - 학술 개념어 (불가피한 경우)
 
+## commit-ko — 커밋 메시지 자연화 (opt-in 부속 스킬)
+
+같은 저장소에 함께 있지만 humanize-korean과는 독립된 별도 스킬입니다. AI가 제안한 한글 커밋 메시지 1~2줄의 사무적·번역투 어휘("~을 수행함"·"~을 진행함")만 걷어냅니다. 진단·청킹 없이 단일 콜로 즉시 처리합니다.
+
+```
+커밋 메시지 자연스럽게: fix(auth): 로그인 실패 시 재시도 로직을 수행함
+```
+
+→ `fix(auth): 로그인 실패 시 재시도 로직 추가` (type/scope 접두사, 이슈 번호, 파일·함수명은 그대로 보존)
+
+기본 플러그인·`install.sh` 범위 밖이라 별도 설치가 필요합니다: `./install.sh --extras` (자세한 내용은 [`INSTALL.md`](INSTALL.md#commit-ko-opt-in-부속-스킬)). 스킬 정의: [`extras/skills/commit-ko/SKILL.md`](extras/skills/commit-ko/SKILL.md)
+
 ## 웹 서비스 확장 (옵션)
 
 웹 버전은 별도 코드베이스로 운영 중입니다. 본 리포의 설계 문서 [`web-service-spec.md`](skills/humanize-korean/references/web-service-spec.md)는 산출물로 보존합니다 (설계 담당이던 `humanize-web-architect` 에이전트는 v2.1에서 은퇴).

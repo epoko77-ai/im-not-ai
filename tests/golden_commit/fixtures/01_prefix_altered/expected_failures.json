@@ -1,0 +1,4 @@
+{
+  "description": "type 대소문자 상향 + scope 소실 — Conventional Commits 접두사는 치환 대상이 아니다 (SKILL.md 처리 절차 #4)",
+  "bad_must_fail": ["prefix_altered"]
+}
