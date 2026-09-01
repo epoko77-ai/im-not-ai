@@ -28,7 +28,7 @@ print_help() {
 Usage: ./install.sh [options]
 
   설치된 CLI를 자동 감지해 humanize-korean 스킬을 전역 설치한다.
-  Claude: ~/skills/{humanize-korean,humanize,humanize-redo} + ~/.claude/agents/*.md
+  Claude: ~/skills/{humanize-korean,humanize,humanize-scan,humanize-redo} + ~/.claude/agents/*.md
   Codex : ~/.codex/skills/humanize-korean
   Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
 
@@ -146,7 +146,7 @@ has_codex_target()  { command -v codex  >/dev/null 2>&1 || [ -d "$CODEX_HOME" ];
 if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; then
   echo "== Claude Code =="
   run mkdir -p "$CLAUDE_HOME/skills" "$CLAUDE_HOME/agents"
-  for s in humanize-korean humanize humanize-redo; do
+  for s in humanize-korean humanize humanize-scan humanize-redo; do
     install_one "$REPO/skills/$s" "$CLAUDE_HOME/skills/$s"
   done
   agents=()

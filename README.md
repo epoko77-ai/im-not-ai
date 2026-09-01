@@ -195,7 +195,9 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Git
 /humanize [윤문할 텍스트 또는 파일 경로]
 ```
 
-옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 두 진입점은 이제 스킬입니다: [`humanize`](skills/humanize/SKILL.md) · [`humanize-redo`](skills/humanize-redo/SKILL.md)
+옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 진입점은 스킬입니다: [`humanize`](skills/humanize/SKILL.md) · [`humanize-scan`](skills/humanize-scan/SKILL.md) · [`humanize-redo`](skills/humanize-redo/SKILL.md)
+
+전수 윤문을 돌릴 값어치가 있는지 먼저 보고 싶으면 `/humanize-scan`입니다. 워크스페이스·진단·게이트 없이 이 대화 안에서 끝나고, [실측 판별력](skills/humanize-korean/references/empirical-validation.md)이 모델·과업을 바꿔도 살아남은 AI 티 6개(C-8 대구 12배 · E-1 장문 결핍 · C-11 연결어미 쉼표 · I-4 당위 · E-2 종결 편중 · F-5 추상 체인)를 실제로 고쳐 본 전후 수치와 바뀐 문장 표본을 돌려줍니다. 손볼 게 많다고 나오면 전문 대신 `/humanize`를 권합니다 — 6개만 본 결과를 완성본으로 쓰게 두지 않기 위해서입니다.
 
 **방법 C — Plugin / 마켓플레이스 (공식)**
 

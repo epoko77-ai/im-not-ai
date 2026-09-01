@@ -13,6 +13,7 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 
 - `/humanize-korean [텍스트]` — 메인 윤문 명령
 - `/humanize [텍스트]` — `/humanize-korean`과 동일
+- `/humanize-scan [텍스트]` — 정찰. 실측 상위 AI 티 6개를 재고 전수 윤문이 필요한지 판정
 - `/humanize-redo [조정 지시]` — 2차 윤문 / 부분 재실행
 
 자연어 트리거도 동작합니다: "이 글 AI 티 없애줘", "AI 윤문", "ChatGPT 티 제거", "번역투 고쳐", "사람이 쓴 것처럼".

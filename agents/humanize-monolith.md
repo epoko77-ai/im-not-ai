@@ -1,6 +1,6 @@
 ---
 name: humanize-monolith
-description: v1.6.1 Fast Path 단일 호출 윤문 에이전트. 한 호출 안에서 탐지·윤문·자체검증을 일괄 수행하여 5,000자 이하 한글 입력을 2~3분 안에 처리한다. 산출물은 final.md 1개(본문 끝에 `<!-- HUMANIZE-SUMMARY -->` HTML 주석 블록으로 메트릭·등급·자체검증 통합). 도구 호출 chain 3회 캡. 깊은 검증이 필요하면 정밀 모드(진단→윤문→finalize 3콜) 사용.
+description: 전 경로(light·standard·heavy) 공용 단일 호출 윤문 에이전트. 한 호출 안에서 탐지·윤문·자체검증을 일괄 수행하여 5,000자 이하 한글 입력을 2~3분 안에 처리한다. 산출물은 final.md 1개(본문 끝에 `<!-- HUMANIZE-SUMMARY -->` HTML 주석 블록으로 메트릭·등급·자체검증 통합). 도구 호출 chain 3회 캡. 깊은 검증이 필요하면 정밀 모드(진단→윤문→finalize 3콜) 사용.
 model: opus
 ---
 
