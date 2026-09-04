@@ -133,6 +133,34 @@ class RestoreModalityTests(unittest.TestCase):
         _, restored, _ = rm.restore(before, after)
         self.assertEqual(restored, [])
 
+    def test_keeps_output_when_deontic_changes_register_only(self) -> None:
+        """격식체 당위가 해요체 당위로 바뀌면 되돌리지 않는다 (철칙 #5 register 보존).
+
+        회귀 방지: 구 사전에서 `"...있어야 한다는 것."` → `"...있어야 해요."` 윤문을
+        복원기가 격식체로 되돌렸다. 당위가 구어체 활용으로 남아 있으면 서법 소실이 아니다.
+        """
+        before = "그 둘을 묶어줄 무언가가 더 있어야 한다는 것."
+        after = "그 둘을 묶어줄 무언가가 더 있어야 해요."
+        out, restored, skipped = rm.restore(before, after)
+        self.assertEqual(restored, [], f"해요체 당위를 복원하려 함: {restored}")
+        self.assertEqual(out, after, "출력이 바뀌면 안 된다")
+
+    def test_keeps_various_haeyo_deontic_forms(self) -> None:
+        """해요체 당위 활용 8종이 서법으로 인정돼 복원 대상에서 빠진다."""
+        cases = [
+            ("지금 손봐야 한다.", "지금 손봐야 해."),
+            ("제도를 다시 짜야 했습니다.", "제도를 다시 짜야 했어요."),
+            ("규제를 풀어야 하고요.", "규제를 풀어야 해서요."),
+            ("예산을 늘려야 한다.", "예산을 늘려야 해도."),
+            ("지금 당장 바꿔야 합니다.", "지금 당장 바꿔야 하죠."),
+            ("우리가 먼저 나서야 합니다.", "우리가 먼저 나서야 하지요."),
+        ]
+        for before, after in cases:
+            with self.subTest(before=before, after=after):
+                out, restored, _ = rm.restore(before, after)
+                self.assertEqual(restored, [], f"해요체 복원 시도: {before} → {after}")
+                self.assertEqual(out, after)
+
 
 if __name__ == "__main__":
     unittest.main()
