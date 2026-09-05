@@ -112,6 +112,37 @@ class CorpusHygieneTests(unittest.TestCase):
             )
 
 
+# 마케팅 사이트의 메뉴·CTA 가 본문으로 새면 문체가 아니라 내비게이션을 재게 된다.
+# 실측 2026-09-05: HubSpot 스냅샷에서 "Subscribe via Email Subscribe on Slack …",
+# "Free Courses & Certifications" 가 인간 코퍼스에 들어갔다.
+_NAV_MARKERS = (
+    "Subscribe via Email", "Subscribe on Slack", "Free Courses & Certifications",
+    "Get HubSpot free", "Update to the latest version",
+)
+
+
+class MarketingCorpusHygieneTests(unittest.TestCase):
+    def test_no_navigation_boilerplate(self) -> None:
+        path = os.path.join(_ROOT, "_workspace", "en_marketing", "human.json")
+        if not os.path.exists(path):
+            self.skipTest("마케팅 코퍼스 미수집")
+        with open(path, encoding="utf-8") as f:
+            rows = json.load(f)
+        bad = [r["title"][:40] for r in rows
+               if any(m in r["text"] for m in _NAV_MARKERS)]
+        self.assertEqual(bad, [], f"내비게이션 잔재 {len(bad)}편")
+
+    def test_texts_read_like_prose(self) -> None:
+        """문장부호가 없는 토막은 산문이 아니다."""
+        path = os.path.join(_ROOT, "_workspace", "en_marketing", "human.json")
+        if not os.path.exists(path):
+            self.skipTest("마케팅 코퍼스 미수집")
+        with open(path, encoding="utf-8") as f:
+            rows = json.load(f)
+        for r in rows:
+            self.assertGreaterEqual(r["text"].count("."), 5, r["title"][:40])
+
+
 class BlogCellHygieneTests(unittest.TestCase):
     """블로그 셀 인간 코퍼스 — 본문에 마크업 잔재가 섞이지 않는지.
 
