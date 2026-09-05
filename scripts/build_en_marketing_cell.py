@@ -170,6 +170,36 @@ def gen_ai(titles: list[str]) -> list[dict]:
         return [r for r in pool.map(one, jobs) if r]
 
 
+# ── GPT 팔 — 계열 교차 (블로그 셀과 같은 규약) ────────────────────────
+_CODEX_BIN = "codex"
+
+
+def gen_gpt(titles: list[str]) -> list[dict]:
+    workdir = tempfile.mkdtemp(prefix="humanize_mkt_gpt_")
+
+    def one(title: str) -> dict | None:
+        prompt = (
+            f'Write an engaging blog post titled "{title}" for our company blog. '
+            f"Around 700 words. "
+            f"Output the post between {_base._START} and {_base._END} and nothing else."
+        )
+        for _ in range(_base._GEN_MAX_TRIES):
+            proc = subprocess.run(
+                [_CODEX_BIN, "exec", "--skip-git-repo-check", prompt],
+                capture_output=True, text=True, timeout=900,
+                cwd=workdir, env=_base._clean_env(), stdin=subprocess.DEVNULL,
+            )
+            text = _base.extract_sentinel(proc.stdout)
+            if text and len(text.split()) >= 300 and not _base.is_contaminated(text):
+                return {"title": title, "text": _r2._excerpt(text),
+                        "tail": _r2._tail(text), "model": "gpt(codex-cli)"}
+        print(f"포기: gpt / {title[:40]}", file=sys.stderr)
+        return None
+
+    with ThreadPoolExecutor(max_workers=_WORKERS) as pool:
+        return [r for r in pool.map(one, titles) if r]
+
+
 def _load(name: str) -> list[dict]:
     p = os.path.join(_WORK, name)
     return json.load(open(p, encoding="utf-8")) if os.path.exists(p) else []
@@ -185,6 +215,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="마케팅 장르 셀")
     ap.add_argument("--fetch-human", type=int, metavar="N")
     ap.add_argument("--gen-ai", type=int, metavar="N", help="제목 N개 × 2모델")
+    ap.add_argument("--gen-gpt", type=int, metavar="N", help="GPT 팔 — 계열 교차")
     ap.add_argument("--report", action="store_true")
     args = ap.parse_args(argv)
 
@@ -204,8 +235,16 @@ def main(argv: list[str] | None = None) -> int:
         rows = [r for r in gen_ai([t for t in titles]) if (r["title"], r["model"]) not in have]
         _save("ai.json", done + rows)
         print(f"마케팅 AI 신규 {len(rows)}편 · 총 {len(done) + len(rows)}편")
+    if args.gen_gpt:
+        human = _load("human.json")
+        titles = list(dict.fromkeys(r["title"] for r in human))[: args.gen_gpt]
+        done = _load("ai_gpt.json")
+        have = {r["title"] for r in done}
+        rows = gen_gpt([t for t in titles if t not in have])
+        _save("ai_gpt.json", done + rows)
+        print(f"마케팅 GPT 신규 {len(rows)}편 · 총 {len(done) + len(rows)}편")
     if args.report:
-        human, ai = _load("human.json"), _load("ai.json")
+        human, ai = _load("human.json"), _load("ai.json") + _load("ai_gpt.json")
         if not human or not ai:
             raise SystemExit("human.json / ai.json 이 필요하다")
         keys = list(_r2._metrics(human[0]["text"], human[0].get("tail")))
@@ -215,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
         aucs = {k: _r2.auc(vals(ai, k), vals(human, k)) for k in keys}
         per_model = {
             m: {k: _r2.auc(vals(sub, k), vals(human, k)) for k in keys}
-            for m in _MODELS
+            for m in list(_MODELS) + ["gpt(codex-cli)"]
             for sub in ([r for r in ai if r["model"] == m],)
             if sub
         }

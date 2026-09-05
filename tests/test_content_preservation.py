@@ -131,6 +131,15 @@ class HeadingTests(unittest.TestCase):
         out = self.m.check("## Method\n\nWe ran a test.", "Method: we ran a test.")
         self.assertIn("heading_absorbed", [f["kind"] for f in out["failures"]])
 
+    def test_long_line_is_not_a_heading(self) -> None:
+        """`# 제목` 뒤에 본문이 같은 줄에 붙으면 그건 제목이 아니라 문단이다.
+
+        실측 2026-09-05: 상한이 없어 장문 12편 중 10편이 heading_lost 오탐이었다.
+        """
+        body = "# The Correct Response " + "word " * 60
+        out = self.m.check(body, "Rewritten prose without the marker.")
+        self.assertEqual([f["kind"] for f in out["failures"]], [], out)
+
     def test_kept_heading_passes(self) -> None:
         out = self.m.check("## Method\n\nWe ran a test.", "## Method\n\nWe tested it.")
         self.assertFalse(out["failed"], out)

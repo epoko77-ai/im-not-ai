@@ -43,6 +43,11 @@ _CITE_BRACKET = re.compile(r"\[\d{1,3}(?:\s*[,–-]\s*\d{1,3})*\]")
 _CITE_AUTHOR_YEAR = re.compile(r"\([^()]{0,60}?(?:19|20)\d{2}[a-z]?\)")
 
 _HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*$")
+# 제목에는 **길이 상한이 필요하다.** 한국어 판(`scripts/checks.py`)은 50자 상한을
+# 두는데 영어 초판은 빠뜨렸다. 그 탓에 `# 제목` 뒤에 본문이 같은 줄에 붙은 입력에서
+# **문단 전체가 제목으로 잡혀** 윤문이 무엇을 하든 heading_lost 가 났다
+# (실측 2026-09-05: 장문 12편 중 10편이 이 오탐이었다).
+MAX_HEADING_WORDS = 12
 _SUMMARY_BLOCK = re.compile(r"<!--\s*HUMANIZE-SUMMARY\b.*", re.DOTALL)
 _WS = re.compile(r"\s+")
 
@@ -90,7 +95,15 @@ def extract_citations(text: str) -> set[str]:
 
 
 def extract_headings(text: str) -> list[str]:
-    return [m.group(1).strip() for m in (_HEADING.match(l) for l in text.splitlines()) if m]
+    out = []
+    for line in text.splitlines():
+        m = _HEADING.match(line)
+        if not m:
+            continue
+        head = m.group(1).strip()
+        if len(head.split()) <= MAX_HEADING_WORDS:
+            out.append(head)
+    return out
 
 
 def strip_summary_block(text: str) -> str:
