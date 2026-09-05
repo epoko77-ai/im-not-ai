@@ -323,7 +323,7 @@ _CAND = {
     "filler_phrase": re.compile(
         r"\bit(?:'s| is) (?:important|worth) (?:to note|noting)\b"
         r"|\bat the end of the day\b|\bwhen it comes to\b"
-        r"|\bin today'?s (?:world|landscape|environment)\b"
+        r"|\bin (?:today'?s|this) (?:[\w-]+ ){0,2}(?:world|landscape|environment|era|age)\b"
         r"|\bneedless to say\b|\bthe fact of the matter\b|\bthat (?:being |)said\b",
         re.I,
     ),
@@ -342,10 +342,17 @@ _CAND = {
     # 다른 정규식을 갖게 되면 실측치와 제품 동작이 조용히 갈린다.
     "tricolon": _TRICOLON_RE,
     # #27 deeper truth — "진짜는 이거다" 제스처.
+    # #27 deeper truth — "진짜는 이거다" 제스처.
+    # ⚠️ 초판은 어휘 목록이라 재현율 2/4 였다("the real story is"·"what most people
+    # miss" 를 놓쳤다). **프레임 둘로 다시 짰다**: ① 한정사+(real|…)+명사+is,
+    # ② here's/what + 인식 동사. 넓히고 다시 재는 것이 순서다(같은 실패 3회 기록).
     "deeper_truth": re.compile(
-        r"\bhere'?s the (?:thing|catch|problem)\b"
-        r"|\bthe (?:real|deeper|bigger) (?:question|issue|problem|truth|point) is\b"
-        r"|\bwhat'?s really (?:going on|happening)\b|\bthe truth is\b",
+        r"\bthe (?:real|deeper|bigger|actual|underlying) [\w-]+ is\b"
+        r"|\bhere'?s (?:the (?:thing|catch|problem)|what [\w-]+ (?:miss|missed|get wrong|"
+        r"don'?t (?:see|get)))\b"
+        r"|\bwhat'?s really (?:going on|happening)\b"
+        r"|\bwhat (?:most|many) people (?:miss|get wrong|don'?t)\b"
+        r"|\bthe truth is\b|\bin reality,",
         re.I,
     ),
     # #1·#4 hype — 의의 과장·판매 어휘.
