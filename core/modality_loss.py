@@ -132,12 +132,14 @@ def find_losses(before: str, after: str, modals: dict | None = None) -> list[dic
         # "Results indicate that X, though Y." → "Results indicate that X. Y."
         # 가 그대로 false FAIL 이었다(총수는 1→1 불변). 인접 삽입 문장까지
         # 창(window)에 넣어 센다.
-        a = " ".join([_inserted(pairs, i, -1), a, _inserted(pairs, i, +1)])
+        # 창(window)은 **계수용**이다. 복원 대상은 정렬된 짝 문장 자체이므로
+        # `a` 를 덮어쓰지 않는다 — 덮어쓰면 앞뒤 공백이 붙어 원문에서 특정되지 않는다.
+        window = " ".join(x for x in (_inserted(pairs, i, -1), a, _inserted(pairs, i, +1)) if x)
         for kind, rx in modals.items():
             # **건수**로 본다. 존재 여부로 보면 "may indicate" → "indicate" 처럼
             # 같은 부류의 표지가 하나 남은 부분 소실을 통째로 놓친다.
             # 건수라서 `may` → `might` 같은 등가 치환은 1→1 로 통과한다.
-            hb, ha = rx.findall(b), rx.findall(a)
+            hb, ha = rx.findall(b), rx.findall(window)
             if len(ha) < len(hb):
                 kept = list(ha)
                 dropped = []
@@ -182,11 +184,65 @@ def check_modality_loss(before: str, after: str, modals: dict | None = None) -> 
     }
 
 
+# ── 복원 ────────────────────────────────────────────────────────────────
+#
+# 탐지만 하면 실행자가 고쳐야 하고, 실행자는 지시를 어긴다 — 실측(2026-09-05)에서
+# 룰북이 "hedge 를 제거하지 마라"고 명시했는데도 28편 중 6편에서 지웠다.
+# 한국어는 게이트 직전에 결정적으로 되돌린다(`scripts/restore_modality.py` · P2.4).
+# 영어도 같게 만든다.
+#
+# **되돌리지 않는 경우**를 셋 둔다. 되돌림이 다른 것을 망가뜨리는 자리들이다.
+MERGE_LEN_RATIO = 1.6     # 짝이 이만큼 길어졌으면 병합으로 본다
+MERGE_FOREIGN_TOKENS = 3  # 원문에 없던 내용어가 이만큼이면 병합으로 본다
+
+# **복원은 판정보다 엄격하다.** 잘못 판정하면 경고 한 줄이지만, 잘못 복원하면
+# 멀쩡한 편집을 되돌려 글을 망친다.
+#
+# 영어 실측 보정(2026-09-05, 소실 짝 55건 vs 무작위 무관 짝 400건):
+#   임계 0.35 — 실제 47/55 통과 · 무관 11.2% 오통과   (판정용, MIN_PAIR_SIM)
+#   임계 0.45 — 실제 41/55 통과 · 무관  0.8% 오통과   (복원용, 아래)
+# 한국어 값(0.35)을 그대로 쓰면 무관 짝 아홉에 하나꼴로 되돌리게 된다.
+RESTORE_MIN_SIM = 0.45
+
+
+def _words(s: str) -> set[str]:
+    return {w.strip(".,;:!?\"'()").lower() for w in s.split() if len(w) > 2}
+
+
+def restore(before: str, after: str, modals: dict | None = None) -> tuple[str, list, list]:
+    """서법이 사라진 문장을 원문 문장으로 되돌린다.
+
+    반환: (복원된 텍스트, 복원 목록, 건너뛴 목록).
+    건너뛴 것도 **보고한다** — 조용히 버리면 손실이 어디로 갔는지 흔적이 없다.
+    """
+    losses = find_losses(before, after, modals)
+    result = after
+    restored: list[dict] = []
+    skipped: list[dict] = []
+    for loss in losses:
+        if _sim(loss["before"], loss["after"]) < RESTORE_MIN_SIM:
+            skipped.append({**loss, "reason": "짝 유사도가 복원 임계 미만 — 같은 문장인지 확신 불가"})
+            continue
+        if result.count(loss["after"]) != 1:
+            skipped.append({**loss, "reason": "결과에서 유일하게 특정되지 않음"})
+            continue
+        foreign = _words(loss["after"]) - _words(loss["before"])
+        longer = len(loss["after"]) >= len(loss["before"]) * MERGE_LEN_RATIO
+        if longer and len(foreign) >= MERGE_FOREIGN_TOKENS:
+            skipped.append({**loss, "reason": "문장 병합 의심 — 되돌리면 다른 명제가 사라진다"})
+            continue
+        result = result.replace(loss["after"], loss["before"], 1)
+        restored.append({**loss, "restored_as": loss["before"]})
+    return result, restored, skipped
+
+
 def main(argv: list[str] | None = None) -> int:
     """Exit code: 0 보존 / 1 소실 / 3 실행 오류."""
     ap = argparse.ArgumentParser(description="서법 소실 게이트 (영어 P5)")
     ap.add_argument("--before", required=True)
     ap.add_argument("--after", required=True)
+    ap.add_argument("--write", action="store_true",
+                    help="서법이 사라진 문장을 원문으로 되돌려 --after 파일에 쓴다")
     args = ap.parse_args(argv)
 
     try:
@@ -197,6 +253,18 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 3
+
+    if args.write:
+        fixed, restored, skipped = restore(before, after)
+        if restored:
+            with open(args.after, "w", encoding="utf-8") as f:
+                f.write(fixed)
+            for r in restored:
+                print(f"restored [{r['kind']}·{r['marker']}] {r['after'][:44]} → {r['before'][:44]}")
+        for sk in skipped:
+            print(f"skipped   [{sk['kind']}·{sk['marker']}] {sk['reason']}")
+        print(f"restore: 복원 {len(restored)}건 · 보류 {len(skipped)}건")
+        after = fixed
 
     out = check_modality_loss(before, after)
     for kind, (b, a) in sorted(out["counts"].items()):

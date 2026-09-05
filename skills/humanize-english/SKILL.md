@@ -156,6 +156,22 @@ SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
 4. `Write` 로 `final.md`.
 5. Phase 2 게이트 실행.
 
+## Phase 1.9: 서법 국소 복원 (게이트 **직전**, LLM 콜 아님)
+
+유보·당위가 사라진 문장을 **원문 문장으로 되돌린다.** 실측(2026-09-05)에서 룰북이
+"hedge 를 제거하지 마라"고 명시했는데도 28편 중 6편에서 지웠다 — 지시로는 안 지켜진다.
+복원을 붙이자 6 → 0 이 됐다.
+
+```bash
+python3 ${SKILL_ROOT}/core/modality_loss.py \
+  --before _workspace/{run_id}/01_input.txt \
+  --after  _workspace/{run_id}/final.md --write
+```
+
+- 복원된 문장은 `restored [...]` 로 출력된다. 사용자 보고에 **그대로 옮긴다.**
+- 짝 유사도가 낮은 건(전면 재작성)은 되돌리지 않고 `skipped` 로 남는다 —
+  되돌리면 다른 편집까지 날아가기 때문이다. 그 건은 아래 게이트가 FAIL 로 잡는다.
+
 ## Phase 2: 결정적 게이트 (전 경로 공통 — LLM 콜 아님)
 
 **다섯 게이트를 순서대로 Bash 로 실행한다.** 앞의 셋은 '내용을 바꿨다'를,

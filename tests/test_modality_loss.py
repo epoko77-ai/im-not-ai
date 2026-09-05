@@ -99,5 +99,43 @@ class CliTests(unittest.TestCase):
         self.assertEqual(r.returncode, 3)
 
 
+class RestoreTests(unittest.TestCase):
+    """서법 복원 — 탐지만 하면 실행자가 고쳐야 하고, 실행자는 지시를 어긴다.
+
+    실측(2026-09-05): 룰북이 "hedge 를 제거하지 마라"고 명시했는데도 28편 중
+    6편에서 지웠다. 복원을 붙이자 6 → 0 이 됐다.
+    """
+
+    def setUp(self) -> None:
+        self.m = _load()
+
+    def test_restores_a_flattened_hedge(self) -> None:
+        before = "The data may be noisy. We ran it twice."
+        after = "The data is noisy. We ran it twice."
+        fixed, restored, _ = self.m.restore(before, after)
+        self.assertEqual(len(restored), 1)
+        self.assertIn("may be noisy", fixed)
+        self.assertFalse(self.m.check_modality_loss(before, fixed)["failed"])
+
+    def test_keeps_the_rest_of_the_edit(self) -> None:
+        """복원은 해당 문장만 되돌린다 — 나머지 편집은 남는다."""
+        before = "The data may be noisy. The team shipped the change on Friday."
+        after = "The data is noisy. The team shipped on Friday."
+        fixed, _, _ = self.m.restore(before, after)
+        self.assertIn("shipped on Friday", fixed)
+
+    def test_skips_when_pair_is_not_confidently_the_same_sentence(self) -> None:
+        """전면 재작성은 되돌리지 않는다 — 되돌리면 다른 편집까지 날아간다."""
+        before = "Raw measurements can be unreliable or noisy."
+        after = "Numbers wobble for all sorts of reasons nobody controls."
+        _, restored, skipped = self.m.restore(before, after)
+        self.assertEqual(restored, [])
+        self.assertEqual(len(skipped), 1)
+
+    def test_restore_threshold_is_stricter_than_detection(self) -> None:
+        """복원 임계는 판정 임계보다 높아야 한다 (실측 보정 0.45 vs 0.35)."""
+        self.assertGreater(self.m.RESTORE_MIN_SIM, self.m.MIN_PAIR_SIM)
+
+
 if __name__ == "__main__":
     unittest.main()
