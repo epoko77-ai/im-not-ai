@@ -99,18 +99,46 @@ SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
 
 목표는 **과윤문 방지**다. 많이 고치는 게 아니다.
 
-1. `Read` 로 `01_input_with_metrics.txt` 와 `${SKILL_ROOT}/lang/en/quick-rules.md` 를 읽는다.
+1. `Read` 로 `01_input_with_metrics.txt` · `${SKILL_ROOT}/lang/en/quick-rules.md` ·
+   `${SKILL_ROOT}/lang/en/rewriting-playbook.md` 를 읽는다.
 2. **보수 강도**로 윤문한다 — 확신 없는 구간은 그대로 둔다. 내용 명사·수치·인용은 원형 보존.
 3. `Write` 로 `_workspace/{run_id}/final.md` 에 본문만 쓴다.
 4. Phase 2 게이트 실행.
 5. 손댄 곳이 거의 없으면 "This already reads well — I touched {N} spots ({요지})" 로 보고한다.
 
-## Standard 경로 (1콜, 겨냥 윤문) — 보통의 AI 초안
+## Standard 경로 (2콜, 진단 → 겨냥 윤문) — 보통의 AI 초안
 
-한국어와 달리 **별도 진단 콜을 두지 않는다.** 영어 진단 인덱스가 없고, 룰북이 14규칙으로
-작아 단일 콜에 전부 들어간다. 콜 수를 늘릴 근거가 없다.
+> **왜 2콜인가 (2026-09-05 실측).** 초판은 "룰북이 작으니 단일 콜로 충분하다"고 봤다.
+> 재 보니 변경률 중앙값이 **0.5%** 였다 — 손대는 것은 전부 옳은 방향이었지만 양이
+> 극히 적었다. 원인은 실행자가 아니라 **겨냥의 부재와 처방의 얇음**이었다.
+> 진단으로 지목하고 플레이북으로 처방한다.
+
+### Standard-1: 진단 (1콜)
 
 1. `Read` 로 `01_input_with_metrics.txt` + `${SKILL_ROOT}/lang/en/quick-rules.md`.
+2. **지배 패턴 3~6개**를 규칙 ID 로 지목하고, 각각 **원문 인용 스팬**을 붙인다.
+   `route_signals` 가 지목한 것을 우선 확인하되, 신호가 없어도 룰북 Tier A 에
+   해당하면 적는다.
+3. `Write` 로 `_workspace/{run_id}/02_diagnosis.md` — 형식:
+   ```
+   ## EN-1 · present participial clauses (3건)
+   - "Costs rose 12%, reflecting weaker demand."
+   - …
+   ## EN-3 · tricolon (1건)
+   - "careers, products, and strategy"
+   ```
+4. 해당 없으면 `## none` 만 쓴다 — 없는 티를 지어내지 않는다.
+5. 진단을 원문에 결합한다:
+   ```bash
+   python3 ${SKILL_ROOT}/scripts/prepare_monolith_input.py \
+     --run-dir _workspace/{run_id} --lang en --genre {abstract|blog} \
+     --diagnosis _workspace/{run_id}/02_diagnosis.md
+   ```
+
+### Standard-2: 겨냥 윤문 (1콜)
+
+1. `Read` 로 `01_input_with_metrics.txt`(진단 결합본) +
+   `${SKILL_ROOT}/lang/en/rewriting-playbook.md`.
 2. `00_metrics.json` 의 `route_signals` 를 겨냥에 쓴다:
    - `en1_participial_per_1k` 가 높으면 → **EN-1 우선**(분사절을 절·독립문으로).
      룰북 최강 근거(AUC 0.787, 전 모델 일치, E1+E2+E3).
@@ -120,7 +148,9 @@ SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
    - ⚠️ `dispersion` 은 **G1 미통과**다(opus 는 인간보다 높다). 겨냥에 쓰지 않는다.
    - `lexicon.by_family` 에 `F-7` 이 있으면 → 범용 동사 교체 우선.
    - `comma_inclusion_rate` 가 높으면 → 쉼표 분절 정리.
-3. Tier A 우선, Tier B 는 서식 문제가 실재할 때만.
+3. **진단이 지목한 스팬을 전부 처리한다.** 플레이북의 갈래 중 어느 것을 쓸지
+   구간마다 고른다 — 같은 갈래만 반복하면 리듬이 기계적으로 남는다.
+4. Tier A 우선, Tier B 는 서식 문제가 실재할 때만.
 4. **hedge·수동태·contraction·인칭은 건드리지 않는다** — LLM 이 이미 과소
    사용하므로 제거하면 더 AI처럼 된다(룰북 「건드리면 안 되는 것」).
 4. `Write` 로 `final.md`.
@@ -224,6 +254,7 @@ python3 ${SKILL_ROOT}/core/underedit.py \
 
 - 언어 무관 원리·증거 기준: `${SKILL_ROOT}/core/principles.md`
 - 영어 룰북: `${SKILL_ROOT}/lang/en/quick-rules.md` (Tier A 9 + Tier B 7)
+- 영어 처방집: `${SKILL_ROOT}/lang/en/rewriting-playbook.md` (규칙별 치환 레시피)
 - 영어 렉시콘: `${SKILL_ROOT}/lang/en/lexicon.json` (Kobak 407건, 라우터용 12건)
 - **학술 근거 SSOT: `${SKILL_ROOT}/lang/en/scholarship.md`** — 규칙별 인용·등급·정정 기록
 - 후보 풀: `${SKILL_ROOT}/lang/en/candidate-pool.md` — 커뮤니티 수집 35건 + 승격 절차

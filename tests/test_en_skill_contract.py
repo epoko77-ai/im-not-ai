@@ -78,5 +78,15 @@ class EnSkillContractTests(unittest.TestCase):
         self.assertIn("humanize-english", _read(_INSTALL))
 
 
+    def test_playbook_is_wired(self) -> None:
+        """처방집이 스킬에 배선돼 있어야 한다 — 변경률 0.5% 의 직접 원인이었다."""
+        self.assertIn("lang/en/rewriting-playbook.md", self.text)
+
+    def test_standard_route_has_a_diagnosis_step(self) -> None:
+        """겨냥 없는 단일 콜은 실측에서 변경률 0.5% 였다."""
+        self.assertIn("02_diagnosis.md", self.text)
+        self.assertIn("--diagnosis", self.text)
+
+
 if __name__ == "__main__":
     unittest.main()
