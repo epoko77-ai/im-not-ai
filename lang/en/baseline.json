@@ -1088,6 +1088,40 @@
    "C3_과윤문_아님": true,
    "효능_확증": true,
    "note": "C4(과소윤문 FAIL ≤ 20%)는 --genre blog 를 넘겨야 해 별도 계측했다: 0/28."
+  },
+  "round3_playbook_and_diagnosis": {
+   "preregistration": "docs/2026-09-05-en-efficacy-preregistration.md (3차 절)",
+   "n": 27,
+   "변경률_중앙": {
+    "개선전(2차)": 0.0055,
+    "개선후(3차)": 0.0119
+   },
+   "mannwhitney_p": 0.192,
+   "primary": {
+    "tricolon": {
+     "better": 16,
+     "worse": 1,
+     "p": 0.00027
+    },
+    "comma_segment_length": {
+     "better": 20,
+     "worse": 4,
+     "p": 0.00154
+    }
+   },
+   "gate_violation_rate": {
+    "content": 0.0,
+    "modality": 0.0,
+    "reinjection": 0.0
+   },
+   "verdict": {
+    "D1": false,
+    "D2": true,
+    "D3": true,
+    "D4": true,
+    "improved": false
+   },
+   "note": "편집량은 2.2배 늘었으나 사전 등록 기준(3배 + U검정 p<0.05)에 미달했다. 방향 신호는 오히려 강해졌다(tricolon 12/1 p=.0034 → 16/1 p=.0003). 기준을 사후에 바꾸지 않는다. **변경률을 주 지표로 삼은 것이 이 회차의 설계 실수**일 수 있다 — 중요한 것은 '얼마나 바뀌었나'가 아니라 '티가 제거됐나'다. 다음 사전 등록에 반영한다."
   }
  }
 }
