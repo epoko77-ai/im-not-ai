@@ -16,7 +16,7 @@ _RULEBOOK = os.path.join(_ROOT, "lang", "en", "quick-rules.md")
 
 # EN-* 는 한국어 대응물이 없는 영어 고유 규칙이다.
 # 실물 기준(2026-09-03). E-1 은 G1 미통과로 제외됨.
-TIER_A = ("C-8", "F-7", "F-4", "EN-1", "EN-2", "EN-3", "C-12b", "C-12", "E-5")
+TIER_A = ("C-8", "F-7", "F-4", "EN-1", "EN-2", "EN-3", "EN-4", "C-12b", "C-12", "E-5")
 TIER_B = ("C-1", "C-2", "C-3", "C-5", "C-6", "C-9", "C-10")
 # A-9·G-1·G-2 는 v0.2 에서 철회·반전됐다 — 규칙 표에 있으면 안 된다.
 # E-1 은 2026-09-03 G1 미통과로 강등(opus 0.59 vs haiku 0.05 — 방향이 갈린다).
@@ -99,6 +99,15 @@ class EnRulebookTests(unittest.TestCase):
         self.assertIn("A, B, and C", row)
         self.assertIn("프레임", row)
         self.assertRegex(row, r"E1")
+
+    def test_en4_is_scoped_to_its_genre(self) -> None:
+        """EN-4 는 마케팅 셀에서만 규칙이다 — 에세이에서는 판별력이 없다(0.559).
+
+        장르를 안 적으면 실행자가 아무 데나 적용한다.
+        """
+        row = next(r for r in self.rows if r.startswith("| **EN-4**"))
+        self.assertIn("마케팅", row)
+        self.assertIn("0.559", row)
 
     def test_c8_lists_multiple_syntactic_frames(self) -> None:
         """C-8 은 프레임 하나만 적으면 첫 정규식처럼 재현율이 무너진다(0/6)."""

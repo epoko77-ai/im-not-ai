@@ -84,6 +84,9 @@ _WORD_BOUNDARY_CACHE: dict[int, re.Pattern] = {}
 # 시대 강건 신호 — 통사 프레임으로 잡는다(표면 어휘 목록은 장르를 타서 실패한다).
 _EN1_RE = re.compile(r",\s+\w+ing\b", re.I)
 _EN2_RE = re.compile(r"\b(?:is|are|was|were)\b", re.I)
+# EN-4(문장 파편) — 마케팅 셀 최강 신호. 동사 없는 짧은 문장("Not anymore.").
+# 연구 스크립트(build_en_blog_r2._CAND)와 같은 정의를 쓴다.
+_FRAGMENT_RE = re.compile(r"(?:^|[.!?]\s+)([A-Z][^.!?]{0,24}[.!?])")
 # 3항 등위(blader #10 forced groups of three) — `A, B, and C` 프레임.
 # R2 블로그 실측에서 이 장르 최강 신호였다: AUC 0.681, 인간 중앙값이 세 출처
 # 모두 0.00, 3모델 0.655~0.704. 승격 기준(0.20)에는 0.019 미달이라 **규칙으로는
@@ -114,10 +117,21 @@ THRESHOLD_SETS = {
         "separation": 0.65,
         "source": "LessWrong·Paul Graham·SSC 인간 100 vs AI 102",
     },
+    # 마케팅·회사 블로그. 인간 40편(HubSpot·Buffer, Wayback 2019~2021) vs
+    # AI 54편(sonnet·haiku·gpt — 2계열). 6지표가 방향 일치로 승격했고,
+    # 그중 셋을 라우터에 쓴다. fragment_rate 는 이 팩 전체에서 가장 강한
+    # 신호다(AUC 0.984, 인간 중앙 5.56 vs AI 26.80).
+    "marketing": {
+        "fragment_rate_min": 8.33,    # 인간 상위 25% — 이 초과면 AI 방향
+        "tricolon_min": 0.0,
+        "comma_segment_max": 8.72,    # 인간 하위 25%
+        "separation": 1.15,           # 홀드아웃 0.95~1.03 · 모델별 0.93~1.36
+        "source": "HubSpot·Buffer 인간 40 vs AI 54(3모델 2계열)",
+    },
 }
 # shim 의 --genre 값을 임계 셀로 푼다. 측정된 셀은 둘뿐이라 나머지는 blog 로
 # 보낸다(shim 기본값이 essay 이고, 산문 장르가 초록보다 블로그에 가깝다).
-GENRE_TO_SET = {"abstract": "abstract"}
+GENRE_TO_SET = {"abstract": "abstract", "marketing": "marketing"}
 DEFAULT_SET = "blog"
 
 
@@ -200,6 +214,24 @@ def compute_all_en(
             f"{tokens} tokens (<{MIN_TOKENS_FOR_RATE}) — 밀도 판정 불가, "
             f"기본 경로 (렉시콘 {total}건 · 분산 {dispersion})"
         )
+    elif threshold_set == "marketing":
+        seg = universal["comma_segment_length"]
+        tri = _per_1k(text, _TRICOLON_RE, tokens)
+        frag = _per_1k(text, _FRAGMENT_RE, tokens)
+        cfg = THRESHOLD_SETS["marketing"]
+        signals = []
+        if frag > cfg["fragment_rate_min"]:
+            signals.append(f"문장 파편 {frag}/1k(>{cfg['fragment_rate_min']})")
+        if tri > cfg["tricolon_min"]:
+            signals.append(f"3항 등위 {tri}/1k")
+        if seg and seg < cfg["comma_segment_max"]:
+            signals.append(f"쉼표 절 {seg}어(<{cfg['comma_segment_max']})")
+        if len(signals) >= 2:
+            hint, reason = "heavy", "AI 신호 " + " + ".join(signals)
+        elif signals:
+            hint, reason = "standard", "AI 신호 " + " · ".join(signals)
+        else:
+            hint, reason = "light", f"파편 {frag}/1k · 3항 {tri} · 쉼표 절 {seg}어 — 인간 범위"
     elif threshold_set == "blog":
         # 블로그 셀 보정 3신호. 쉼표 계열 나머지·EN-2·분산은 이 장르에서
         # **모델마다 부호가 반대**라(G1 미통과) 라우터에 넣지 않는다.

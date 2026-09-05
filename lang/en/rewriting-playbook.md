@@ -60,6 +60,21 @@
 - 문단당 1회는 허용한다. 수사로서의 tricolon 은 사람도 쓴다.
 - **항목이 각기 다른 사실이면 지우지 않는다.** 줄이는 것은 표현이지 내용이 아니다.
 
+### EN-4 · 문장 파편 (마케팅 한정)
+
+동사 없는 짧은 문장이 이어지는 리듬. **마케팅·회사 블로그에서만 규칙이다** —
+분석적 에세이에서는 판별력이 없다(AUC 0.559).
+
+| 원문 | 고침 |
+|---|---|
+| `That worked in 2019. Not anymore.` | `That worked in 2019, but it doesn't now.` |
+| `We tried three tools. All slow.` | `We tried three tools, and all of them were slow.` |
+| `The result? Zero.` | `The result was zero.` |
+
+- **한 문단에 1회는 허용한다.** 리듬 장치로 사람도 쓴다(인간 중앙 5.56/1k).
+- 파편을 이을 때 **대시를 쓰지 않는다**(철칙 #6). 쉼표·접속사·세미콜론으로 잇는다.
+- 물음표 파편(`The result?`)은 수사 의문과 겹친다 — 둘 다 걸리면 한 번만 고친다.
+
 ### C-8 · 대구(antithesis)
 
 프레임이 여러 개다: `not X but Y` · `it's not X, it's Y` · `neither X nor Y` ·

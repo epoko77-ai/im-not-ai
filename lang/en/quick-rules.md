@@ -28,6 +28,11 @@
 > 4. **GPT 산문에서 더 잘 선다** — 같은 신호로 분리도 1.37(Claude 0.65).
 >    블로그 신호는 Claude 개인어가 아니다.
 >
+> ④ **마케팅 셀**(인간 40 · AI 54 · 3모델 2계열) — **판별 가능.** 6지표가 방향
+> 일치로 승격했고 라우터 분리도는 **1.15**(홀드아웃 0.95~1.03 · 모델별 0.93~1.36).
+> 같은 코퍼스에 블로그 임계를 쓰면 0.82 로 떨어진다 — **장르 보정이 여기서도 이긴다.**
+> `fragment_rate` 는 이 팩 최강 신호(0.984)이나 **분석 에세이에서는 0.559 로 무력**하다.
+>
 > **비형식 산문에서는 초록 임계를 근거 있는 것으로 여기지 말 것.**
 > 상세: `lang/en/baseline.json` genres.blog / blog_essay / blog_essay_r2.
 >
@@ -68,6 +73,7 @@
 | **EN-1** | **현재분사절 남발** — 통사 프레임 `, VERB-ing` 전체다. 동사 목록이 아니다 (`, spanning…` `, suggesting…` `, showing…` `, reflecting…` `, highlighting…`) | 종속절·독립문으로 푼다. `X, reflecting Y` → `X. That reflects Y.` / `X, which reflects Y`. **내용 추가 금지** | **E1+E2+E3 — 룰북 최강.** 자체 실측 AUC 0.726(인간 중앙값 **0.00** vs AI 10.26/1k) · Reinhart 2025 PNAS 인간의 2~5배 · blader #3(41k★) |
 | **EN-2** | **be동사 회피** — `X constitutes a violation` · `Y represents an improvement` 처럼 `is/are` 자리에 무거운 동사·명사구를 놓는다 | 단순 be동사로 되돌린다. `X constitutes a violation` → `X is a violation`. **F-4 와 같은 편집이다** | **E1+E3** 자체 실측 AUC 0.238 (인간 19.31 vs AI **10.15**/1k — AI 가 절반만 씀) · blader #8(41k★) |
 | **EN-3** | **3항 등위 남발** — 통사 프레임 `A, B, and C` 다. 어휘 목록이 아니다 (`careers, products, and strategy` · `we shipped fast, learned, and adjusted`) | 문단당 1회까지 허용. 반복되면 **두 항으로 줄이거나 문장을 나눈다**. `X, Y, and Z 가 모두 무너졌다` → `X 와 Y 가 무너졌다. Z 도 마찬가지다`. 셋째 항이 앞 둘의 되풀이면 지운다 — **내용 추가·삭제 금지, 항목이 각기 다른 사실이면 보존한다** | **E1+E3** 자체 실측 AUC 0.737 (인간 중앙값 **0.00** vs AI 1.67/1k). 4모델·2계열 전부 같은 방향(0.655~0.903) · 인간 3출처 전부(0.713~0.786) · blader #10(41k★) |
+| **EN-4** | **문장 파편 남발** — 동사 없는 25자 이하 단문이 이어진다 (`Not anymore.` · `Here's why.` · `Simple.`). **마케팅·회사 블로그 한정** | 앞 문장에 붙이거나 완전한 문장으로 편다. `X works. Not anymore.` → `X used to work; it doesn't now.` **한 문단에 1회는 허용** — 리듬 장치로 사람도 쓴다 | **E1** 자체 실측 AUC 0.984(인간 중앙 5.56 vs AI 26.80/1k). 3모델 2계열 전부 일치(.979~.986) · **이 룰북 최강 신호**. ⚠️ 분석적 에세이에서는 0.559 로 판별력이 없다 — 장르를 확인하고 쓴다 |
 | **F-4** | 명사화 과다 — `-tion` `-ment` `-ness` `-ity` 체인 | 동사로 되돌린다. `the implementation of the policy` → `implementing the policy` / `the policy took effect` | **E2 ×3** Reinhart 2025 (**1.5~2배**) + Mizumoto 2024 + Jiang & Hyland 2025 — 3개 연구 독립 수렴, 이 룰북에서 근거 최강 |
 
 ## Tier B — 구조·서식 (언어 무관성이 자명)

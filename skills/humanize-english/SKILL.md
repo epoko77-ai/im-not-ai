@@ -16,6 +16,7 @@ description: AI(ChatGPT·Claude·Gemini 등)가 쓴 영어 텍스트를 사람�
 > | abstract | arXiv 인간 42 vs AI 21 | **0.95** |
 > | blog (기본) | LW·PG·SSC 인간 100 vs AI 102 | **0.65** |
 > | blog / GPT 산문 | 같은 인간 vs codex CLI 34 | **1.37** |
+| **marketing** | HubSpot·Buffer 40 vs AI 54(3모델 2계열) | **1.15** |
 >
 > 두 셀 밖(마케팅 카피·기술 문서·소설)은 **미검증이다.** 그 경우 `route_hint` 를
 > 근거로 들지 말고 사용자에게 한 줄로 알린다.
@@ -45,7 +46,8 @@ humanize-english v0.2 — path: {light|standard} ({route_hint|user}) / genre: {t
 ### 경로 결정
 1. **사용자 명시가 최우선.** "가볍게"·"light"·"minimal" → light 고정.
 1-b. **장르를 판정해 shim 에 넘긴다.** 학술 초록류면 `--genre abstract`,
-   블로그·칼럼·에세이면 `--genre blog`(기본값). 두 셀 밖이면 `blog` 로 두되
+   회사 블로그·콘텐츠 마케팅이면 `--genre marketing`, 그 밖의 블로그·칼럼·
+   에세이면 `--genre blog`(기본값). 세 셀 밖이면 `blog` 로 두되
    위 표의 미검증 고지를 붙인다. 넘긴 값은 `00_metrics.json` 의
    `threshold_set` 으로 되돌아오므로 상태 줄에 함께 적는다.
 2. 명시가 없으면 `00_metrics.json` 의 `route_hint` 를 따른다.

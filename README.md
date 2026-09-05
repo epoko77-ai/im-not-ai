@@ -312,6 +312,7 @@ Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩�
 | `abstract` | arXiv 인간 42 vs AI 21 | **0.95** |
 | `blog` (기본) | LessWrong·Paul Graham·SSC 인간 100 vs AI 102 | **0.65** |
 | `blog` / GPT 산문 | 같은 인간 vs codex CLI 34 | **1.37** |
+| `marketing` (회사 블로그·콘텐츠 마케팅) | HubSpot·Buffer 40 vs AI 54 (3모델 2계열) | **1.15** |
 
 그 밖의 장르(마케팅 카피·기술 문서·소설)는 **미검증**이며, 스킬이 그 사실을 사용자에게 고지합니다.
 

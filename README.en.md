@@ -122,15 +122,18 @@ All three were withdrawn. That correction is the point of the project: the ruleb
 | [`lang/en/candidate-pool.md`](lang/en/candidate-pool.md) | Community axis — the 41k★ `blader/humanizer` list, cross-checked against the research |
 | [`lang/en/baseline.json`](lang/en/baseline.json) | Our own measurements: every AUC, CI, per-model split and null result |
 
-**Two genres are validated.** Thresholds turned out to be genre-dependent, so the router picks a calibrated cell:
+**Three genres are validated.** Thresholds turned out to be genre-dependent, so the router picks a calibrated cell:
 
 | Threshold cell | Corpus | Router separation |
 |---|---|---|
 | `abstract` | arXiv: 42 human vs 21 AI | **0.95** |
 | `blog` (default) | LessWrong · Paul Graham · SSC: 100 human vs 102 AI | **0.65** |
 | `blog` on GPT prose | same humans vs 34 from the codex CLI | **1.37** |
+| `marketing` | HubSpot · Buffer: 40 human vs 54 AI (3 models, 2 families) | **1.15** |
 
-Anything outside those two cells is **unvalidated**, and the skill says so to the user instead of pretending otherwise. Three blog-cell metrics that looked strong turned out to be per-model idiolect and were dropped.
+Anything outside those cells is **unvalidated**, and the skill says so to the user instead of pretending otherwise. Three blog-cell metrics that looked strong turned out to be per-model idiolect and were dropped.
+
+The strongest signal in the whole pack is genre-bound: sentence fragments discriminate marketing prose almost perfectly (AUC 0.984, human median 5.56 vs AI 26.80 per 1k) and are **useless** in analytical essays (0.559). A rule is only as portable as the cell it was measured in.
 
 Five deterministic gates run on every path: change rate, content preservation (numbers, quotes, citations, headings), modality loss (hedges and obligations turning into flat assertions), tell re-injection, and under-editing. The `heavy` / verification path stays closed for English — we have no measured evidence to back the claim it would make.
 
