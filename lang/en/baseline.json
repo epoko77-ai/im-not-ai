@@ -884,6 +884,144 @@
     }
    },
    "finding": "규칙 적중률은 길이에 비례해 오른다(EN-1 46% → 100%, tricolon 60% → 83%). '편집량이 작다'는 결과의 일부는 300단어 발췌의 산물이다. 다만 판별력은 지표마다 다르게 움직인다 — **tricolon 은 길이에 강건하고(0.737→0.705) comma_segment 는 약해진다(0.224→0.336, 기준 밖으로 나간다).** 담화층 규칙이 산술 지표보다 길이에 강하다는 신호다."
+  },
+  "marketing": {
+   "captured_at": "2026-09-05T13:16:59+00:00",
+   "status": "판별 가능",
+   "human_n": 40,
+   "ai_n": 40,
+   "source_human": "HubSpot·Buffer 마케팅 블로그, Wayback 2019~2021 스냅샷",
+   "models": [
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001"
+   ],
+   "auc": {
+    "sentence_length_dispersion": 0.574,
+    "comma_inclusion_rate": 0.306,
+    "comma_usage_rate": 0.406,
+    "comma_segment_length": 0.138,
+    "en1_participial": 0.55,
+    "en2_be_verbs": 0.23,
+    "fragment_rate": 0.985,
+    "rhetorical_question": 0.285,
+    "second_person": 0.398,
+    "filler_phrase": 0.5,
+    "vague_source": 0.463,
+    "range_formula": 0.45,
+    "tricolon": 0.748,
+    "deeper_truth": 0.5,
+    "hype_word": 0.596,
+    "closing_formula": 0.512
+   },
+   "auc_per_model": {
+    "claude-sonnet-5": {
+     "sentence_length_dispersion": 0.813,
+     "comma_inclusion_rate": 0.394,
+     "comma_usage_rate": 0.526,
+     "comma_segment_length": 0.187,
+     "en1_participial": 0.534,
+     "en2_be_verbs": 0.256,
+     "fragment_rate": 0.984,
+     "rhetorical_question": 0.248,
+     "second_person": 0.369,
+     "filler_phrase": 0.5,
+     "vague_source": 0.45,
+     "range_formula": 0.412,
+     "tricolon": 0.713,
+     "deeper_truth": 0.5,
+     "hype_word": 0.548,
+     "closing_formula": 0.525
+    },
+    "claude-haiku-4-5-20251001": {
+     "sentence_length_dispersion": 0.334,
+     "comma_inclusion_rate": 0.217,
+     "comma_usage_rate": 0.286,
+     "comma_segment_length": 0.089,
+     "en1_participial": 0.566,
+     "en2_be_verbs": 0.203,
+     "fragment_rate": 0.986,
+     "rhetorical_question": 0.322,
+     "second_person": 0.428,
+     "filler_phrase": 0.5,
+     "vague_source": 0.475,
+     "range_formula": 0.487,
+     "tricolon": 0.783,
+     "deeper_truth": 0.5,
+     "hype_word": 0.644,
+     "closing_formula": 0.5
+    }
+   },
+   "promoted": [
+    "comma_segment_length",
+    "en2_be_verbs",
+    "fragment_rate",
+    "rhetorical_question",
+    "tricolon"
+   ],
+   "router_blog_thresholds": {
+    "signals": [
+     "comma_segment_length",
+     "tricolon",
+     "en1_participial"
+    ],
+    "rule": "comma_segment < 8.72 · tricolon > 0 · en1 > 0 — 2개 이상 heavy, 1개 standard, 0개 light",
+    "seg_max": 8.72,
+    "human": {
+     "light": 0.28,
+     "standard": 0.38,
+     "heavy": 0.35
+    },
+    "ai": {
+     "light": 0.03,
+     "standard": 0.15,
+     "heavy": 0.82
+    },
+    "separation": 0.72,
+    "separation_by_model": {
+     "claude-sonnet-5": 0.63,
+     "claude-haiku-4-5-20251001": 0.83
+    },
+    "holdout_by_human_source": {
+     "fit=buffer": {
+      "seg_max": 7.5,
+      "separation": 0.68
+     },
+     "fit=hubspot": {
+      "seg_max": 8.89,
+      "separation": 0.74
+     }
+    }
+   },
+   "seg_max_here": 8.72,
+   "caveat": "블로그 셀 임계(쉼표 절 < 8.57)가 이 장르에서도 맞는지 함께 본다. 레지스터가 다르면 임계도 다르다 — 초록→블로그에서 이미 겪었다.",
+   "extraction_bias_check": {
+    "why": "fragment_rate 0.985 는 지나치게 커서 추출 방식의 산물인지 먼저 의심했다. 인간 본문을 <p> 요소에서 뽑을 때 '12단어 이상 + 문장부호' 조건을 걸었는데, 그 조건이 인간의 단문 문단을 걸러 냈다면 격차가 만들어진다.",
+    "method": "같은 스냅샷 5편을 느슨한 필터(5단어·문장부호 무관)로 다시 뽑아 대조",
+    "result": {
+     "엄격_필터_중앙": 8.3,
+     "느슨_필터_중앙": 7.7,
+     "AI_중앙": 28.57
+    },
+    "verdict": "추출 산물이 아니다. AI 마케팅 산문의 문장 파편이 인간의 3.5배다."
+   },
+   "cross_genre": {
+    "note": "tricolon(EN-3)이 세 번째 장르에서도 선다 — 초록·블로그에 이어 마케팅.",
+    "tricolon": {
+     "blog": 0.737,
+     "marketing": 0.748,
+     "blog_long": 0.705
+    },
+    "fragment_rate": {
+     "blog": 0.559,
+     "marketing": 0.985,
+     "해석": "장르 특이 신호다. 분석적 에세이에서는 판별력이 없고 마케팅에서만 크다."
+    },
+    "comma_segment_length": {
+     "blog": 0.224,
+     "marketing": 0.138,
+     "blog_long": 0.336
+    }
+   }
   }
  },
  "contamination_incident": {
