@@ -170,7 +170,7 @@ def fetch_lw(n: int) -> list[dict]:
             if not _ok(prose):
                 continue
             assert post["postedAt"] < "2022", f"날짜 창 위반: {post['postedAt']}"
-            got.append({"title": " ".join(title.split()), "text": _excerpt(prose),
+            got.append({"title": " ".join(title.split()), "text": _excerpt(prose), "full": prose,
                         "tail": _tail(prose), "published": post["postedAt"][:10],
                         "source": "lesswrong"})
             taken += 1
@@ -253,7 +253,7 @@ def fetch_ssc(n: int) -> list[dict]:
         prose = _r1._prose(page[start : min(ends) if ends else len(page)])
         if not _ok(prose):
             continue
-        got.append({"title": slug.replace("-", " ").title(), "text": _excerpt(prose),
+        got.append({"title": slug.replace("-", " ").title(), "text": _excerpt(prose), "full": prose,
                     "tail": _tail(prose),
                     "published": url.split("slatestarcodex.com/")[1][:10].replace("/", "-"),
                     "source": "slatestarcodex"})
