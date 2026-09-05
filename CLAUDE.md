@@ -1,8 +1,8 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.3.2)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.4.0)
 
 ## 프로젝트 개요
 
-AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 70개 AI 티 패턴(+A-17 hold 1건)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
+AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 81개 AI 티 패턴(A-17 hold 1건 포함)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
 
 v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
 
@@ -50,6 +50,20 @@ im-not-ai/
 ├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
 ├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
 ├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
+├── core/                          # 언어 무관 커널 (다국어 R1) — 프로덕션 런타임
+│   ├── principles.md              # 철칙 6 + 근거 등급 E1~E4 + 증거 기준 G1~G4
+│   ├── change_rate.py             # 변경률 — 문자 diff, metrics_v2에서 분리(재수출로 하위호환)
+│   ├── metrics_universal.py       # 분산·장문율·쉼표 계열 — 산술 지표(unit: chars|tokens)
+│   ├── reinjection.py             # G3 게이트 — 윤문 전후 재측정, 원시 건수로 판정
+│   ├── underedit.py               # G4 게이트 — 지목된 티가 실제로 줄었는지 (과소윤문)
+│   ├── content_preservation.py    # 내용 보존 — 수치(주입만 FAIL)·인용·전거·제목
+│   ├── modality_loss.py           # 서법 소실 — 유보·당위가 단정이 됐는지 (문장쌍 판정)
+│   └── detect_language.py         # 유니코드 스크립트 비율 (ko|en|unknown, 판정 불가 시 ko)
+├── lang/                          # 언어별 데이터·지표 (다국어 R2a) — 프로덕션 런타임
+│   └── en/
+│       ├── lexicon.json           # Kobak 초과 어휘 407건 (router_eligible 12건만 라우터에 사용)
+│       ├── metrics_en.py          # 영어 route_hint — 계측형 주도 + 렉시콘 보조
+│       └── quick-rules.md         # 영어 룰북 Tier A 7 + Tier B 7 (근거 등급 표기)
 ├── scripts/
 │   ├── prepare_monolith_input.py  # input shim — 텍스트 위생 + 정량 점수 + route_hint 산출 + 결합 입력 (`--diagnosis`·`--chunk`·`--no-sanitize`)
 │   ├── sanitize_text.py           # 텍스트 위생 — 제로폭·bidi·특수공백 제거 + 한글 NFD→NFC (결정적, LLM 0콜)
@@ -69,13 +83,13 @@ im-not-ai/
 │   ├── humanize-finalizer.md      # heavy P3 마무리 (의미 15항 + 자연성)
 │   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
 │   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
-├── skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
+├── skills/                # 스킬 4종 (humanize-korean · humanize-english · humanize · humanize-redo)
 │   └── humanize-korean/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
 │           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
-│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 활성 70 패턴 (+ _quick 빌드 메타)
+│           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 81패턴 전수 (+ _quick 빌드 메타)
 │           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
 │           ├── metrics.py · metrics_v2.py     # v1.6 8종 + v2.0 post-editese 14종
 │           ├── baseline.json · baseline_v2.json   # v1.6 baseline · v2.0(placeholder — calibration 대기)
@@ -192,12 +206,15 @@ im-not-ai/
 ## 확장 포인트
 
 - **웹 서비스화**: 별도 코드베이스로 라이브 (imnotai.kr). 본 리포의 `web-service-spec.md`는 설계 산출물로만 보존 (설계 에이전트 `humanize-web-architect`는 v2.1에서 은퇴).
-- **다국어 확장**: 일본어·중국어로 확장 시 언어별 taxonomy 분리 파일 추가.
+- **다국어 확장**: 설계 완료 — `docs/superpowers/specs/2026-09-02-multilingual-design.md`. 커널은 코드가 아니라 **증거 기준**(`core/principles.md` G1·G2·G3)이다. 실측 결과 81패턴 중 48개(59%)가 담화·구조 층이라 무료 이식되나 **탐지기는 이식되지 않는다**(영어 C-8 정규식 첫 재현율 0/6). 첫 확장 언어는 영어, baseline 은 발표 수치 인용(코퍼스 신규 구축 없음).
 - **장르 확장**: 현재 4장르(칼럼·리포트·블로그·공적). 학술 논문·법률 문서·제품 카피 추가 가능.
 
 ## 참고
 
+- **언어 무관 원리·증거 기준: `core/principles.md`** — 규칙을 신설·강등할 때의 판정 기준(G1~G3) + 윤문 결과 판정(G4)
+- 다국어 확장 설계: `docs/superpowers/specs/2026-09-02-multilingual-design.md` (근거: `docs/spikes/2026-09-02-en-transplant.md`)
 - 오케스트레이터: `skills/humanize-korean/SKILL.md`
+- 영어 스킬: `skills/humanize-english/SKILL.md` (v0.2 — 장르 보정 라우터 · 게이트 5종)
 - 분류 체계: `skills/humanize-korean/references/ai-tell-taxonomy.md`
 - 윤문 처방: `skills/humanize-korean/references/rewriting-playbook.md`
 - 슬림 룰북(monolith): `skills/humanize-korean/references/quick-rules.md`

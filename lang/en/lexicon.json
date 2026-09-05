@@ -1,0 +1,2868 @@
+{
+ "version": "0.1",
+ "source": "Kobak, Márquez, Horvát, Lause (2025), 'Delving into LLM-assisted writing in biomedical publications through excess vocabulary', Science Advances. 데이터: github.com/berenslab/llm-excess-vocab results/excess_words.csv",
+ "source_sha256_16": "f5786f3cc83f9578",
+ "evidence": "E2 — 동료심사 발표 + 공개 원자료 직접 확인. 논문의 핵심 주장('2024 초과 어휘의 66%가 동사')을 원자료로 재계산해 65.8%로 검증했다. core/principles.md 「근거 등급」 참조.",
+ "caveat": "코퍼스가 PubMed 생의학 초록(15M편, 2010-2024)이다. 논설·에세이 장르의 임계가 아니라 방향 근거로만 쓴다. content word 462건은 주제 부산물이므로 제외하고 style word 만 담았다.",
+ "notes": "표제어는 원자료의 표면형 그대로다. 원형화하지 않는다 — Kobak 이 형태별로 초과를 측정했고 목록이 delve/delves/delving 을 각각 담고 있다. 원형화 후 접미사 재확장은 측정되지 않은 형태를 만들어낸다.",
+ "family_derivation": "part_of_speech 에서 기계적 유도: verb→F-7, adjective→D-4, adverb→F-1, 그 외→unclassified. 손 분류 없음.",
+ "entries": [
+  {
+   "word": "accentuates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "achieving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "acknowledges",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "acknowledging",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "across",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "additionally",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "address",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "addresses",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "addressing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "adept",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "adhered",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "adhering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "advancement",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "advancements",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "advancing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "advocates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "advocating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "affirming",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "afflicted",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "aiding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "aims",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "akin",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "align",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "aligning",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "aligns",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "alongside",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "amid",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "amidst",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "analysis",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "announced",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "apologizes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "approach",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "assess",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "assessed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "assessing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "assessments",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "attains",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "attributed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "augmenting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "avenue",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "avenues",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "based",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "between",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "bolster",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "bolstered",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "bolstering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "both",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "pronoun/adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "broader",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "burgeoning",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "capabilities",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "capitalizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "categorized",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "categorizes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "categorizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "challenge",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "challenges",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "combating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "commendable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "compelling",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "complex",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "complicates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "complicating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "comprehend",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "comprehending",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "comprehensive",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "comprising",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "conditions",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "conducted",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "consequently",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "consolidates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "contributing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "comment": "contributing factors",
+   "router_eligible": false
+  },
+  {
+   "word": "conversely",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "correlating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "crafted",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "crafting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "crucial",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "culminating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "customizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "declare",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "declared",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "deductively",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "delineates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "delve",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true
+  },
+  {
+   "word": "delved",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "delves",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true,
+   "ratio": 28.0
+  },
+  {
+   "word": "delving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true
+  },
+  {
+   "word": "demonstrated",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "demonstrates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "demonstrating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "dependability",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "dependable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "despite",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "detailing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "detrimentally",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "diminishes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "diminishing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "discern",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "discerned",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "discernible",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "discerning",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "displaying",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "disrupts",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "distinct",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "distinctions",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "distinctive",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "diverse",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "during",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "easing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "effectively",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "elevate",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elevated",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elevates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elevating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elucidate",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elucidates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "elucidating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "embracing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emerged",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emerges",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emphasises",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emphasising",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emphasize",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emphasizes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emphasizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "employed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "employing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "employs",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "empowers",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emulating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "emulation",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "enabling",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "encapsulates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "encompass",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "encompassed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "encompasses",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "encompassing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "endangering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "endeavors",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "comment": "\"research endeavors\"",
+   "router_eligible": false
+  },
+  {
+   "word": "endeavours",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "comment": "BE version",
+   "router_eligible": false
+  },
+  {
+   "word": "enduring",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "enhance",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "enhanced",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "enhancements",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "nount",
+   "router_eligible": false
+  },
+  {
+   "word": "enhances",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "enhancing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "ensuring",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "equipping",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "escalating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "essentials",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "evaluates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "evolving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exacerbating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "examines",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exceeding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "excels",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exceptional",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "exceptionally",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "exerting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exhibit",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exhibited",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exhibiting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exhibits",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "expedite",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "expediting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "exploration",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "explores",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "facilitated",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "facilitates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "facilitating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "featuring",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "fight",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun/verb",
+   "router_eligible": false
+  },
+  {
+   "word": "findings",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "focusing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "formidable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "fostering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "fosters",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "foundational",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "furnish",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "garnered",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "garnering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "gauged",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "grappling",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "groundbreaking",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "groundwork",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "hardest",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "harness",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "harnesses",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "harnessing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "heighten",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "heightened",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "highlight",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "highlighting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "highlights",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "hinder",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "hinges",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "hinting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "hold",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "holds",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "however",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "identified",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "illuminates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "illuminating",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "imbalances",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "impact",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "impactful",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "impacting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "impede",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "impeding",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "imperative",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "impressive",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "inadequately",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "including",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "incorporates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "incorporating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "indicating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "individuals",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "influencing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "inherent",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "initially",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "innovative",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "inquiries",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "insights",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "integrates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "integrating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "integration",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "interconnectedness",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "interplay",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "into",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "intricacies",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "intricate",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": true
+  },
+  {
+   "word": "intricately",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "introduces",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "invaluable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "investigates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "involves",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "involving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "juxtaposed",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "leading",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "leverages",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "leveraging",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "like",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "particle",
+   "router_eligible": false
+  },
+  {
+   "word": "limitations",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "linked",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "maintaining",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "merges",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "methodologies",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "meticulous",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "meticulously",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": true
+  },
+  {
+   "word": "midst",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "multifaceted",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "necessitate",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "necessitates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "necessitating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "necessity",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "need",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "notable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "notably",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "advebr",
+   "router_eligible": false
+  },
+  {
+   "word": "noteworthy",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "nuanced",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "nuances",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "observed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "offer",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "offering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "offers",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "optimizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "orchestrating",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "outcomes",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "outlines",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "overlook",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "overlooking",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "overwhelmed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "particularly",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "paving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "persist",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pinpoint",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pinpointed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pinpointing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pioneering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pioneers",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "pivotal",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": true
+  },
+  {
+   "word": "poised",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pose",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "posed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "poses",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "posing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "postponed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "potential",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "potentially",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "precise",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "predominantly",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "presents",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "preserving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pressing",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "prevalent",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "primarily",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "primary",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "promise",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "promising",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "pronounced",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "propelling",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "providing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "realizes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "realm",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": true
+  },
+  {
+   "word": "realms",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "recognizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "refine",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "refines",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "refining",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "reframing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "remains",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "remarkable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "renowned",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "research",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "resulting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "rethink",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "revealed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "revealing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "reveals",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "revolutionize",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "revolutionizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "revolves",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "role",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "scrutinize",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "scrutinized",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "scrutinizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "seamless",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "seamlessly",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "seeks",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "serves",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "serving",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "shaping",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "shedding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "showcased",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "showcases",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true
+  },
+  {
+   "word": "showcasing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true,
+   "ratio": 10.7
+  },
+  {
+   "word": "signifying",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "solidify",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "spanned",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "spanning",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "specifically",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "spurred",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "stands",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "statement",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "stemming",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "strategically",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "strategies",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "streamline",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "streamlined",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "streamlines",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "streamlining",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "struggle",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "subsequently",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "substantial",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "substantiated",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "substantiates",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surged",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surmount",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surpass",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surpassed",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surpasses",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "surpassing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "swift",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "swiftly",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "techniques",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "their",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "pronoun",
+   "router_eligible": false
+  },
+  {
+   "word": "thereby",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "these",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "pronoun",
+   "router_eligible": false
+  },
+  {
+   "word": "this",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "pronoun",
+   "router_eligible": false
+  },
+  {
+   "word": "thorough",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "through",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "transformative",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "typically",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "ultimately",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "uncharted",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "uncovering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "underexplored",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "underscore",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true
+  },
+  {
+   "word": "underscored",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "underscores",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true,
+   "ratio": 13.8
+  },
+  {
+   "word": "underscoring",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": true
+  },
+  {
+   "word": "understanding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unexplored",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "unlocking",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unparalleled",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "unraveling",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unveil",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unveiled",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unveiling",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "unveils",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "uphold",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "upholding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "urging",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "using",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "utilized",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "utilizes",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "utilizing",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "valuable",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "various",
+   "type": "style",
+   "family": "D-4",
+   "pos": "adjective",
+   "router_eligible": false
+  },
+  {
+   "word": "varying",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "verifies",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "versatility",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "noun",
+   "router_eligible": false
+  },
+  {
+   "word": "wandering",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "warranting",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "were",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  },
+  {
+   "word": "while",
+   "type": "style",
+   "family": "unclassified",
+   "pos": "preposition",
+   "router_eligible": false
+  },
+  {
+   "word": "within",
+   "type": "style",
+   "family": "F-1",
+   "pos": "adverb",
+   "router_eligible": false
+  },
+  {
+   "word": "yielding",
+   "type": "style",
+   "family": "F-7",
+   "pos": "verb",
+   "router_eligible": false
+  }
+ ],
+ "router_policy": "router_eligible=true 인 항목만 route_hint 산출에 쓴다. 나머지는 룰북 자원이다. 이유: 이 목록은 '2010-2021 기준선 대비 증가분'이라 희귀 표지 집합이 아니다 — this·across·between·however·typically 같은 초고빈도어가 섞여 있고, 문서 단위 히트 카운트로 쓰면 평범한 영어에서도 상시 발화한다(실측: 'This is a plain sentence.' 반복문에서 142.86/1k). 논문은 희귀·고비율(r) 어휘와 흔한·고격차(δ) 어휘를 구분하지만 공개 저장소에 per-word r/δ 표가 없어 우리가 그 구분을 재현할 수 없다. 그래서 논문이 본문에서 **명시적으로 호명한** 대표 초과어만 라우터에 쓴다. r/δ 표를 확보하면 이 정책을 재검토한다.",
+ "router_eligible_count": 12
+}

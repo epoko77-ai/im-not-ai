@@ -109,7 +109,9 @@
       ],
       "change_rate": {
         "min": 0.0,
-        "max": 0.5
+        "max": 0.5,
+        "gate_required": true,
+        "note": "게이트 없는 경로에서는 모델이 이 상한을 지키지 못한다(실측 6회 중 5회 초과, 0.545~0.692). 제품은 verify_change_rate.py 가 50% 이상을 기각한다 — 그 보장은 test_humanize_pipeline_live.py 가 실제 파이프라인으로 검증한다."
       },
       "signal_drop": null,
       "note": "과윤문 가드: 순진하게 전면 재작성하면 50%를 넘을 텍스트. ≤0.50 유지(강제중단 가드 준수)를 검증. 서수(첫째/둘째/셋째)는 구조적 비계라 보호 대상 아님 — 내용 명사만 protected.",

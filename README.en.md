@@ -21,6 +21,7 @@ LLMs write Korean that *reads* like translated English. Native speakers spot it 
 | [`docs/en/taxonomy.md`](docs/en/taxonomy.md) | All 71 patterns: severity, trigger, prescription, genre guards, detector schema |
 | [`docs/en/evidence.md`](docs/en/evidence.md) | The corpus study — what was confirmed, what was **rejected**, and the limits of the design |
 | [`docs/en/integration.md`](docs/en/integration.md) | Building this into a model or product, and the failure modes we hit in production |
+| [English support](#english-support-humanize-english-v02) | **Writing in English?** `humanize-english` v0.2 ships in the same package — re-measured against English corpora, not translated from Korean |
 
 Engineers integrating this should start with `integration.md`.
 
@@ -99,6 +100,39 @@ cd im-not-ai && ./install.sh
 ```
 
 Then paste Korean text and ask for it in plain language ("이 글 AI 티 없애줘"), or call `/humanize-korean`. Copilot and Codex run the single-call path only; the multi-call diagnose/finalize paths are Claude Code-specific. Full guide: [`INSTALL.md`](INSTALL.md).
+
+## English support (`humanize-english` v0.2)
+
+The Korean rules were **not translated into English.** They were re-measured against English corpora — and that process caught three rules ported from Korean whose direction was **backwards**:
+
+| Ported rule | What we assumed | What the research says |
+|---|---|---|
+| Remove agentless passives | LLMs overuse them | Reinhart et al. 2025 (*PNAS*): LLMs use them at **half** the human rate |
+| Cut hedges (`may`, `might`) | LLMs hedge too much | Three studies converge: LLMs **underuse** hedges |
+| Cut qualifiers | Same | Same — removing them makes text *more* AI-like, and changes claim strength |
+
+All three were withdrawn. That correction is the point of the project: the rulebook carries an evidence grade per rule, and a rule with community support but contrary peer-reviewed evidence does not ship.
+
+**Evidence, all published in-repo:**
+
+| | |
+|---|---|
+| [`lang/en/quick-rules.md`](lang/en/quick-rules.md) | The rulebook — Tier A 8 + Tier B 7, evidence grade per rule |
+| [`lang/en/scholarship.md`](lang/en/scholarship.md) | Academic anchors (Kobak 2025 *Science Advances*, Reinhart 2025 *PNAS*, Jiang & Hyland 2025 *ESP*) + a correction log |
+| [`lang/en/candidate-pool.md`](lang/en/candidate-pool.md) | Community axis — the 41k★ `blader/humanizer` list, cross-checked against the research |
+| [`lang/en/baseline.json`](lang/en/baseline.json) | Our own measurements: every AUC, CI, per-model split and null result |
+
+**Two genres are validated.** Thresholds turned out to be genre-dependent, so the router picks a calibrated cell:
+
+| Threshold cell | Corpus | Router separation |
+|---|---|---|
+| `abstract` | arXiv: 42 human vs 21 AI | **0.95** |
+| `blog` (default) | LessWrong · Paul Graham · SSC: 100 human vs 102 AI | **0.65** |
+| `blog` on GPT prose | same humans vs 34 from the codex CLI | **1.37** |
+
+Anything outside those two cells is **unvalidated**, and the skill says so to the user instead of pretending otherwise. Three blog-cell metrics that looked strong turned out to be per-model idiolect and were dropped.
+
+Five deterministic gates run on every path: change rate, content preservation (numbers, quotes, citations, headings), modality loss (hedges and obligations turning into flat assertions), tell re-injection, and under-editing. The `heavy` / verification path stays closed for English — we have no measured evidence to back the claim it would make.
 
 ## Ethics
 
