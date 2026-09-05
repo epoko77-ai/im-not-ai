@@ -1,0 +1,4 @@
+{
+  "description": "서법 평탄화 — 유보(can·may·tend to·suggests)가 단정이 된다. 실측 2026-09-05: 룰북이 명시로 금지했는데도 28편 중 6편에서 발생.",
+  "bad_must_fail": ["modality_loss"]
+}

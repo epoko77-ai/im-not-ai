@@ -1,0 +1,1 @@
+We shipped the migration in two stages — the first moved reads, the second moved writes a week later. Neither stage required downtime — though the second came close when a replica lagged. Ultimately, what matters is that our rollback plan was a single flag — and we tested it twice before the cutover. In conclusion, staged migrations work.

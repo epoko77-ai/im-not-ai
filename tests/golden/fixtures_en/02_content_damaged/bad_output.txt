@@ -1,0 +1,1 @@
+The 2019 audit found that nearly 40% of accounts had stale permissions. Reviewers described a process nobody owned. Prior work reports a similar range in organizations of comparable size. We re-ran the scan in March and the figure had not moved.

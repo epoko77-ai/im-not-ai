@@ -1,0 +1,4 @@
+{
+  "description": "역주입 — 문장을 이으면서 em dash 를 심고 결론 공식·cleft 를 새로 넣는다. 실측 2026-09-05: 맨 프롬프트 팔 28편 중 22편(79%). 철칙 #6.",
+  "bad_must_fail": ["reinjection"]
+}
