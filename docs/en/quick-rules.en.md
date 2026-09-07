@@ -29,7 +29,7 @@ Format: one line per pattern — `ID [severity] trigger → prescription`. No ex
 - **A-10** [S2] `~할 수 있다` overused → assert (`높일 수 있다` → `높인다`)
 - **A-11** [S2] `~을 위해` purpose clauses overused → `~려고`, `~도록`, `~위한`
 - **A-15** abstract subject + all-purpose verb (`보여준다/제공한다/가져온다`); literal causative and cognition verbs → restore a concrete subject; render causatives as adverbial `X 때문에/덕분에/로 인해`; render suggest/show/indicate as `~에 따르면 ~이다`
-- **A-16** `그/그녀/그것/그들` 3+ per paragraph — literal English pronouns → drop 50%+ (Korean's zero pronoun) or use a name/noun phrase
+- **A-16** For each pronoun (`그/그녀/그것/그들/이것/이는`), count antecedent candidates in the preceding 2 sentences — **no frequency threshold**. 0 candidates → restore a noun phrase (leave as-is if it cannot be determined) / 1 → zero pronoun / 2+ → restate the noun phrase. **No deletion quota; when unsure, keep**
 - **A-18** pre-nominal modifier or relative clause of 3+ eojeol, left-branching from English → split the sentence, or postpose as an appositive (`X를 만났는데, 그 X는 ~`)
 - **A-19** stacked particles `~에서의/~에로의/~으로의/~에의/~으로부터의` → unfold into a clause or phrase; plain `~의` is not a target
 
