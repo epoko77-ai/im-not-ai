@@ -289,6 +289,25 @@ def compute_route_hint(metrics_obj: dict) -> dict:
     }
 
 
+def resolve_lang(requested: str, text: str) -> str:
+    """``--lang`` 값을 실제 경로로 푼다.
+
+    ``auto`` 는 유니코드 스크립트 비율로 감지하고, 판정 불가(``unknown``)면
+    **한국어로 떨어뜨린다** — 이 저장소의 현행 동작이 한국어이므로 회귀가 없다.
+    감지 모듈 import 가 실패해도 같은 이유로 ko 로 떨어진다.
+    """
+    if requested != "auto":
+        return requested
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "core"))
+        from detect_language import detect_language  # noqa: PLC0415
+
+        detected = detect_language(text)
+    except Exception:  # noqa: BLE001 — 감지 실패가 파이프라인을 막지 않는다.
+        return "ko"
+    return detected if detected in ("ko", "en") else "ko"
+
+
 # ---------------------------------------------------------------------------
 # Combined-file rendering
 # ---------------------------------------------------------------------------
@@ -352,7 +371,71 @@ def _render_v2_counts(metrics_obj: dict) -> list[str]:
     return lines
 
 
+def _render_block_en(metrics_obj: dict) -> str:
+    """영어 계측 블록.
+
+    **한국어 블록을 영어 런에 그대로 내보내던 결함을 고친 것이다.** 실측
+    (2026-09-05 첫 end-to-end 런): 영어 결합 파일에 `[v1.6 지표]` 8개가 전부
+    n/a 로 실리고, 근거 가이드가 **영어 룰북에 없는 규칙 ID**(C-11·D-1·H-1)를
+    적용하라고 지시했다. 윤문 콜이 룰북과 모순되는 지시를 받는 상태였다.
+    """
+    u = metrics_obj.get("universal", {})
+    sig = metrics_obj.get("route_signals", {})
+    lex = metrics_obj.get("lexicon", {})
+
+    lines: list[str] = []
+    lines.append("[정량 사전 점수 — 영어 계측형 (lang/en/metrics_en.py)]")
+    if metrics_obj.get("route_hint"):
+        lines.append(
+            f"route_hint: {metrics_obj['route_hint']}  "
+            f"(권고 — 사용자·오케스트레이터가 무시 가능)"
+        )
+        lines.append(f"route_reason: {metrics_obj.get('route_reason', '')}")
+    lines.append(f"genre: {metrics_obj.get('genre', 'essay')}")
+    lines.append(f"threshold_set: {metrics_obj.get('threshold_set', 'abstract')}")
+    lines.append(f"char_count: {metrics_obj.get('char_count', 0)}")
+    lines.append("")
+    lines.append("[계측 지표]")
+    for key, fmt in (
+        ("sentences", "{:d}"),
+        ("tokens", "{:d}"),
+        ("sentence_length_dispersion", "{:.2f}"),
+        ("long_sentence_rate", "{:.2f}"),
+        ("comma_inclusion_rate", "{:.2f}"),
+        ("comma_usage_rate", "{:.2f}"),
+        ("comma_segment_length", "{:.2f}"),
+    ):
+        val = u.get(key)
+        lines.append(f"- {key}: {fmt.format(val) if val is not None else 'n/a'}")
+    lines.append(f"- EN-1 participial /1k: {sig.get('en1_participial_per_1k', 'n/a')}")
+    lines.append(f"- EN-2 be-verb /1k: {sig.get('en2_be_verb_per_1k', 'n/a')}")
+    if "tricolon_per_1k" in sig:
+        lines.append(f"- tricolon /1k: {sig['tricolon_per_1k']}")
+    lines.append(f"- lexicon(router 12건) /1k: {lex.get('per_1k', 'n/a')}")
+    lines.append("")
+    lines.append("[근거 사용 가이드]")
+    lines.append("- 위 점수는 *근거 보조*다. 단독 판정 금지.")
+    lines.append(
+        "- 규칙 ID 는 lang/en/quick-rules.md 의 것만 쓴다(EN-1·EN-2·C-8·F-7·E-5 …). "
+        "한국어 ID(C-11·D-1·H-1 …)는 이 경로에 존재하지 않는다."
+    )
+    lines.append(
+        "- **hedge·수동태·contraction·1·2인칭은 건드리지 않는다** — LLM 이 이미 "
+        "과소 사용한다(scholarship.md 결핍 신호). 제거하면 더 AI처럼 된다."
+    )
+    lines.append(
+        f"- 임계는 '{metrics_obj.get('threshold_set', 'abstract')}' 셀 보정값이다. "
+        "장르가 다르면 route_hint 를 근거로 들지 말 것(baseline.json genres)."
+    )
+    if metrics_obj.get("evidence_note"):
+        lines.append(f"- 근거 등급: {metrics_obj['evidence_note']}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _render_block(metrics_obj: dict) -> str:
+    if metrics_obj.get("lang") == "en":
+        return _render_block_en(metrics_obj)
     m = metrics_obj.get("metrics", {})
     z = metrics_obj.get("z_scores", {})
     ev = metrics_obj.get("evidence", {})
@@ -858,6 +941,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--text", help="Inline text input (creates new run dir)")
     p.add_argument("--genre", default="essay", help="Genre hint (default: essay)")
     p.add_argument(
+        "--lang",
+        choices=("auto", "ko", "en"),
+        default="auto",
+        help="입력 언어. auto 는 유니코드 스크립트 비율로 감지(기본, 판정 "
+             "불가 시 ko). ko 는 현행 한국어 경로와 완전히 동일하게 동작한다.",
+    )
+    p.add_argument(
         "--baseline",
         default=None,
         help="Override baseline JSON path (default: project default)",
@@ -910,7 +1000,34 @@ def main(argv: list[str] | None = None) -> int:
     metrics_path = run_dir / "00_metrics.json"
     error_path = run_dir / "00_metrics.error"
 
-    if _metrics_mod is None:
+    lang = resolve_lang(args.lang, text)
+
+    if lang == "en":
+        # 영어는 별도 경로다 — 한국어 metrics 는 형태소·조사 정규식과
+        # 한국어 baseline 에 묶여 있어 영어에서 의미 없는 수를 낸다.
+        # 탐지 대신 계측형(분산·쉼표) + 명시 호명 렉시콘으로 route_hint 를 낸다.
+        try:
+            sys.path.insert(0, str(PROJECT_ROOT / "lang" / "en"))
+            from metrics_en import compute_all_en  # noqa: PLC0415
+
+            metrics_obj = compute_all_en(text, genre=args.genre)
+            metrics_path.write_text(
+                json.dumps(metrics_obj, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            if error_path.exists():
+                try:
+                    error_path.unlink()
+                except OSError:
+                    pass
+        except Exception as exc:  # noqa: BLE001 — graceful degrade is the point.
+            metrics_obj = None
+            error_path.write_text(
+                f"metrics_en_failed: {type(exc).__name__}: {exc}\n\n"
+                + traceback.format_exc(),
+                encoding="utf-8",
+            )
+    elif _metrics_mod is None:
         error_path.write_text(
             "metrics module import failed; combined file emitted without score block",
             encoding="utf-8",
@@ -924,6 +1041,7 @@ def main(argv: list[str] | None = None) -> int:
             metrics_obj["_text"] = text
             metrics_obj.update(compute_route_hint(metrics_obj))
             metrics_obj.pop("_text", None)
+            metrics_obj["lang"] = "ko"
             metrics_path.write_text(
                 json.dumps(metrics_obj, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -953,6 +1071,7 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"run_dir={run_dir}\n"
         f"combined={combined_path}\n"
+        f"lang={lang}\n"
         f"risk_band={rb}  risk_score={rs}\n"
         f"route_hint={rh}\n"
         f"degraded={metrics_obj is None}"

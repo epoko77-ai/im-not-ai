@@ -1,13 +1,25 @@
 {
   "name": "humanize-korean",
-  "version": "2.3.2",
-  "description": "GitHub Copilot CLI에서 AI가 쓴 한글의 번역투와 기계적인 문체를 단일 호출로 자연스럽게 윤문합니다.",
+  "version": "2.4.0",
+  "description": "AI가 쓴 한글 텍스트를 사람이 쓴 글처럼 윤문 — route_hint 3경로(light 1콜 · standard 2콜 · heavy 3+콜). 10대 카테고리 70 AI 티 패턴. v2.4부터 영어 스킬(humanize-english v0.2) 동봉 — 언어 무관 커널 + 장르 보정 라우터(abstract·blog).",
   "author": {
     "name": "epoko77-ai"
   },
   "homepage": "https://github.com/epoko77-ai/im-not-ai",
   "repository": "https://github.com/epoko77-ai/im-not-ai",
   "license": "MIT",
-  "keywords": ["korean", "humanize", "ai-detector", "translationese", "윤문", "번역투"],
-  "skills": ["./codex/skills/"]
+  "keywords": [
+    "korean",
+    "humanize",
+    "ai-detector",
+    "translationese",
+    "윤문",
+    "번역투",
+    "english",
+    "humanize-english",
+    "ai-slop"
+  ],
+  "skills": [
+    "./codex/skills/"
+  ]
 }

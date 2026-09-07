@@ -21,6 +21,20 @@ grep 전수 조사(2026-07-17, v2.0.1 기준)로 확정한 목록입니다.
 | 11 | `.claude-plugin/marketplace.json` | `metadata.version` + `plugins[].version` + `plugins[].description` | `"X.Y.Z"` — 동일 테스트가 대사 |
 | 12 | `plugin.json` | `version` + `description` | `"X.Y.Z"` — GitHub Copilot CLI가 읽는 루트 매니페스트. 동일 테스트가 대사 |
 | 13 | git tag | `vX.Y.Z` | 아래 §3 시점 규칙 준수 |
+| 14 | `README.en.md` | 「English support」 절의 버전·분리도 표 | 영어 팩을 손댄 회차에만 |
+
+### 영어 팩 (별개 트랙 — v0.2 부터)
+
+`skills/humanize-english/SKILL.md` 의 `version:` 은 **한국어 스킬과 동행하지 않습니다**(gemini-extension.json 과 같은 취급). 영어 팩을 손대는 회차에만 함께 올립니다.
+
+| # | 파일 | 위치 |
+|---|------|------|
+| E1 | `skills/humanize-english/SKILL.md` | frontmatter `version:` + H1 + Phase 0 배너 |
+| E2 | `lang/en/quick-rules.md` | H1 버전 + 장르 한계 경고 블록 |
+| E3 | `lang/en/baseline.json` | `genres.*` 셀 — **재측정한 회차에만.** 수치는 스크립트가 쓴다(손으로 고치지 말 것) |
+| E4 | `README.md` 「영어 지원」 · `README.en.md` 「English support」 | 분리도 표가 baseline.json 과 일치하는지 |
+
+영어 수치를 문서에 적을 때는 **재현 명령을 함께 적습니다**(`scripts/build_en_blog_r2.py --report` 등). 손으로 옮긴 수치는 조용히 낡습니다.
 
 **#10~#12는 사람이 기억하지 않아도 됩니다** — `tests/test_version_sync.py`가 SKILL.md frontmatter를 SSOT로 삼아 세 매니페스트를 대사하고, 어긋나면 CI에서 막습니다. description에 은퇴한 구조 표기(`5인 파이프라인` 등)가 남아 있는 경우도 같은 테스트가 잡습니다.
 

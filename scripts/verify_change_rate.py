@@ -32,14 +32,13 @@ import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_REFS = os.path.join(
-    _HERE, "..", "skills", "humanize-korean", "references"
-)
-_REFS = os.path.abspath(_REFS)
-if _REFS not in sys.path:
-    sys.path.insert(0, _REFS)
+# 변경률은 언어 무관(문자 diff)이라 커널에 있다. 한국어 스킬 디렉터리를
+# 거치지 않아야 다른 언어팩도 같은 게이트를 쓴다(다국어 R1, 2026-09-02).
+_CORE = os.path.abspath(os.path.join(_HERE, "..", "core"))
+if _CORE not in sys.path:
+    sys.path.insert(0, _CORE)
 
-import metrics_v2 as _m  # noqa: E402  (sys.path mutation is intentional)
+import change_rate as _m  # noqa: E402  (sys.path mutation is intentional)
 
 # final.md 본문 끝의 메타데이터 주석 블록. 여는 마커부터 파일 끝까지.
 _SUMMARY_BLOCK_RE = re.compile(r"<!--\s*HUMANIZE-SUMMARY\b.*", re.DOTALL)

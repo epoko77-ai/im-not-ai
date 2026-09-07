@@ -4,17 +4,25 @@
     "name": "epoko77-ai"
   },
   "metadata": {
-    "description": "AI가 쓴 한글 텍스트를 사람이 쓴 글처럼 윤문하는 humanize-korean 스킬 마켓플레이스",
-    "version": "2.3.2",
+    "description": "AI가 쓴 텍스트를 사람이 쓴 글처럼 윤문하는 스킬 마켓플레이스 — humanize-korean(한국어) + humanize-english(영어, v0.2)",
+    "version": "2.4.0",
     "pluginRoot": "."
   },
   "plugins": [
     {
       "name": "humanize-korean",
       "source": "./",
-      "description": "AI가 쓴 한글 텍스트를 사람이 쓴 글처럼 윤문하는 오케스트레이터 스킬 + 서브에이전트 묶음 (route_hint 3경로).",
-      "version": "2.3.2",
-      "keywords": ["korean", "humanize", "ai-detector", "윤문", "번역투"]
+      "description": "AI가 쓴 텍스트를 사람이 쓴 글처럼 윤문하는 오케스트레이터 스킬 + 서브에이전트 묶음 (route_hint 3경로). 한국어 정식 + 영어 humanize-english v0.2 동봉.",
+      "version": "2.4.0",
+      "keywords": [
+        "korean",
+        "humanize",
+        "ai-detector",
+        "윤문",
+        "번역투",
+        "english",
+        "ai-slop"
+      ]
     }
   ]
 }

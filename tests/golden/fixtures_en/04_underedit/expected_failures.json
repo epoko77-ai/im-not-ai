@@ -1,0 +1,5 @@
+{
+  "description": "과소윤문 — tricolon(EN-3)과 분사절(EN-1)이 그대로 남는다. 게다가 contraction 을 펴서(can't→cannot) 티를 더한다. 실측 2026-09-05: 룰북 단독 팔 21%.",
+  "bad_must_fail": ["underedit"],
+  "route_hint": "standard"
+}

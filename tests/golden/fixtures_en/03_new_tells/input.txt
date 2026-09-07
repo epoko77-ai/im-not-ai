@@ -1,0 +1,1 @@
+We shipped the migration in two stages. The first stage moved reads; the second moved writes a week later. Neither stage required downtime, though the second one came close when a replica lagged. Our rollback plan was a single flag, and we tested it twice before the cutover.

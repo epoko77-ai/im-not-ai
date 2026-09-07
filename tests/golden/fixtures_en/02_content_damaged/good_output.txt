@@ -1,0 +1,1 @@
+The 2019 audit found that 12% of accounts had stale permissions. One reviewer put it plainly: "nobody owns the offboarding checklist". That sentence explains most of what followed. Prior work on access drift [14] reports a similar range in organizations of comparable size. We re-ran the scan in March. The figure had not moved.
