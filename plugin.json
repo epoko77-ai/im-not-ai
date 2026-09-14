@@ -1,0 +1,13 @@
+{
+  "name": "humanize-korean",
+  "version": "2.3.2",
+  "description": "GitHub Copilot CLI에서 AI가 쓴 한글의 번역투와 기계적인 문체를 단일 호출로 자연스럽게 윤문합니다.",
+  "author": {
+    "name": "epoko77-ai"
+  },
+  "homepage": "https://github.com/epoko77-ai/im-not-ai",
+  "repository": "https://github.com/epoko77-ai/im-not-ai",
+  "license": "MIT",
+  "keywords": ["korean", "humanize", "ai-detector", "translationese", "윤문", "번역투"],
+  "skills": ["./codex/skills/"]
+}

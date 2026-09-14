@@ -1,0 +1,703 @@
+{
+  "label": "threshold-calibration (사람 vs AI 패턴 밀도)",
+  "captured_at": "2026-08-28T16:43:53+00:00",
+  "note": "사람 60편(2000~2021, 발행일 검증) vs AI 60편(20프롬프트 x 3모델: fable-5·gpt-5.6-sol·haiku-4.5). 종전 24쌍 대비 2.5배.",
+  "provenance": {
+    "human": "2000~2021 발행 한국어 산문 60편(11,620어절). 발행일을 메타태그·JSON-LD·웨이백 캡처로 개별 검증(2022년 이후 0편). 장르: 칼럼·논평 12, 에세이·수필 12, 산업·시장 분석 10, 뉴스 해설·기획 10, 정책 제언·기고 8, 서평·사용기 5, 학술 요약 3. 본문은 저작권상 미수록.",
+    "ai": "20개 프롬프트 x 3개 모델(fable-5·gpt-5.6-sol·haiku-4.5) = 60편(8,727어절). 종전 기준선은 단일 모델이었다 — 모델별 분해를 `ai_by_model`에 함께 싣는다.",
+    "caveat": "① 사람 글은 편집·출판된 완성본, AI 글은 초고다. 이 격차를 'AI 고유 지문'이라 부를 수 없고 '미편집 AI 초고의 교정 표적'으로 한정해야 한다. ② **AI 60편은 사람 60편과 주제가 1:1로 매칭되지 않는다**(장르 수준에서만 대응). 종전 24쌍 기준선(2026-08-23)이 주제·분량까지 맞춘 더 엄격한 설계이므로, 두 기준선은 대체가 아니라 상호 보완이다. 결론이 갈리면 24쌍 쪽을 우선한다. ③ **과업 편향에 주의.** 예: J-2 따옴표는 사람 11.36 vs AI 0.0인데, 이는 문체 차이가 아니라 사람 글이 취재·인용을 포함한 매체 기사인 반면 AI 프롬프트는 인용을 요구하지 않은 결과일 수 있다. 인용·출처가 필요한 과업으로 생성한 대조군이 있어야 판정 가능하다."
+  },
+  "human": {
+    "label": "human",
+    "docs": 60,
+    "words": 11620,
+    "avg_chars": 842,
+    "patterns": {
+      "I-4": {
+        "total": 19,
+        "per_1k_words": 1.64,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 3058
+      },
+      "C-8": {
+        "total": 6,
+        "per_1k_words": 0.52,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 5810
+      },
+      "F-5": {
+        "total": 45,
+        "per_1k_words": 3.87,
+        "docs_over_current_threshold": 8,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 775
+      },
+      "H-1": {
+        "total": 5,
+        "per_1k_words": 0.43,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 11620
+      },
+      "A-2": {
+        "total": 19,
+        "per_1k_words": 1.64,
+        "docs_over_current_threshold": 2,
+        "current_threshold": 3,
+        "threshold_unit": "문단",
+        "words_to_reach_threshold": 1835
+      },
+      "A-16": {
+        "total": 124,
+        "per_1k_words": 10.67,
+        "docs_over_current_threshold": 19,
+        "current_threshold": 3,
+        "threshold_unit": "단락",
+        "words_to_reach_threshold": 281
+      },
+      "D-4": {
+        "total": 3,
+        "per_1k_words": 0.26,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 11620
+      },
+      "G-3": {
+        "total": 1,
+        "per_1k_words": 0.09,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 4,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 46480
+      },
+      "J-2": {
+        "total": 132,
+        "per_1k_words": 11.36,
+        "docs_over_current_threshold": 10,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 440
+      },
+      "H-3": {
+        "total": 10,
+        "per_1k_words": 0.86,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 3486
+      },
+      "A-4": {
+        "total": 0,
+        "per_1k_words": 0.0,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": null
+      },
+      "I-1": {
+        "total": 6,
+        "per_1k_words": 0.52,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 5810
+      }
+    }
+  },
+  "ai": {
+    "label": "ai",
+    "docs": 60,
+    "words": 8727,
+    "avg_chars": 595,
+    "patterns": {
+      "I-4": {
+        "total": 53,
+        "per_1k_words": 6.07,
+        "docs_over_current_threshold": 2,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 823
+      },
+      "C-8": {
+        "total": 55,
+        "per_1k_words": 6.3,
+        "docs_over_current_threshold": 5,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 476
+      },
+      "F-5": {
+        "total": 53,
+        "per_1k_words": 6.07,
+        "docs_over_current_threshold": 7,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 494
+      },
+      "H-1": {
+        "total": 20,
+        "per_1k_words": 2.29,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 2182
+      },
+      "A-2": {
+        "total": 7,
+        "per_1k_words": 0.8,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문단",
+        "words_to_reach_threshold": 3740
+      },
+      "A-16": {
+        "total": 37,
+        "per_1k_words": 4.24,
+        "docs_over_current_threshold": 4,
+        "current_threshold": 3,
+        "threshold_unit": "단락",
+        "words_to_reach_threshold": 708
+      },
+      "D-4": {
+        "total": 3,
+        "per_1k_words": 0.34,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 8727
+      },
+      "G-3": {
+        "total": 4,
+        "per_1k_words": 0.46,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 4,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 8727
+      },
+      "J-2": {
+        "total": 0,
+        "per_1k_words": 0.0,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 5,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": null
+      },
+      "H-3": {
+        "total": 5,
+        "per_1k_words": 0.57,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 5236
+      },
+      "A-4": {
+        "total": 0,
+        "per_1k_words": 0.0,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": null
+      },
+      "I-1": {
+        "total": 2,
+        "per_1k_words": 0.23,
+        "docs_over_current_threshold": 0,
+        "current_threshold": 3,
+        "threshold_unit": "문서",
+        "words_to_reach_threshold": 13090
+      }
+    }
+  },
+  "ai_by_model": {
+    "fable-5": {
+      "label": "fable-5",
+      "docs": 20,
+      "words": 3832,
+      "avg_chars": 779,
+      "patterns": {
+        "I-4": {
+          "total": 10,
+          "per_1k_words": 2.61,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 1916
+        },
+        "C-8": {
+          "total": 27,
+          "per_1k_words": 7.05,
+          "docs_over_current_threshold": 5,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 426
+        },
+        "F-5": {
+          "total": 24,
+          "per_1k_words": 6.26,
+          "docs_over_current_threshold": 4,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 479
+        },
+        "H-1": {
+          "total": 1,
+          "per_1k_words": 0.26,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 19160
+        },
+        "A-2": {
+          "total": 3,
+          "per_1k_words": 0.78,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문단",
+          "words_to_reach_threshold": 3832
+        },
+        "A-16": {
+          "total": 23,
+          "per_1k_words": 6.0,
+          "docs_over_current_threshold": 4,
+          "current_threshold": 3,
+          "threshold_unit": "단락",
+          "words_to_reach_threshold": 500
+        },
+        "D-4": {
+          "total": 2,
+          "per_1k_words": 0.52,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 5748
+        },
+        "G-3": {
+          "total": 1,
+          "per_1k_words": 0.26,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 4,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 15328
+        },
+        "J-2": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "H-3": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "A-4": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "I-1": {
+          "total": 1,
+          "per_1k_words": 0.26,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 11496
+        }
+      }
+    },
+    "gpt-5.6-sol": {
+      "label": "gpt-5.6-sol",
+      "docs": 20,
+      "words": 2415,
+      "avg_chars": 488,
+      "patterns": {
+        "I-4": {
+          "total": 29,
+          "per_1k_words": 12.01,
+          "docs_over_current_threshold": 2,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 416
+        },
+        "C-8": {
+          "total": 16,
+          "per_1k_words": 6.63,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 453
+        },
+        "F-5": {
+          "total": 12,
+          "per_1k_words": 4.97,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 604
+        },
+        "H-1": {
+          "total": 2,
+          "per_1k_words": 0.83,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 6038
+        },
+        "A-2": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문단",
+          "words_to_reach_threshold": null
+        },
+        "A-16": {
+          "total": 6,
+          "per_1k_words": 2.48,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "단락",
+          "words_to_reach_threshold": 1207
+        },
+        "D-4": {
+          "total": 1,
+          "per_1k_words": 0.41,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 7245
+        },
+        "G-3": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 4,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "J-2": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "H-3": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "A-4": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "I-1": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        }
+      }
+    },
+    "haiku-4.5": {
+      "label": "haiku-4.5",
+      "docs": 20,
+      "words": 2480,
+      "avg_chars": 518,
+      "patterns": {
+        "I-4": {
+          "total": 14,
+          "per_1k_words": 5.65,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 886
+        },
+        "C-8": {
+          "total": 12,
+          "per_1k_words": 4.84,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 620
+        },
+        "F-5": {
+          "total": 17,
+          "per_1k_words": 6.85,
+          "docs_over_current_threshold": 3,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 438
+        },
+        "H-1": {
+          "total": 17,
+          "per_1k_words": 6.85,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 729
+        },
+        "A-2": {
+          "total": 4,
+          "per_1k_words": 1.61,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문단",
+          "words_to_reach_threshold": 1860
+        },
+        "A-16": {
+          "total": 8,
+          "per_1k_words": 3.23,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "단락",
+          "words_to_reach_threshold": 930
+        },
+        "D-4": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "G-3": {
+          "total": 3,
+          "per_1k_words": 1.21,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 4,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 3307
+        },
+        "J-2": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 5,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "H-3": {
+          "total": 5,
+          "per_1k_words": 2.02,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 1488
+        },
+        "A-4": {
+          "total": 0,
+          "per_1k_words": 0.0,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": null
+        },
+        "I-1": {
+          "total": 1,
+          "per_1k_words": 0.4,
+          "docs_over_current_threshold": 0,
+          "current_threshold": 3,
+          "threshold_unit": "문서",
+          "words_to_reach_threshold": 7440
+        }
+      }
+    }
+  },
+  "ratios": {
+    "I-4": {
+      "human_per_1k": 1.64,
+      "ai_per_1k": 6.07,
+      "ratio_ai_over_human": 3.7,
+      "suggested_density_threshold": 3.28,
+      "by_model_per_1k": {
+        "fable-5": 2.61,
+        "gpt-5.6-sol": 12.01,
+        "haiku-4.5": 5.65
+      },
+      "all_models_exceed_human": true
+    },
+    "C-8": {
+      "human_per_1k": 0.52,
+      "ai_per_1k": 6.3,
+      "ratio_ai_over_human": 12.12,
+      "suggested_density_threshold": 1.04,
+      "by_model_per_1k": {
+        "fable-5": 7.05,
+        "gpt-5.6-sol": 6.63,
+        "haiku-4.5": 4.84
+      },
+      "all_models_exceed_human": true
+    },
+    "F-5": {
+      "human_per_1k": 3.87,
+      "ai_per_1k": 6.07,
+      "ratio_ai_over_human": 1.57,
+      "suggested_density_threshold": 7.74,
+      "by_model_per_1k": {
+        "fable-5": 6.26,
+        "gpt-5.6-sol": 4.97,
+        "haiku-4.5": 6.85
+      },
+      "all_models_exceed_human": true
+    },
+    "H-1": {
+      "human_per_1k": 0.43,
+      "ai_per_1k": 2.29,
+      "ratio_ai_over_human": 5.33,
+      "suggested_density_threshold": 0.86,
+      "by_model_per_1k": {
+        "fable-5": 0.26,
+        "gpt-5.6-sol": 0.83,
+        "haiku-4.5": 6.85
+      },
+      "all_models_exceed_human": false
+    },
+    "A-2": {
+      "human_per_1k": 1.64,
+      "ai_per_1k": 0.8,
+      "ratio_ai_over_human": 0.49,
+      "suggested_density_threshold": 3.28,
+      "by_model_per_1k": {
+        "fable-5": 0.78,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 1.61
+      },
+      "all_models_exceed_human": false
+    },
+    "A-16": {
+      "human_per_1k": 10.67,
+      "ai_per_1k": 4.24,
+      "ratio_ai_over_human": 0.4,
+      "suggested_density_threshold": 21.34,
+      "by_model_per_1k": {
+        "fable-5": 6.0,
+        "gpt-5.6-sol": 2.48,
+        "haiku-4.5": 3.23
+      },
+      "all_models_exceed_human": false
+    },
+    "D-4": {
+      "human_per_1k": 0.26,
+      "ai_per_1k": 0.34,
+      "ratio_ai_over_human": 1.31,
+      "suggested_density_threshold": 0.52,
+      "by_model_per_1k": {
+        "fable-5": 0.52,
+        "gpt-5.6-sol": 0.41,
+        "haiku-4.5": 0.0
+      },
+      "all_models_exceed_human": false
+    },
+    "G-3": {
+      "human_per_1k": 0.09,
+      "ai_per_1k": 0.46,
+      "ratio_ai_over_human": 5.11,
+      "suggested_density_threshold": 0.18,
+      "by_model_per_1k": {
+        "fable-5": 0.26,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 1.21
+      },
+      "all_models_exceed_human": false
+    },
+    "J-2": {
+      "human_per_1k": 11.36,
+      "ai_per_1k": 0.0,
+      "ratio_ai_over_human": 0.0,
+      "suggested_density_threshold": 22.72,
+      "by_model_per_1k": {
+        "fable-5": 0.0,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 0.0
+      },
+      "all_models_exceed_human": false
+    },
+    "H-3": {
+      "human_per_1k": 0.86,
+      "ai_per_1k": 0.57,
+      "ratio_ai_over_human": 0.66,
+      "suggested_density_threshold": 1.72,
+      "by_model_per_1k": {
+        "fable-5": 0.0,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 2.02
+      },
+      "all_models_exceed_human": false
+    },
+    "A-4": {
+      "human_per_1k": 0.0,
+      "ai_per_1k": 0.0,
+      "ratio_ai_over_human": null,
+      "suggested_density_threshold": null,
+      "by_model_per_1k": {
+        "fable-5": 0.0,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 0.0
+      },
+      "all_models_exceed_human": false
+    },
+    "I-1": {
+      "human_per_1k": 0.52,
+      "ai_per_1k": 0.23,
+      "ratio_ai_over_human": 0.44,
+      "suggested_density_threshold": 1.04,
+      "by_model_per_1k": {
+        "fable-5": 0.26,
+        "gpt-5.6-sol": 0.0,
+        "haiku-4.5": 0.4
+      },
+      "all_models_exceed_human": false
+    }
+  },
+  "reading_guide": {
+    "all_models_exceed_human": "모든 모델에서 사람보다 밀도가 높은 규칙만 '모델 계열과 무관한 AI 티'로 취급한다. 한 모델만 높은 항목은 그 모델의 습관일 수 있어 규칙의 근거로 쓰기 약하다.",
+    "n60_findings": {
+      "robust": [
+        "I-4 당위(3.7배)",
+        "C-8 대구(12.1배)",
+        "F-5 추상체인(1.57배)"
+      ],
+      "single_model_driven": [
+        "H-1 문두접속사 — haiku 6.85이 끌어올림(fable 0.26·gpt 0.83, 사람 0.43)",
+        "G-3 안전균형 — haiku 1.21 단독(fable 0.26·gpt 0.0)",
+        "H-3 메타진입 — haiku 2.02 단독"
+      ],
+      "human_higher": [
+        "A-16 대명사직역 10.67 vs 2.48~6.0(번역 맥락 한정 조치를 재확인)",
+        "A-2 ~를 통해 1.64 vs 0.8",
+        "I-1 ~것이다 0.52 vs 0.23",
+        "J-2 따옴표 11.36 vs 0.0 — 단 과업 편향 의심(caveat ③)"
+      ],
+      "weak_evidence": [
+        "D-4 hype 1.31배",
+        "A-4 라는 점에서 양쪽 0건"
+      ]
+    }
+  }
+}

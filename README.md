@@ -1,0 +1,729 @@
+<p align="center">
+  <img src="assets/social-preview.png" alt="im-not-ai — 한글 AI 티 제거기" width="820">
+</p>
+
+# Humanize KR — 한글 AI 티 제거기 v2.3.2
+
+> **English**: [`README.en.md`](README.en.md)
+
+AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
+
+번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 70 서브 패턴**(+검증 대기 hold 1건)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
+
+## 설치 (Install)
+
+> **Claude Code**, **GitHub Copilot CLI**, **OpenAI Codex CLI**, **Gemini CLI**를 지원합니다. 전체 가이드: [`INSTALL.md`](INSTALL.md)
+
+**GitHub Copilot CLI — 플러그인 마켓플레이스 (클론 불필요, 권장)**
+
+```bash
+copilot plugin marketplace add epoko77-ai/im-not-ai
+copilot plugin install humanize-korean@im-not-ai
+copilot plugin list
+```
+
+Copilot에서 `humanize-korean 스킬로 이 글의 AI 티를 없애줘:`처럼 요청하거나 `/skills list`로 로드 여부를 확인하세요. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`입니다. Copilot은 **단일 호출 경로만** 제공하며 Claude Code 전용 진단·finalize 다중 호출 경로는 실행하지 않습니다.
+
+> 호환성 참고: 1.0.79-5에서는 `copilot plugin install epoko77-ai/im-not-ai`도 동작하지만, CLI가 저장소 직접 설치의 사용 중단 예정 경고를 표시합니다. 신규 설치 경로로는 권장하지 않습니다.
+
+**Claude Code — 플러그인 마켓플레이스 (클론 불필요, 권장)**
+
+```
+/plugin marketplace add epoko77-ai/im-not-ai
+/plugin install humanize-korean@im-not-ai
+```
+
+새 세션에서 `/humanize-korean` (또는 자연어로 "이 글 AI 티 없애줘").
+
+**Claude Code · Codex CLI — 클론 + 스크립트**
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+./install.sh            # 설치된 claude/codex 자동 감지 → 전역 심링크
+```
+
+- Claude: `/humanize-korean` · Codex: `$humanize-korean`
+- 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
+- **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
+- Codex는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
+
+## 왜 한글 특화인가
+
+영어권 humanizer(QuillBot · Hix · Undetectable AI)는 한국어에 약합니다. 한글 AI 글의 티는 대부분 **영어 번역투**에서 나옵니다. 
+
+- "AI 기술을 **통해** 효율을 높**일 수 있다**" → "AI로 효율을 높인다"
+- "이에 **있어서** 중요한 **점은**" → "여기서 중요한 건"
+- "~**에 의해** 생성된" → "~가 만든"
+- "**결론적으로**, 이는 **시사하는 바가 크다**" → (삭제)
+
+이 도구는 그 한글 고유 패턴을 SSOT로 정리하고, 글의 상태에 맞는 세 경로(light 1콜 / standard 2콜 / heavy 3+콜) 중 하나로 윤문합니다. 잘 쓴 글일수록 콜 수가 줄어 빠르고 싸게 끝납니다.
+
+## 4대 철칙
+
+1. **의미 불변** — 사실 · 주장 · 수치 · 고유명사 · 직접 인용은 100% 원문 보존.
+2. **근거 기반** — 탐지된 span에만 수술적 수정. 탐지 없는 구간은 건드리지 않음.
+3. **장르 유지** — 칼럼을 문학으로, 리포트를 에세이로 옮기지 않음.
+4. **과윤문 금지** — 변경률 30% 초과 시 경고, 50% 초과 시 강제 중단.
+
+## 아키텍처 (v2.2) — route_hint 3경로
+
+입력을 shim(`prepare_monolith_input.py`)이 먼저 정량 채점하고, 그 점수로 **`route_hint`(light | standard | heavy)** 를 결정적으로 산출합니다. 글의 상태가 경로를 정하고, 경로가 콜 수를 정합니다. 절감은 모델 교체가 아니라 **콜 수 축소**에서 옵니다(모델 선택은 사용자 몫).
+
+| 경로 | LLM 콜 수 | 언제 | 파이프라인 |
+|---|---|---|---|
+| **light** | **1** | 잘 쓴 글 — 어휘 티가 거의 0 | 진단·finalize 생략, 보수 강도 단일 윤문. 손댈 게 거의 없으면 "이미 좋습니다"로 조기 종료 |
+| **standard** | **2** | 보통의 AI 초안 — 어휘·구조 티 섞임 | 진단 1콜 + 겨냥 윤문 1콜. 1만자급도 청킹 없이 단일 윤문 콜 |
+| **heavy** | **3+** | 중증 AI 슬롭 밀집 or 초장문(15,000자 초과) or 검증 증적 필요 | 진단 → 윤문(shim이 청크를 2개 이상 만든 경우에만 청크 병렬) → finalize |
+
+```
+입력 텍스트
+    ↓
+[prepare_monolith_input.py]  ── 정량 사전 점수 (KatFish·post-editese 지표) + route_hint 산출
+    ↓                            실패 시 점수 없이 standard로 자동 진행 (graceful degrade)
+    ├─ light ────→ [humanize-monolith ×1] ────────────────────────────→ final.md
+    ├─ standard ─→ [humanize-diagnostician] → [monolith 겨냥 윤문] ───→ final.md
+    └─ heavy ────→ [diagnostician] → [monolith(필요시 청크 병렬)] → [humanize-finalizer]
+    ↓
+[verify_change_rate.py]      ── 변경률 게이트 (결정적 코드 판정, exit code) — 모든 경로 공통
+```
+
+- 사용자 명시가 route_hint를 오버라이드합니다: `--strict`·"정밀 모드" → heavy 고정, "가볍게" → light 고정.
+- **단일 콜 우선**: 청킹은 heavy 전용이며 15,000자 이하는 비권장. 실측으로 1만자 글을 청킹 7콜로 돌리면 610K 토큰, 단일 콜이면 134K(4.5배 절감, 품질 동등)였습니다 — 청크마다 룰북·진단을 재로드하는 비용이 절감분을 다 먹기 때문입니다.
+- 이번 개선의 핵심 가치: **잘 쓴 글은 1콜로 싸게 끝납니다.** 어휘 티 없는 글에 최중량 파이프라인을 돌리던 낭비를 route_hint가 차단합니다.
+
+## 에이전트 구성
+
+윤문 실행에 쓰이는 에이전트는 아래 4개입니다.
+
+| 에이전트 | 경로 | 역할 |
+|---------|---|------|
+| `humanize-monolith` | 전 경로 공용 | 단일 호출 윤문 (탐지·윤문·자체검증 일괄, 도구 호출 3회 캡) |
+| `humanize-diagnostician` | standard·heavy | 글 전체의 지배 패턴 3~6개 진단, taxonomy ID + 처방 |
+| `humanize-finalizer` | heavy | 원문 직접 대조로 의미 보존 15항 + 자연성 판정, 국소 보정 |
+| `korean-ai-tell-taxonomist` | 별도 명령 | 분류 체계(SSOT) 관리, 신규 패턴 심사 승격 |
+
+이 외에 `agents/`에는 릴리스 회차 전용 개발 도구 5개(`translationese-research-distiller` · `korean-translation-scholar` · `taxonomy-gap-analyzer` · `post-editese-metric-engineer` · `quick-rules-integrator` — v2.0 학술 흡수 작업용, 윤문 실행과 무관)가 함께 들어 있습니다.
+
+옛 strict 5인 파이프라인의 `ai-tell-detector` · `korean-style-rewriter` · `content-fidelity-auditor` · `naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 **v2.1에서 은퇴**했습니다(아래 v2.1 릴리스 노트 참조).
+
+## AI 티 분류 체계 (요약)
+
+| ID | 대분류 | 대표 서브 패턴 |
+|----|-------|---------------|
+| A | 번역투 | "~를 통해", "~에 대해", "~에 있어서", 이중 피동 "~되어진다", "가지고 있다", **"그/그녀" 강박적 사용 (A-16)**, **관계절 좌향 수식 (A-18)**, **"~에서의/~에로의" 이중 조사 (A-19)** |
+| B | 영어 인용·용어 과다 | 과도한 괄호 병기, 번역 가능한 영어 그대로 |
+| C | 구조적 AI 패턴 | 기계적 "첫째/둘째/셋째", 과도한 불릿·헤딩·이모지, 연결어미 뒤 쉼표 (C-11) |
+| D | AI 특유 관용구 | "결론적으로", "시사하는 바가 크다", "주목할 만하다", "혁신적인" |
+| E | 리듬 균일성 | 문장 길이 표준편차 낮음, 동일 종결어미 반복, **청자 경어법 일관성 손실 (E-7)** |
+| F | 수식·중복 | "매우", "정말", 동의어 이중 수식, "~적/~성/~화/-tion/-ment" 남발 |
+| G | Hedging 남용 | "~할 수 있을 것으로 보인다" 다중 완곡 |
+| H | 접속사 남발 | 문두 "또한/따라서/즉/나아가" 연속 |
+| I | 형식명사 과다 | "것이다", "점", "수", "바", "~할 필요가 있다" |
+| J | 시각 장식 남용 | 과도한 **볼드**, "따옴표", 대시(—) 남발 |
+
+전체 70 서브 패턴(+hold 1건)과 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
+
+## 심각도 & 품질 등급
+
+**심각도**
+- **S1 결정적**: 한 번만 나와도 AI 확신. 무조건 제거.
+- **S2 강함**: 1~2회 허용, 3회+ 반복 시 제거.
+- **S3 약함**: 다른 패턴과 중첩될 때만 문제.
+
+**품질 등급 (윤문 후)**
+- **A**: S1 0건, S2 ≤2건, 점수 개선 70%+
+- **B**: S1 0건, S2 ≤4건, 개선 50%+
+- **C**: S1 1~2건 or 과윤문 시그널 2개 → 2차 윤문
+- **D**: S1 3건+ or 심각한 과윤문 → 사람 검토
+
+## 사용법 — 5분이면 따라합니다
+
+> **전역 설치([설치](#설치-install))를 마쳤다면** 1~2단계(클론·폴더 진입)는 건너뛰고, 아무 폴더에서나 바로 **3단계**로 가세요. 아래는 설치 없이 리포에서 곧바로 체험하는 흐름입니다.
+
+### 0. 전제
+
+아래 1~4단계는 3경로 전체를 제공하는 [Claude Code](https://claude.com/claude-code) 기준입니다. GitHub Copilot CLI·Codex CLI·Gemini CLI의 단일 호출 경로는 아래 각 도구별 방법을 참고하세요. Mac · Windows · Linux 모두 지원합니다.
+
+설치 확인:
+```bash
+claude --version
+```
+
+> Claude Code는 터미널에서 Claude(Anthropic의 AI)와 대화하며 파일을 같이 편집하는 CLI입니다. 웹 버전 Claude.ai나 일반 ChatGPT에서는 이 저장소의 스킬이 자동 로드되지 않습니다.
+
+### 1. 리포 받기
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git
+cd im-not-ai
+```
+
+### 2. Claude Code 켜기
+
+```bash
+claude
+```
+
+> **전역 설치를 했다면** 아무 폴더에서나 켜도 `/humanize-korean`이 동작합니다([설치](#설치-install) 참고).
+> **설치 없이 체험만 하려면** 방금 클론한 `im-not-ai` 폴더 **안에서** 실행하세요(프로젝트 로컬 스킬이 로드됩니다). 다른 위치에서 켜면 일반 Claude Code처럼 동작합니다.
+
+### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
+
+Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. GitHub Copilot CLI·Codex CLI 사용자는 아래 **방법 D·E**를 참고하세요.
+
+**방법 A — 자연어 한 문장 (가장 쉬움)**
+
+평소 말투 그대로 쓰면 됩니다:
+
+```
+이 AI 글 자연스럽게 윤문해줘:
+
+[ChatGPT / Claude / Gemini 초안 여기에 붙여넣기]
+```
+
+아래 표현 중 아무거나 쓰면 스킬이 자동 발동합니다:
+- "AI 티 없애줘"
+- "GPT 문체 제거해줘"
+- "사람이 쓴 것처럼 윤문해줘"
+- "번역투 제거"
+- "한글 AI 윤문"
+
+**방법 B — 슬래시 커맨드** *(v1.2~)*
+
+```
+/humanize [윤문할 텍스트 또는 파일 경로]
+```
+
+옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 두 진입점은 이제 스킬입니다: [`humanize`](skills/humanize/SKILL.md) · [`humanize-redo`](skills/humanize-redo/SKILL.md)
+
+**방법 C — Plugin / 마켓플레이스 (공식)**
+
+본체가 이제 Claude Code Plugin/Marketplace를 **공식 지원**합니다. 클론 없이 마켓플레이스로 설치하세요:
+
+```
+/plugin marketplace add epoko77-ai/im-not-ai
+/plugin install humanize-korean@im-not-ai
+```
+
+스킬 3개 + 서브에이전트 9개가 함께 설치됩니다. 자세한 옵션·스크립트 설치는 [설치](#설치-install) 섹션과 [`INSTALL.md`](INSTALL.md) 참고. (초기 패키징을 탐색한 [`gaebalai/im-not-ai`](https://github.com/gaebalai/im-not-ai) 포크도 있습니다.)
+
+**방법 D — GitHub Copilot CLI (공식, 단일 호출 경로)**
+
+GitHub Copilot CLI 1.0.79-5에서 마켓플레이스 설치와 스킬 탐색을 확인했습니다.
+
+```bash
+copilot plugin marketplace add epoko77-ai/im-not-ai
+copilot plugin install humanize-korean@im-not-ai
+copilot plugin list
+copilot skill list
+```
+
+새 Copilot 세션에서 `humanize-korean 스킬로 이 글을 자연스럽게 윤문해줘:` 또는 `이 글 AI 티 없애줘:`처럼 요청합니다. `/skills list`에서도 스킬을 확인할 수 있습니다. 업데이트는 `copilot plugin update humanize-korean@im-not-ai`, 제거는 `copilot plugin uninstall humanize-korean@im-not-ai`을 사용하세요.
+
+Copilot은 Codex와 같은 **단일 호출 경로**를 사용합니다. Claude Code 전용 `route_hint` 3경로 오케스트레이션과 진단·finalize 서브에이전트는 Copilot에서 실행되지 않습니다.
+
+> 저장소 직접 설치 명령 `copilot plugin install epoko77-ai/im-not-ai`은 1.0.79-5에서 동작하지만 사용 중단 예정 경고가 표시되는 호환성 경로입니다.
+
+**방법 E — Codex CLI (공식, 단일 콜 경로)**
+
+본체가 이제 Codex CLI Skills를 **공식 지원**합니다. 리포 클론 후 한 줄이면 `~/.codex/skills/`에 연결됩니다:
+
+```bash
+git clone https://github.com/epoko77-ai/im-not-ai.git && cd im-not-ai
+./install.sh --codex-only
+```
+
+Codex에서 `$humanize-korean`으로 발동합니다(또는 `/skills` 메뉴). Codex는 **단일 콜 경로만** 제공하며, 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용입니다. (Codex Desktop용 별도 어댑터로는 community 포트 [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex)도 있습니다.)
+
+**방법 F — Web UI (비공식)**
+
+opencode 로 윤문하는 커뮤니티 제작 포트입니다.
+- 접속: [im-not-ai-ocx.illuwa.click](https://im-not-ai-ocx.illuwa.click/)
+
+### 커뮤니티 포트
+
+공식 지원 런타임은 **Claude Code · Codex · Gemini CLI** 세 가지입니다. 저희가 라이브로 검증할 수 있는 범위를 넘어서면 "공식 지원" 을 표기하지 않는다는 정책이라, 그 밖의 런타임은 커뮤니티 포트로 안내합니다.
+
+| 포트 | 런타임 | 제작 |
+|---|---|---|
+| [`Squirbie/im-not-ai-codex`](https://github.com/Squirbie/im-not-ai-codex) | Codex Desktop 어댑터 | @Squirbie |
+| [im-not-ai-ocx](https://im-not-ai-ocx.illuwa.click/) | opencode Web UI | 커뮤니티 |
+
+포트를 만드셨다면 Issue 로 알려주세요 — 확인 후 이 표에 추가합니다. 본체를 건드리지 않는 격리 설계와, 룰북 사본이 본진과 어긋나면 깨지는 드리프트 검사를 갖추는 것을 권장합니다([PR #61](https://github.com/epoko77-ai/im-not-ai/pull/61) 이 좋은 참고입니다).
+
+### 4. 결과 확인
+
+정량 사전 채점이 산출한 `route_hint`에 따라 세 경로 중 하나로 처리합니다(사용자 명시가 오버라이드).
+
+**light (1콜 · 잘 쓴 글 · 1~2분)** — 진단·finalize 없이 `humanize-monolith` 한 콜이 보수 강도로 윤문합니다. 손댈 게 거의 없으면 "이미 좋습니다"와 손댄 곳 요약으로 조기 종료합니다.
+
+**standard (2콜 · 보통의 AI 초안 · 2~5분)** — 진단 1콜이 지배 패턴을 짚고, 겨냥 윤문 1콜이 처리합니다. 1만자급도 청킹 없이 단일 윤문 콜입니다.
+
+산출물은 `_workspace/{실행날짜-번호}/`에:
+
+| 파일 | 내용 |
+|------|------|
+| `01_input.txt` | 원문 그대로 |
+| `00_metrics.json` · `01_input_with_metrics.txt` | 정량 사전 점수 + `route_hint` + 점수 블록을 원문 앞에 붙인 결합 입력 (점수 계산 실패 시 standard로 자동 진행) |
+| `02_diagnosis.md` | (standard·heavy) 지배 패턴 3~6개 진단 (taxonomy ID · 근거 · 처방 · 장르/격식) |
+| `final.md` | 윤문본 + 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 주석 블록(메트릭·카테고리 탐지 before/after·자체검증 6항·등급·주요 변경 하이라이트). HTML 주석이라 마크다운 뷰어·웹 게시·복사 시 본문에만 노출 |
+
+**heavy (3+콜 · 중증 슬롭·초장문·증적 필요 · `--strict`로 강제 가능 · 5~8분)** — 진단 → 윤문(shim이 청크를 2개 이상 만든 경우에만 청크 병렬) → finalize. 위 산출물에 더해:
+
+| 파일 | 내용 |
+|------|------|
+| `final_pre_finalize.md` | finalize 보정 전 윤문본 백업 |
+| `09_finalize.json` | 의미 보존 15항 + 자연성 판정 결과 |
+
+부분 재실행("이 카테고리만 다시"·"2차 윤문")은 heavy 경로로 자동 전환됩니다.
+
+### 5. 결과가 맘에 안 들면
+
+그대로 말씀하시면 됩니다. 재실행·수정 명령을 따로 외울 필요 없습니다:
+
+- **"이 문단만 다시 윤문해줘"** — 해당 구간만 재시도
+- **"번역투만 더 손봐줘"** (또는 "관용구만 다시") — 특정 카테고리만 재처리
+- **"윤문 강도 낮춰줘"** — 보수적 윤문 (결정적 패턴만 제거)
+- **"원문 톤을 더 살려줘"** — 변경률 상한을 낮춰 원문 유지
+- **"2차 윤문해줘"** — 현재 결과를 한 번 더 다듬기
+
+### 6. 다른 글로 또 돌리고 싶을 때
+
+Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩니다. 실행마다 새 `_workspace/{날짜-번호}/` 폴더가 만들어져 이전 결과와 섞이지 않습니다.
+
+## Do-NOT List (탐지·윤문 대상 제외)
+
+- 수치 · 단위 · 날짜
+- 고유명사 · 인명 · 제품명 · 모델명
+- 큰따옴표 내부 직접 인용
+- 법률 · 규정 조문
+- 학술 개념어 (불가피한 경우)
+
+## 웹 서비스 확장 (옵션)
+
+웹 버전은 별도 코드베이스로 운영 중입니다. 본 리포의 설계 문서 [`web-service-spec.md`](skills/humanize-korean/references/web-service-spec.md)는 산출물로 보존합니다 (설계 담당이던 `humanize-web-architect` 에이전트는 v2.1에서 은퇴).
+
+## 외부 티어다운 대응 — Pebblous (2026-08)
+
+데이터 품질 기업 Pebblous가 본 프로젝트의 공개 코드를 분해 리뷰했습니다([기술 블로그, 2026-08-20](https://blog.pebblous.ai/report/korean-ai-humanizer-teardown-2026-08/en/)). 인용 변조·수치 누락 포착과 과윤문 차단이 정상 동작함을 확인해 준 한편, 재현 가능한 반례 하나를 제시했습니다: **2020년(pre-ChatGPT) 사람 에세이가 위험도 6/6 최고 판정** — 필자의 개인 쉼표 습관(연결어미 뒤 쉼표율 83.3%)이 C-11 단일 계열의 z-점수를 폭주시킨 오판이었습니다.
+
+지적을 재현·확장 검증한 결과, 1편짜리 반례가 아니라 시스템 결함이었습니다. 클린 사람 코퍼스 532편(칼럼 11·위키 설명문 521) 실측:
+
+| 판정기 | 사람 글 high 오판 | medium | low |
+|---|---|---|---|
+| 수정 전 | **285편 (53.6%)** | 171 | 76 |
+| 계열 상한 + 독립 2계열 요건 (#119) | 0 | 4 | 528 |
+| + column·report 장르 셀 (#121) | **0** | **0** | **532 (100%)** |
+
+3단계로 반영했습니다 (지적 접수 → 반영 완료까지의 기록은 각 PR 참조):
+
+1. **오탐 방지 원칙** ([#110](https://github.com/epoko77-ai/im-not-ai/pull/110)) — 단일 지표 비증거·단독 판정 금지·개인 편차 캐비엇·판정 3인+ICC를 분류 체계에 명문화
+2. **판정기 수정** ([#119](https://github.com/epoko77-ai/im-not-ai/pull/119)) — 쉼표 계열 기여 상한 + high는 독립 계열 2개 이상 동시 발화 시에만
+3. **장르 베이스라인 확장** ([#121](https://github.com/epoko77-ai/im-not-ai/pull/121)) — 근본 원인은 column/report 장르가 essay(KatFish) 셀로 폴백되던 구멍. 실측 인간 극으로 두 셀을 추가하고, 인간 실측이 AI 극을 역전한 지표(ending_comma_rate 등)는 해당 장르에서 비활성
+
+재실측이 셀 산출 코퍼스와 같은 in-sample이라는 한계는 남습니다 — out-of-sample 검증은 다음 코퍼스 라운드에서 수행합니다. 공개 코드에 대한 재현 가능한 외부 반례는 이 프로젝트가 가장 빨리 좋아지는 경로입니다. 이런 리뷰는 언제든 환영합니다.
+
+## v2.3.2 — 플러그인 스킬 위치 정정 (2026-08)
+
+**마켓플레이스·플러그인으로 설치하셨다면 업데이트를 권합니다.** 스킬은 로드됐지만 내부에서 두 층이 조용히 빠지고 있었습니다.
+
+### 무엇이 문제였나
+
+플러그인 로더는 스킬을 **플러그인 루트 `skills/`** 에서 기본 스캔합니다. 그런데 이 저장소는 `.claude/skills/` 에 두고 `plugin.json` 의 `skills` 필드로 가리키고 있었습니다.
+
+스펙에 예외가 있습니다 — **marketplace 항목의 `source` 가 마켓플레이스 루트로 풀리면, 선언한 디렉터리가 기본 `skills/` 스캔을 대체합니다.** 우리 `source` 는 `"./"` 라 정확히 그 경우였고, 관례 위치는 비어 있었습니다.
+
+결과가 로더마다 갈렸습니다.
+
+| 환경 | 이전 |
+|---|---|
+| CLI 심링크 설치 | 정상 |
+| CLI 마켓플레이스 설치 | 로드는 됐지만 **정량 shim·진단이 조용히 누락** |
+| 관례 위치만 스캔하는 로더(Cowork 등) | **스킬 자체를 못 찾음** |
+
+두 번째가 특히 문제였습니다. `route_hint` 와 철칙 #4 게이트가 사라진 채로도 **결과물은 정상적으로 나오기 때문에** 품질이 떨어진 것을 알아채기 어려웠습니다.
+
+### 고친 것
+
+- 스킬 3종을 **`.claude/skills/` → `skills/`** (관례 위치)로 이동. `plugin.json` 의 `skills` 필드 제거 — 루트 `skills/` 는 기본 스캔 대상이라 선언이 불필요하고, 선언하면 오히려 예외 조항에 걸립니다.
+- **`${SKILL_ROOT}` 유도를 깊이 비의존으로.** `.claude-plugin/` 마커를 만날 때까지 거슬러 올라갑니다. 고정 횟수(`cd ../../..`)는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킵니다.
+- 끊어져 있던 `codex/skills/.../references` 심링크 복구.
+
+에이전트는 같은 이유로 이미 루트 `agents/` 에 있었습니다([#26](https://github.com/epoko77-ai/im-not-ai/pull/26)). 스킬만 남아 있었던 것입니다.
+
+### 업데이트 방법
+
+```bash
+# 플러그인
+/plugin update humanize-korean
+
+# 스크립트 설치
+./update.sh          # 또는 ./install.sh
+```
+
+⚠️ **심링크로 설치하셨다면 링크가 끊어집니다.** `.claude/skills/` 가 사라졌기 때문입니다. `./install.sh` 를 다시 돌리면 복구됩니다.
+
+### 검증
+
+- `pytest` **236 passed** (레이아웃 회귀 4건 신설 — 구 위치 부활 금지, `skills` 필드 재도입 금지, 고정 깊이 유도 금지)
+- `claude plugin validate .` 통과
+- 격리 환경 설치 실측 · `${SKILL_ROOT}` 유도 4종(저장소 직접·심링크·깊이 2·깊이 3) 검증
+
+제보해주신 분들 덕에 잡혔습니다. 세 건 모두 **실제로 설치해 쓴 분들**에게서 왔고, 저장소 안에서만 테스트하면 원리적으로 보이지 않는 것들이었습니다.
+
+## v2.3.1 — 경로 해석 · 런타임 경계 · 계약 정합 (2026-08)
+
+**외부 제보로 드러난 실행 불가 경로를 고친 패치 회차입니다. 기능·분류 체계 변경은 없습니다.**
+
+### 고친 것
+
+- **`--run-dir` 상대경로가 cwd 가 아닌 저장소 루트 기준으로 해석**되던 문제 ([#71](https://github.com/epoko77-ai/im-not-ai/issues/71), [@bukbuk82-alt](https://github.com/bukbuk82-alt)). SKILL.md 는 "모든 경로는 cwd 기준"이라 지시하는데 스크립트는 반대로 동작해, **심링크로 설치해 작업 디렉터리에서 스킬을 부르면 첫 실행부터 항상 실패**했습니다. 저장소 루트에서 돌리면 `cwd == PROJECT_ROOT` 라 내부에서는 드러나지 않던 버그입니다. `--diagnosis` 도 같은 기준으로 통일했고, 실패할 때마다 빈 `_workspace/{run_id}/` 가 쌓이던 부작용도 제거했습니다.
+
+- **프로덕션 게이트가 `tests/` 를 런타임 import** 하던 경계 위반 ([#59](https://github.com/epoko77-ai/im-not-ai/issues/59), [@andrea9292](https://github.com/andrea9292)). `verify_gates.py` 가 `tests/golden/checks.py` 를 불러 쓰고 있어, 런타임 파일만 선별 배포하면 **P3 golden 축이 통째로 죽었습니다.** `checks.py` 는 이름만 tests 아래 있었을 뿐 전부 프로덕션 검사 로직이라 `scripts/` 로 옮겼습니다.
+
+- **Light 경로 finalize 승급이 실행 불가**하던 계약 공백 ([#54](https://github.com/epoko77-ai/im-not-ai/issues/54), [@andrea9292](https://github.com/andrea9292)). Light 는 `02_diagnosis.md` 를 만들지 않는데 finalizer 가 그 파일을 필수로 요구했습니다. `diagnosis_path` 를 선택으로 바꾸고, **진단 콜을 추가하지 않는 쪽**을 의도로 명문화했습니다 — finalize 본체(의미 보존 15항 + 자연성)는 원문↔윤문본 직접 대조로 성립합니다.
+
+- **내용 앵커 유실** ([#74](https://github.com/epoko77-ai/im-not-ai/issues/74), [@ruddyscent](https://github.com/ruddyscent)). 윤문 콜이 편집 **전에** 문장별 핵심 내용 명사를 기록하고, 앵커가 사라지는 edit 은 즉시 롤백하는 `anchor_ledger` 계약을 배포 경로 5곳에 적용했습니다. 실측(opus-5 × `fx_guard_overedit`, 계약 적용 전후 각 11 run): **보호 어휘 유실 2회 → 0회.**
+
+- **전역 설치 범위 한정** ([#70](https://github.com/epoko77-ai/im-not-ai/pull/70), [@penta505](https://github.com/penta505)) — 스킬이 실제로 쓰는 런타임 4종만 설치(`--all-agents` 로 전체). **구버전 설치본 자동 정리**([#73](https://github.com/epoko77-ai/im-not-ai/issues/73), 원안 [@yswyang0228](https://github.com/yswyang0228)) — 재실행 시 범위 밖·은퇴 dangling 링크를 해제합니다. 소유권은 심링크 대상으로만 판별해 사용자 파일·타 도구 링크는 건드리지 않습니다.
+
+- **배포 정합** ([@penta505](https://github.com/penta505)) — fixture 가 원문에 없는 문자열을 보존 대상으로 요구하던 것([#67](https://github.com/epoko77-ai/im-not-ai/pull/67)), 매니페스트 버전 드리프트([#68](https://github.com/epoko77-ai/im-not-ai/pull/68)), SKILL.md 에이전트 서술 불일치([#69](https://github.com/epoko77-ai/im-not-ai/pull/69)). 각각 회귀 테스트를 동반했고, 셸 테스트가 이 회차에 CI 에 최초 등록됐습니다.
+
+- fixture 가 taxonomy **D-7("변환 공식")이 제거를 지시하는 표현**("패러다임의 전환")을 보존 대상으로 요구하던 결함. 스킬이 규칙을 올바르게 지킬 때마다 fidelity 위반으로 채점되고 있었습니다.
+
+### 검증
+
+- `pytest` **223 passed** (신규 회귀: 경로 해석 5건 · 런타임 경계 5건 · 텍스트 위생 17건 · 계약 정합)
+- 게이트가 **`tests/` 없는 트리에서 전 축 동작** 실측 — P3 golden PASS
+- 설치 정리는 격리 환경에서 사용자 파일·타 도구 링크 불가침 확인
+
+### 함께 들어간 것
+
+- **텍스트 위생** `scripts/sanitize_text.py` — 제로폭·bidi·태그 문자 제거, 한글 NFD → NFC 정규화. shim 이 자동 적용(`--no-sanitize` 로 해제). NFD 분해 한글은 글자수가 최대 3배로 잡혀 변경률 게이트가 "전 글자 변경"으로 오판하던 잠복 사고를 막습니다. **AI 워터마크와 무관합니다** — 사유는 `CLAUDE.md` 「AI 워터마킹에 대한 입장」 참조.
+- **품질 기준선 계측** `scripts/eval_baseline.py` · `eval_compare.py` + `docs/watermark-baseline-runbook.md`. K회 반복의 자체 표준편차를 잡음 바닥으로 삼아 그걸 넘는 변화만 유의하다고 표시합니다.
+
+기여해주신 분들은 [CONTRIBUTORS.md](CONTRIBUTORS.md) 에 기록했습니다.
+
+## v2.3 — 구조 수렴 게이트 · 진단 슬림 인덱스 (2026-07)
+
+윤문이 "제대로 됐는지"를 문자 변경률 하나로만 보던 게이트를 **4축**으로 넓히고, 진단 콜의 토큰을 크게 줄였습니다.
+
+**핵심 변경**
+
+- **구조 수렴 게이트 (`scripts/verify_gates.py`, LLM 콜 0)** — ① 문자율(폭주 재작성 상한, 기존) ② **진단 목표달성**(진단이 지목한 지표가 실제로 사람 분포로 수렴했는지 z-score로 검증) ③ **대구 전멸 방지**(C-8 "A가 아니라 B"를 다 깨서 필자 목소리를 지우면 실패) ④ golden + **수치 주입 차단**. 문자 change_rate가 못 보던 구조 편집(쉼표·대구 해체)을 결정적으로 검증합니다. 기존 `verify_change_rate.py`는 하위호환 보존.
+- **진단 슬림 인덱스 (`references/diagnosis-rules.md`, 빌드 생성)** — 진단이 taxonomy 전량(74.8KB)을 읽던 것을 71패턴 전수 × 2줄(ID·정의·탐지 시그니처)의 ~13KB 인덱스로 교체(83%↓). 진단 콜 토큰 35~50% 절감, 지배 패턴 지목 품질은 실측 회귀로 동등 확인. SSOT(`ai-tell-taxonomy.md`)는 무수정 유지, `build_diagnosis_rules.py --check`가 drift 차단.
+
+## v2.2 — route_hint 3경로 · 단일 콜 우선 (2026-07)
+
+shim이 정량 점수로 `route_hint`(light | standard | heavy)를 결정적으로 산출하고, 그 힌트가 콜 수를 정하는 구조로 재편했습니다. 구 "fast 1콜 / 정밀 3콜" 이분법을 대체합니다.
+
+**왜 재편했나** — 1만자 글을 청킹 7콜로 돌린 실측이 610K 토큰이었는데, 같은 글을 단일 콜로 돌리면 134K에 품질 동등이었습니다. 청크마다 룰북·진단을 재로드하는 비용이 폭발 원인이었습니다. 또 어휘 티가 거의 없는 잘 쓴 글에도 최중량 파이프라인을 돌리고 있었습니다.
+
+**핵심 변경**
+
+- **route_hint 3경로** — light(1콜: 진단·finalize 생략, 손댈 게 없으면 "이미 좋습니다" 조기 종료) / standard(2콜: 진단 + 단일 윤문) / heavy(3+콜: 진단 → 윤문 → finalize). 사용자 명시(`--strict`·"가볍게")가 힌트를 오버라이드
+- **단일 콜 우선** — 청킹은 heavy 전용, 15,000자 이하 비권장. shim이 실제로 청크를 2개 이상 만들 때만 병렬
+- 절감은 **콜 수**에서 옵니다. 모델 티어는 강제하지 않으며 사용자 선택입니다
+
+## v2.1 — 정밀 모드 3콜 재편 (2026-07)
+
+옛 strict 5인 파이프라인(detector → rewriter → 병렬 fidelity·naturalness → 판정 매트릭스)을 **진단 1콜 → 겨냥 윤문(monolith 재사용) → finalize 1콜**의 3콜 구조로 대체했습니다.
+
+**왜 재편했나**
+
+- span 열거 탐지는 같은 글에서 0↔18개로 요동칠 만큼 불안정했고, taxonomy 전체를 두 에이전트가 중복 로드해 탐지 단계만 wall-clock의 54%를 차지했습니다.
+- 판정 매트릭스가 LLM 재탐지에 의존해 느리고 비쌌습니다.
+- 같은 엔진의 웹 구현이 "지배 패턴 진단 1콜 + 결정적 변경률 게이트" 치환을 먼저 검증했습니다 — 진단 없는 윤문은 잘 쓰인 AI 글에서 변경률 0.5%(사실상 no-op)였고, 진단을 붙이자 11%로 뛰며 5인 파이프라인과 동급이 됐습니다. 그 결과를 이식한 것입니다.
+
+**핵심 변경**
+
+- **신규 에이전트 2종** — `humanize-diagnostician`(글 전체의 지배 패턴 3~6개 진단, span을 세지 않음) · `humanize-finalizer`(원문↔윤문본 직접 대조로 의미 보존 15항 + 자연성 양방향 판정, 문제 구간만 국소 보정 — 전체 재작성 금지로 의미 드리프트 차단)
+- **은퇴 5종** — `ai-tell-detector` · `korean-style-rewriter` · `content-fidelity-auditor` · `naturalness-reviewer`(역할이 진단·finalize 콜로 통합) · `humanize-web-architect`(웹은 별도 코드베이스로 운영, 설계 문서만 보존)
+- **수렴 판정의 결정화** — 변경률 게이트를 LLM 재탐지 대신 `scripts/verify_change_rate.py`(exit code)가 판정. 이 수치가 SSOT
+- **fast 장문 청킹** — 6,000자 초과 입력은 결정적 분할(`--chunk`, 문단·문장 경계) 후 청크 병렬 윤문 → `scripts/reassemble_chunks.py` 재조립. 구 "8,000자+ strict 자동 승급"(긴 입력을 가장 느린 경로로 보내는 속도 역전) 폐지 — 정밀 모드는 길이가 아니라 진단·검증 증적이 필요할 때 고르는 모드입니다
+
+## v2.0 — 한국 번역학계 8유형 + post-editese metric 트랙 (A-17 hold) (2026-05-07)
+
+v1.6이 KatFish/LREAD 정량 결정타로 잔존 약점을 잡았다면, v2.0은 **분류 체계의 이론적 토대를 한국 번역학계 정통성 위에 다시 세웠습니다.** 한국어 번역투 종합 연구보고서(540줄)를 입력으로 받아 8대 번역투 유형(이근희·김정우·김도훈·곽은주·진실로·김순영·박옥수·김혜영·이영옥) + Toral 2019 post-editese 3축(simplification·normalisation·interference)을 본진에 흡수했습니다. monolith·5인 정의는 무수정, 도구 호출 3회 캡(v1.6.1) 그대로 보존.
+
+**핵심 변경**
+
+- **본진 신규 4건** — `A-16` 영어 대명사 직역(그/그녀/그것/그들 강박적 매핑) [S1, 김도훈 2009 + Cho et al. 2019 ACL] · `A-18` 관계대명사절 좌향 수식(관형구 3중 중첩) [S2, 박옥수 2018] · `A-19` 이중 조사 결합(-에서의·-에로의·-으로의·-에의) [S2, 김정우 2007, 단순 ~의 명시 제외] · `E-7` 청자 경어법 4단계 일관성 손실 [S2 estimated, 김혜영 2019, dialogue 가드]
+- **본진 보강 4건** — `A-15` 사역·인지·발화 동사 분리 구문 처방 / `A-7` light verb construction 일반화(have/make/take/give + 명사) / `F-4` 영어 명사화 접미사 4종 통합(-tion·-ment·-ness·-ity) / `E-2` 진행형 '~고 있다' 자동 매핑 처방
+- **post-editese metric-only 트랙** — Baker 1993·Toury 1995·Toral 2019의 단순화·정규화·간섭 3축을 14개 신규 metric으로 코드화(`metrics_v2.py`). 본진 패턴 ID 미부여 — caveat C3(한국어 정량 검증 부재)에 따라 metric only 트랙으로 분리. `interference_index` 합성 지표가 T1~T8 8개 시그널 가중 합산
+- **학술 인용 양면 보존** — 본진 `taxonomy.md` 패턴마다 `source_anchor` 한 줄(≤25자) + 학자 29명·Caveat 6건 verbatim은 외부 SSOT [`scholarship.md`](skills/humanize-korean/references/scholarship.md)에 보존. 룰북 슬림성 유지
+- **rewriting-playbook §1.X 신설** — Toral 2019 + 한국 PE 가이드라인(윤미선 외 2018·김혜림 2022·이상빈 2017·2018a·2018b·마승혜 2018) 통합 15항목 PE 체크리스트(PE1~PE15), 본진 패턴 ID 부착
+- **monolith·5인 정의 무수정 + 도구 호출 3회 캡 보존** — `humanize-monolith`·detector·rewriter·auditor·reviewer git diff 0줄. 헤더 토큰 +0.6KB만 차이
+
+**Hold 1건 — A-17 무정물·추상명사 '-들'**
+
+학술 anchor(전영철 2007·곽은주·진실로 2011·김순영 2012)는 강하나, **v1.6 input 5편 + 외부 회차 위키 6편 모두 양성 0건**으로 우리 도메인에서 결정타가 없었습니다. v1.x 1번 원칙("우리 데이터에서 검증 안 된 패턴은 본진 등재하지 않는다")에 따라 본진 등재 보류. ID 슬롯은 hold 안내 박스로 유지하고, scholarship.md §4 학술 전문 + `metrics_v2.deul_overuse_rate` 함수 + 무정물·추상 명사 사전 25종은 검증용 보존. NMT 원본 출력(DeepL·Papago·Google Translate) ≥5편에서 양성 ≥2/5 시 동일 ID(A-17)로 v2.1 부활 예정.
+
+**검증 결과**
+
+| 회차 | 코퍼스 | 결과 |
+|---|---|---|
+| Phase 5 (재윤문 없음) | v1.6 본질 테스트 5편 (003~007) | 회귀 0건. lexical_diversity 5편 전수 상승(post-editese 단순화 가설 1차 반증). interference_index 4/5 감소(평균 -0.176) |
+| 외부 회차 | 위키피디아 영-한 NMT 번역체 6편 | A-16 양성 **3/6 (50%)**, A-18 양성 **4/6 (67%)** — 영-한 NMT 번역체에서 신규 패턴 작동 입증. interference_index 외부 평균 0.251 vs v1.6 0.05~0.10 — Toral 2019 간섭 가설 1차 부합 |
+| pytest | metrics 단위 테스트 (v1.6 + v2.0) | **94개 전체 통과** (v2.0.1에서 fresh clone 경로 수리 후 재검증) |
+
+**한계 — 다음 회차 과제**
+
+- baseline 70셀 placeholder(5장르 × 14지표) — 절대 z-score 해석 보류, calibration 회차 필요
+- A-17 NMT 원본 출력 회차 — v2.1 부활 결정용
+- E-7 dialogue 코퍼스 별도 회차(소설 대화·인터뷰 트랜스크립트)
+- 004 relative_clause +1 잔존 결정타 — quick-rules A-18 가드 강화
+
+상세 산출물: `_workspace/v2.0-2026-05-07/01_distill ~ 07_pr/` · 외부 회차 보고: `_workspace/v2.0-2026-05-07/05_regression/v2_external_samples/H1_revisited.md` · PR: [#19](https://github.com/epoko77-ai/im-not-ai/pull/19)
+
+---
+
+## v1.6 — KatFish·LREAD 외부 연구 통합 + 정량 점수 레이어 (2026-05-07)
+
+v1.5 fast path가 사람 판정 등급 A를 통과해도 **연결어미 뒤 쉼표(C-11)** 같은 한국어 특이 신호를 일관되게 못 잡는 잔존 약점이 있음을 정량으로 확인했습니다. 외부 연구 KatFish(Park et al., 2,094편 코퍼스)와 LREAD(인간 판독 60% → 루브릭 90%)를 검토한 결과, 한국어에서 가장 강한 단일 분리도 신호가 **연결어미 뒤 쉼표 4.84배**(에세이)였습니다.
+
+v1.6은 monolith·5인 에이전트 정의를 무수정한 채 **본진 분류 체계 + 룰북 + 외부 정량 점수 레이어**만 보강한 설계입니다.
+
+**핵심 변경**
+
+- **본진 분류 체계 v1.5.1 → v1.6** — 신규 5건(`C-11` 연결어미 뒤 쉼표 [S1] · `C-12` 쉼표 포함률 [S2] · `E-5` 쉼표 분절 평균 길이 [S2] · `E-6` 쉼표 전후 POS 다양성 [S2, 에세이·뉴스 한정] · `G-3` 안전 균형 lexicon [S2]) + 보강 2건(`D-1` 결산 lexicon 4종 정식 인용 / `F-4` 한자어 명사화 -성·-적·-화 명시)
+- **`quick-rules.md` 보강** — C-11·G-3·F-4·D-1 lexicon 4건을 monolith 슬림 룰북에 박아 윤문 단계에서 직접 처방. 123줄 → 126줄 (+3, +200 토큰)
+- **`metrics.py` 신설** — KatFish baseline 기반 8개 정량 지표(쉼표 포함률·연결어미 쉼표·분절 길이·POS 다양성·결산 lexicon·균형 lexicon·한자어 밀도·어휘 다양성) 표준 라이브러리만으로 계산. z-score + risk_band(low/medium/high) 출력
+- **`prepare_monolith_input.py` 신설** — monolith 호출 *전* 외부 사전처리로 점수 산출, 결합 입력 파일에 prepend. **monolith 도구 호출 4회 캡 그대로 보존**(v1.5 1번 철칙)
+- **5인 strict 파이프라인 그대로 유지** — voice profile·candidate pool 재도입 없음
+
+**검증 결과 (run 003~007 5편 일괄, 같은 입력에 v1.5 vs v1.6 두 번 윤문)**
+
+| 지표 | v1.5 | v1.6 | 개선 |
+|---|---|---|---|
+| ending_comma 평균 z | +3.40 | +0.67 | −2.73 (인간 baseline 근접) |
+| risk_band low 도달 | 0/5 | 3/5 | +3 |
+| input 대비 risk_score 감소 | 2/5 | 4/5 | +2 |
+| 등급 A 유지 | 5/5 | 5/5 | 회귀 없음 |
+| 도구 호출 4회 캡 | 5/5 | 5/5 | 보존 |
+
+가장 심한 케이스(run 006 교육 블로그)는 ending_comma_rate 0.500 → 0.120(76% 감소), z=+5.84 → +1.00로 정상 구간에 들어왔습니다. v1.5 회귀에서 5편 중 4편이 *악화*했던 자리에서 v1.6은 5편 전수 개선했습니다.
+
+**한계 — 다음 회차 과제**
+
+- baseline의 lexical_diversity·hanja placeholder는 KatFish 미공개 셀로 보수적 추정값. 한국어 essay 실측 교정 필요
+- 정책·공적 문서(run 007)는 ending_comma z=+2.47 잔존. 장르별 baseline 별도 카탈로그 필요
+- 일부 케이스에서 char_count 증가(쉼표 제거 부작용으로 분절 길이 증가). 룰북에 분절 재조정 가이드 추가 검토
+
+상세 산출물: `_workspace/v1.6-2026-05-06/01_pattern_candidates.md` · `02_katfish_baseline.json`(`references/baseline.json`로 정식 배치) · `03_taxonomy_diff.md` · `04_input_shim_spec.md` · `05_regression_report.md`.
+
+### v1.6.1 hotfix — final.md 통합 산출물 (2026-05-07)
+
+v1.6 5편 일괄 검증 중 sub-agent가 **두 번째 Write를 자체 보수 룰로 회피**하는 패턴이 5/5 재현됨을 확인했습니다(권한 차단 아닌 self-imposed). v1.5 시점에도 같은 현상이 있었고, summary 메타가 응답 인라인으로 전달되어 디스크 산출물에서 누락되는 회귀 위험이 있었습니다.
+
+해결 — **monolith 산출물을 final.md 1개로 통합**:
+
+- final.md 본문 끝에 `<!-- HUMANIZE-SUMMARY ... -->` HTML 주석 블록 1개로 메트릭·카테고리 탐지·자체검증·등급·하이라이트·잔존 finding을 함께 박아 단일 Write로 끝
+- HTML 주석이라 마크다운 뷰어·웹 게시·복사 시 본문에만 노출. 메타 추출은 `grep -A 30 "HUMANIZE-SUMMARY"` 또는 간단한 파서로
+- monolith 도구 호출 캡 4회 → **3회**로 자연 절감 (Read 입력 + Read 룰북 + Write final). v1.4 함정 회피 마진 확대
+- `summary.md`(v1.6.0 이전 산출물 또는 외부 도구 산출물)는 그대로 보존, 삭제·갱신 금지
+
+본 변경은 monolith 정의 파일만 수술하고, 5인 strict 파이프라인·`metrics.py`·`prepare_monolith_input.py`·분류 체계는 모두 무수정.
+
+---
+
+## v1.5 — v1.1 베이스라인 + Monolith Fast Path (2026-04-26)
+
+v1.2(voice profile)·v1.3(candidate pool)·v1.4(역할별 모델 분산)이 모두 핫패스 비용을 잡지 못했음이 검증으로 확인됐습니다. 5,000자 입력 윤문 wall-clock이 **25분**까지 늘어났고, v1.4의 모델 다운그레이드로도 detector 1콜이 **8분**이었습니다. 진단 결과 진범은 모델이 아니라 **에이전트 간 컨텍스트 재로드 + 에이전트 내부 도구 호출 chain 누적**이었습니다.
+
+v1.5는 v1.2~v1.4를 모두 폐기하고 **v1.1 단순 구조로 롤백한 뒤 단일 호출 monolith fast path만 추가**한 설계입니다.
+
+**핵심 변경**
+
+- **v1.2~v1.4 폐기 (롤백)** — 5인 에이전트 정의를 v1.1 commit `f25ee64` 시점으로 복원, voice profile·candidate pool 관련 reference 4개 파일 삭제, 권한 위계 §1~§6 절 제거
+- **Monolith Fast Path 신설 (디폴트)** — `humanize-monolith` 에이전트(opus): 한 콜 안에서 탐지·윤문·자체검증 일괄 처리, 도구 호출 4~5회 캡(Read 입력 + Read 룰북 + Write final + Write summary), 5,000자 이하 wall-clock 2~3분 목표
+- **`quick-rules.md` 신설 (~150줄)** — 본진 386줄에서 S1·S2 핵심 패턴만 추린 슬림 룰북. monolith 전용. 자체검증 6항 + 등급 기준 포함
+- **Strict 모드 보존** — v1.1 5인 파이프라인을 `--strict` 또는 8,000자+ 자동 승급으로 그대로 유지. 부분 재실행("이 카테고리만 다시"·"2차 윤문")도 strict 자동 전환
+- **분류 체계 본진 보존** — `ai-tell-taxonomy.md`의 v1.2~v1.3.1 발굴 신규 패턴(C-9·C-10·D-7·H-3·I-3·I-4 보강 등) 모두 그대로 유지
+
+**검증 결과 (같은 칼럼 2,604자)**
+
+| 항목 | v1.4 (detector haiku 1콜) | v1.5 (monolith opus 1콜) |
+|---|---|---|
+| Wall-clock | 7분 58초 | **3분 28초** |
+| 도구 호출 | 12회 | **4회** |
+| 토큰 | 113,621 | 68,045 |
+| 윤문 등급 | (단계 1만 끝, 미완) | **A (자체검증 6/6, 변경률 22%)** |
+
+5인 파이프라인 25분 → monolith 3.5분, 약 86% 단축. opus로 격상하고도 도구 호출 chain을 압축한 게 결정적이었습니다.
+
+**호환성 안내**
+
+- v1.3.1 사용자: `author-context.yaml`(voice profile)이 더 이상 작동하지 않습니다. 메인테이너 측 실전 사용 사례가 미확보였고, 필요 시 v1.6에서 monolith 옵션으로 재도입을 검토합니다.
+- 슬래시 커맨드 `/humanize`·`/humanize-redo`는 그대로. 내부에서 v1.5 fast/strict 분기 자동.
+
+**회고**
+
+v1.4 작업은 모델 다운그레이드를 진단의 1순위로 잡았으나, 실측이 그 가설을 부쉈습니다. opus로 격상하고도 도구 호출 chain을 압축하니 더 빨라졌어요 — 모델보다 **에이전트 내부 도구 호출 횟수**가 wall-clock의 진짜 변수였습니다. 이 교훈이 v1.6 이후 설계의 1번 원칙입니다.
+
+**본질 테스트 — 5편 다양성 검증 (2026-04-26)**
+
+v1.5 발행 직후, 메인테이너가 원래 계획했던 본질 테스트(원본 AI 글이 사람 글로 진짜 변하나)를 5편으로 진행했습니다. 회차 1 합성 제조업 칼럼 1편 + 회차 3 Gemini 직접 호출 4편(핀테크 칼럼·제조 리포트·교육 블로그·헬스케어 정책)으로 모델·장르·길이 다양성을 확보.
+
+| run | 입력 | 길이 | 변경률 | 등급 |
+|---|---|---|---|---|
+| 003 | 합성 제조 칼럼 | 716자 | 14% | **A** |
+| 004 | Gemini 핀테크 칼럼 | 2,725자 | 18% | **A** |
+| 005 | Gemini 제조 리포트 | 2,572자 | 18% | **A** |
+| 006 | Gemini 교육 블로그 | 2,445자 | 22% | **A** |
+| 007 | Gemini 헬스케어 정책 | 2,316자 | 18% | **A** |
+
+**5편 모두 등급 A · 자체검증 6/6 통과 · 변경률 안전 구간(10~25%).** Gemini 시그니처(C-10 콜론 헤딩 · D-7 변환 공식 · D-4 hype 어휘 · J-2 따옴표 강조 · J-1 마크다운 ** 강조 · G-1 미래 단정 · I-4 권고형 결말)가 4개 장르 모두에서 일관되게 제거됐고, 고유명사·수치·인용은 100% 보존됐습니다.
+
+**가속 효과 누적**: v1.3.1로 5편 직렬 처리 추정 약 125분 → v1.5 monolith 병렬 약 7분(병렬 효과 포함). **94% 단축, 17~18배 가속.** 메모리에 가설로 박아둔 "wall-clock 1/7로 줄어 7배 샘플 처리 가능"이 실측에서 18배로 확인됐습니다.
+
+관련 PR: [#13](https://github.com/epoko77-ai/im-not-ai/pull/13) · 태그: [`v1.5.0`](https://github.com/epoko77-ai/im-not-ai/releases/tag/v1.5.0)
+
+## v1.3.1 hotfix — 회차 3 Gemini 직접 호출 검증 + 본진 신규 2건·보강 3건 (2026-04-25)
+
+v1.3 발행 직후, 사용자께서 직접 Gemini API 키를 제공해 회차 3 진짜 외부 데이터 검증을 진행했습니다. Gemini Pro 2.5 직접 호출 4편(약 10,058자, 자연 prompt만 사용)에서 본진 신규 2건과 보강 3건을 추가로 영구 반영하고, 회차 2 hold 후보의 모델 분산 검증을 마쳤습니다.
+
+**본진 신규 2건 (Gemini-우세 시그니처)**
+
+- **C-10 콜론 부제 헤딩 공식** "X: Y" 또는 "X: A에서 B로" — Gemini가 헤딩에 거의 자동으로 콜론을 사용하는 시그니처 (8회·3파일·3도메인 분산)
+- **D-7 변환 공식** "X에서 Y로 / X을 넘어 Y로" — 패러다임 전환·진화·고도화를 표현할 때 자동 등장 (7회·2파일·2도메인)
+
+**본진 보강 3건**
+
+- **D-4 hype 어휘 셋 확장** — 본진 "혁신적·획기적·전례 없는"에 Gemini 어휘 추가: "압도적·막강한·폭발적·파격적·대대적·강력한·치열한·뜨거운"
+- **J-2 빈도 임계 명시** — 한 문서에 따옴표 강조 어휘 5회 초과 시 S2 강화 (Gemini 한 문서 17~33회 사례)
+- **I-4 권고형 결말 변종 추가** — 본진 "~할 필요가 있다"에 정책·보고서 결말 "~해야 한다·~해야 합니다" 변종 추가, 한 문서 5회 초과 임계
+
+**회차 2 hold 후보 검증 결과 — GPT vs Gemini 모델 시그니처 차이**
+
+| 회차 2 hold 후보 | GPT 빈도 | Gemini 빈도 | 결론 |
+|---|---|---|---|
+| "결국" 문두 단언 | 9+ | 1 | **GPT-우세 시그니처** |
+| "X은 A가 아니라 B다" 부정-긍정 대구 | 7+ | 2 | **GPT-우세 시그니처** |
+| 5~8개 영역 콤마 빠른 나열 | 4 | 0 | **GPT-특유 가능성 매우 강함** |
+
+회차 2 hold 후보 3건이 Gemini에서 거의 재현되지 않았다는 사실은 **분류 체계에 "모델 우세 분포" 메타데이터 차원 도입 필요성**을 시사합니다(v1.4 검토 사항). 회차 4에서 국내 모델·Claude 데이터로 모델 분포를 확정한 뒤 결정합니다.
+
+**회차 1·2·3 누적 결과 — v1.2 신규 0건이 v1.3.1에서 신규 3·보강 6건으로**
+
+| 회차 | 데이터 | 본진 신규 | 본진 보강 | 누적 효과 |
+|------|--------|----------|----------|----------|
+| 1 | Claude 합성 샘플 2건 | C-9 (1) | I-2 (1) | 인프라 검증 |
+| 2 | 뉴스핌 외부 GPT 2건 | 0 | I-3·H-3 (2) | Gate 1.3 보호장치 검증 |
+| 3 | Gemini 직접 호출 4건 | C-10·D-7 (2) | D-4·J-2·I-4 (3) | 모델 분산 확보 + GPT/Gemini 차이 발견 |
+| **합계** | 8건 (3 모델 × 다양 장르) | **3건** | **6건** | v1.2 멈춤 → v1.3.1 풍부 |
+
+전체 v1.3.1 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+
+## v1.3 — 서브 패턴 발굴 운영 체계 + 본진 신규 1건·보강 3건 (2026-04-25)
+
+**에이전트들이 실전에서 만난 미분류 의심 패턴을 단일 풀에 누적·점검·승격하는 운영 인프라**를 도입하고, 발행 전 두 회차의 파일럿(회차 1 합성 샘플 인프라 검증 + 회차 2 외부 매체 진짜 GPT 출력 분석)에서 본진 신규 1건(`C-9` 숫자 괄호 인덱싱) + 본진 보강 3건(`I-2` 결합형 · `I-3` 결말 변종 · `H-3` 메타 진입 변종)을 영구 반영하고 hold 4건을 풀에 누적했습니다. v1.1까지는 패턴 추가가 사람의 1회성 결정이었고, v1.2에서는 voice profile 권한 위계가 들어왔다면, v1.3은 **분류 체계 자체가 시간을 따라 자라나는 구조**를 만듭니다.
+
+v1.3은 v1.2와 **하위 호환**입니다 — 에이전트 입출력 변경 없음, voice profile 동작 동일. 본진 신규 1건은 v1.2 이후 멈춰 있던 패턴 발굴이 새 인프라로 깨지는지 검증하는 파일럿 결과이며, 새로 추가된 풀 적재는 부수 효과이고 적재 실패가 메인 파이프라인을 막지 않습니다.
+
+**핵심 변경**
+
+- **Pattern candidates 풀** (`references/pattern-candidates.md`) — 본진 승격 전 모든 의심 패턴을 누적하는 단일 그릇. 임시 ID(`cand-{대분류}-{YYYY}-{NNN}`), 4상태(pending/promoted/rejected/merged), 기각 사유 5종 표준 라벨, 90일 미재현 자동 만료
+- **3개 에이전트 풀 적재 채널** — `ai-tell-detector`(미분류 span), `korean-style-rewriter`(윤문 저항·반복 잔존), `naturalness-reviewer`(voice profile 미주입 외부 시각). 각자 적재 트리거·필수 필드·중복 검사 절차 명문화
+- **taxonomist 풀 운영자 역할** — 4가지 trigger(사용자 명시 / pending 10건 임계 / 단일 후보 occurrences ≥ 3 / 외부 PR) 기반 정기 점검. 6단계 점검 절차, `_workspace/taxonomy_changelog.md` 회차 기록 표준화
+- **샘플 수집 파이프라인** (`references/sample-collection.md`) — 4축 다양성 매트릭스(모델·장르·길이·작가), 4종 채널(사용자 자발·합성 샘플·공개 데이터·외부 contributor), 익명화·저작권 5대 정책
+- **승격 자동 검증 체크리스트** (`references/promotion-checklist.md`) — 6개 게이트(사전 점검·재현·본진 중복·분류 적합성·처방 적합성·본진 위계). 일부 게이트는 향후 스크립트 자동화 가능
+
+**왜 이 구조인가**
+
+v1.1까지의 패턴 7건 승격은 사람이 한 번에 작업한 결과였습니다. 이후 실전 사용 중 발견되는 의심 패턴이 늘어도 적재할 그릇이 없으면 매번 사람이 "이번에 뭘 봤지" 하고 메모해야 합니다. v1.3은 그 메모를 에이전트가 자동으로 풀에 떨어뜨리고, taxonomist가 회차 단위로 정량 게이트를 통과시켜 본진에 반영하는 구조입니다. 분류 체계가 단일 사용자 분포에 좁아지지 않도록 외부 샘플 채널도 함께 정의했습니다.
+
+**발행 전 파일럿 회차 결과**
+
+회차 1(인프라 검증, 합성 샘플 2건) → 본진 신규 1건(C-9 숫자 괄호 인덱싱) · 본진 보강 1건(I-2 결합형) · hold 1건. 인프라 작동 확인.
+
+회차 2(외부 진짜 데이터, 뉴스핌 [AI로 읽는 경제] 시리즈 ① ② — ChatGPT 작성 명시 GPT 출력 약 4,500자) → 본진 보강 2건 + hold 3건:
+
+| 후보 | 결과 | 사유 |
+|------|------|------|
+| "~라는 뜻이다 / ~다는 뜻이다" 결말 단언 공식 | **merged → I-3 보강** | Gate 2.2 (본진 변종) — I-3 시그니처 예문에 결말 변종 4건 흡수 |
+| "이 점에서 / 이 관점에서 / 이 말은" 메타 진입 | **merged → H-3 보강** | Gate 2.2 (본진 변종) — H-3 시그니처 예문에 결합형 4건 흡수 |
+| "결국" 문두 단언 남발 (9회+) | **hold** | Gate 1.3 (분산) — 같은 모델·같은 기자 시리즈, 다음 회차 다른 모델 데이터에서 재현 시 promoted 가능 (강력 후보) |
+| "X은 A가 아니라 B다" 부정-긍정 대구 결산 (7회+) | **hold** | 동일 — D-7 신규 등재 자격 충분, 분산 검증 대기 |
+| 5~8개 영역 콤마 빠른 나열 (4회) | **hold** | 동일 |
+
+회차 2의 핵심 발견은 **Gate 1.3 분산 보호장치가 진짜 외부 데이터에서도 정확히 작동했다**는 점입니다. occurrences·source distinct 정량 기준은 모두 통과한 강력 후보 3건이, 같은 모델·같은 기자 시리즈라는 정성 분산 검사로 hold 처리되어 단일 출처 노이즈가 본진을 오염시키지 않았습니다. v1.2 워크플로였다면 5개 후보 모두 reviewer JSON에 기록됐다가 run 종료 후 묻혔을 정보입니다. v1.3에서는 본진 보강 2건이 즉시 영구 반영되고, 강력 후보 3건이 풀에 hold로 누적되어 다음 회차의 자동 승격 트리거가 마련됐습니다.
+
+회차별 점검 로그는 운영 산출물이라 `_workspace/taxonomy_changelog.md`에 누적되며 (gitignored), 본진 변경은 [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)에 영구 기록됩니다.
+
+전체 v1.3 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+
+## v1.2 — 작가 voice profile (2026-04-25)
+
+작가/책마다 고유한 voice가 일반 분류 패턴과 충돌하는 경우(예: 단단한 서술체 voice의 의도된 종결어미 반복, em-dash 리듬 장치, 책 mandate "~수 있다 사용 권장")를 위한 **opt-in 명시 주입** 메커니즘을 추가했습니다. v1.2의 모든 변경은 v1.1과 **하위 호환**입니다 — voice profile 미주입 시 v1.1과 100% 동일하게 동작합니다.
+
+**핵심 변경**
+
+- **권한 위계 §1~§6** 신설 — 객관 분류 우선, voice profile은 opt-in, 무력화 불가 패턴(A-8/C-5/D-1~D-6) 영구 default-on, naturalness-reviewer 분리 검증층 보존 (`ai-tell-taxonomy.md`)
+- **`author-context.yaml`** 스키마 — 패턴 ID 단위 on/off + 임계 완화(multiplier 캡: 일반 ≤2.0, D-1~D-6 ≤1.5) + Do-NOT 키워드 화이트리스트만 허용 (`references/author-context-schema.md`)
+- **자유 텍스트 mandate 금지** — LLM 자의 해석 차단. 모든 override는 구조화된 필드 단위
+- **Schema validator** — 무력화 불가 disable 거부, multiplier 캡 위반 거부, prompt injection escape character 검증
+- **Telemetry** — `voice_profile_log.json` 발행 (적용·거부·trigger 키워드 추적)
+- **경로 토큰화** — SKILL.md 절대 경로 제거, `_workspace/`는 cwd 기준 (글로벌 설치 지원)
+
+**사용 예시 (단행본 비소설 작가)**
+
+```yaml
+# author-context.yaml — 작업 cwd 또는 _workspace/{run_id}/에 명시 배치
+version: "1.0"
+
+profile:
+  author: "Won Seongmuk"
+  work: "단행본 비소설 (8.5만 자)"
+  notes: "단단한 서술체, em-dash 리듬 장치"
+
+pattern_overrides:
+  - id: "J-3"            # em-dash 임계 완화
+    action: "relax"
+    multiplier: 2.0
+  - id: "A-10"           # "~수 있다" 사용 권장 mandate
+    action: "disable"
+
+do_not_extra:            # 작가 고유 표현 보호
+  - "1인칭 진입"
+
+reviewer_contract:
+  naturalness_reviewer_voice_blind: true   # §5 강제
+```
+
+**Issue #1 후속 — 외부 contributor**
+
+v1.2는 [Issue #1](https://github.com/epoko77-ai/im-not-ai/issues/1)에서 8.5만 자 단행본 비소설 적용 후기·개선 제안 4건을 보내주신 [@simonsez9510](https://github.com/simonsez9510)의 기여로 시작됐습니다. 그분의 [PR #3](https://github.com/epoko77-ai/im-not-ai/pull/3)에서 다운스트림 caller adapter reference (`references/proposals/voice-aware-adapter.md`)와 multiplier 캡·`reviewer_contract` 강제 등 schema 강화 통찰을 받아 메인테이너 schema에 흡수했습니다.
+
+**v1.2 회귀 안전성**
+
+v1.2는 코드 변경이 거의 없고 대부분 문서·정책·schema 추가입니다. voice profile 미주입 모드(default)에서는 v1.1과 동일한 6인 에이전트가 동일한 입출력으로 동작합니다. voice profile 주입 모드는 신기능이라 회귀 대상이 아니며, 외부 회귀 케이스 검증 결과는 v1.2.1에서 별도 hotfix로 반영합니다(외부 케이스 모집은 별도 Issue로 진행 예정).
+
+전체 v1.2 변경 이력: [`ai-tell-taxonomy.md` 버전 관리](skills/humanize-korean/references/ai-tell-taxonomy.md#버전-관리)
+
+---
+
+## 라이선스 & 윤리
+
+- **MIT 라이선스** — [`LICENSE`](LICENSE) 참조. 코드·스킬·에이전트 정의·분류 체계 문서를 포함한 본 리포 전체에 적용됩니다. 외부 패키지 통합·fork·상용 활용 모두 허용되며, 저작권 표기와 라이선스 사본을 함께 배포하면 됩니다.
+- 외부 contribution(PR·Issue 등)은 GitHub 기본 inbound = outbound 원칙에 따라 동일한 MIT 라이선스로 contribution됩니다.
+- 본 도구는 "AI 탐지기 우회(Undetectable AI)"가 아니라 **한글 글쓰기 품질 개선**을 목적으로 합니다.
+- 학술 제출·저널리즘 진실성 보증 도구가 아닙니다.
+- 분류 체계(`ai-tell-taxonomy.md`)는 연구·교육·도구 통합 목적 자유 이용 가능합니다(MIT 범위 내).
+
+## 기여
+
+새로운 AI 티 패턴이나 회귀 사례를 발견했다면 [Issue](https://github.com/epoko77-ai/im-not-ai/issues)로 보고해 주세요. 실증 사례 2건 이상(가능하면 서로 다른 모델·장르·작가)이 함께면 분류학자 에이전트가 점검 회차에서 본진([`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md))으로 승격합니다. v1.3에서 운영했던 candidate pool은 핫패스 비용 문제로 v1.5에서 제거됐고, 외부 보고는 Issue 채널로 단순화됐습니다.
+
+**외부 데이터 raw text 보존 정책 (v1.5~)** — 외부 매체 글(예: 뉴스 기사·블로그)을 검증 데이터로 제출할 때, 직접 raw text 인용이 저작권상 부담스러우면 **분석 노트만 보존하지 말고 안전한 인용 단위(문단 1~2개) + 출처 URL을 같이** 남겨주세요. v1.3 회차 2 뉴스핌 GPT 데이터가 분석 노트만 보존되고 raw text가 떨어져 v1.5 회귀 검증에서 재사용 불가했던 사례가 있었습니다. URL이 만료되면 검증 자산 자체가 사라지므로, fair use 범위의 짧은 인용 + URL 동시 보존이 권장됩니다.
+
+다른 형태(외부 회귀 케이스 제공·슬래시 커맨드·Plugin 통합·다국어 확장 등)도 환영합니다. 자세한 안내와 기여자 명단은 [`CONTRIBUTORS.md`](CONTRIBUTORS.md)를 참고해주세요.
+
+## Contributors
+
+v1.2까지의 외부 기여자: **[@simonsez9510](https://github.com/simonsez9510)** (Issue #1, PR #3 — 권한 위계 기반 voice profile 도입), **[@gaebalai](https://github.com/gaebalai)** (Issue #5 LICENSE 지적, Issue #6 슬래시 커맨드 reference + 포크 distribution channel). 전체 명단과 기여 내역: [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
+
+---
+
+Built with [Claude Code](https://claude.com/claude-code) + [revfactory/harness](https://github.com/revfactory/harness) 아키텍처 기반 프로젝트.

@@ -1,0 +1,12 @@
+{
+  "description": "학술 구조·각주 파괴 — 장 제목이 본문에 흡수되고 각주 번호가 무관한 문장으로 이동해 인용 출처가 변조되는 fidelity 사고 (웹앱 실사용 18.6K자 학술논문에서 실제 발생한 실패 모드의 합성 재현)",
+  "bad_must_fail": [
+    "heading_absorbed",
+    "heading_lost",
+    "footnote_count",
+    "footnote_numbers",
+    "footnote_anchor",
+    "footnote_def",
+    "quote_altered"
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "version": "v2.0-baseline-diff-2026-05-07",
+  "source": "Placeholder. Toral 2019 simplification·normalisation·interference 정의 + 보고서 T1~T8 ko_manifestation 추정치. 비번역 한국어 (Sejong corpus·국립국어원 모두의 말뭉치 등) 정밀 측정은 별도 calibration 회차에서 수행.",
+  "notes": "metric-engineer(Phase 3b) 산출. ALL cells carry _placeholder: true. Phase 6 integrator는 본진 baseline.json에 merge할 때 placeholder 플래그를 반드시 보존하고, calibration 완료 셀만 플래그를 해제한다.",
+  "calibration_due": true,
+  "genres": {
+    "essay": {
+      "lexical_diversity_ttr": {"mean": 0.62, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "simplification", "interpretation": "low = AI-like (repetition)"},
+      "lexical_density": {"mean": 0.30, "stdev": 0.07, "_placeholder": true, "calibration_due": true, "axis": "simplification", "interpretation": "low = AI-like (function-word heavy)"},
+      "ending_diversity": {"mean": 0.55, "stdev": 0.12, "_placeholder": true, "calibration_due": true, "axis": "simplification", "interpretation": "low = monotonic endings"},
+      "normalisation_score": {"mean": 0.50, "stdev": 0.15, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "interpretation": "high = AI-like (-한다/-된다/-이다 concentration)"},
+      "da_streak_rate": {"mean": 0.4, "stdev": 0.6, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "unit": "streaks_per_doc", "interpretation": "high = AI-like"},
+      "inanimate_subject_rate": {"mean": 0.10, "stdev": 0.06, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T1", "interpretation": "high = AI-like (translationese)"},
+      "by_passive_count": {"mean": 0.5, "stdev": 1.0, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2a", "unit": "per_doc", "interpretation": "high = AI-like"},
+      "double_passive_count": {"mean": 0.2, "stdev": 0.6, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2b", "unit": "per_doc", "interpretation": "high = strong S2 signal"},
+      "pronoun_density": {"mean": 0.012, "stdev": 0.010, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T3", "interpretation": "high = AI-like (he/she literal mapping)"},
+      "deul_overuse_rate": {"mean": 0.005, "stdev": 0.008, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T4", "interpretation": "high = AI-like (-들 over-use)"},
+      "relative_clause_nesting": {"mean": 0.3, "stdev": 0.5, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T5", "unit": "sentences_per_doc", "interpretation": "high = AI-like (left-modifier overload)"},
+      "have_make_literal_count": {"mean": 0.4, "stdev": 0.8, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T6", "unit": "per_doc", "interpretation": "high = AI-like"},
+      "double_particle_count": {"mean": 0.3, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T7", "unit": "per_doc", "interpretation": "high = AI-like"},
+      "progressive_aspect_rate": {"mean": 0.10, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T8b", "interpretation": "high = AI-like (~고 있다 literal mapping)"}
+    },
+    "news": {
+      "lexical_diversity_ttr": {"mean": 0.65, "stdev": 0.07, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "lexical_density": {"mean": 0.34, "stdev": 0.07, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "ending_diversity": {"mean": 0.40, "stdev": 0.10, "_placeholder": true, "calibration_due": true, "axis": "simplification", "note": "뉴스는 평서형 단조성이 일부 정상"},
+      "normalisation_score": {"mean": 0.75, "stdev": 0.12, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "note": "뉴스 장르는 -이다/-한다 비중이 높음"},
+      "da_streak_rate": {"mean": 1.0, "stdev": 1.0, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "unit": "streaks_per_doc"},
+      "inanimate_subject_rate": {"mean": 0.18, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T1"},
+      "by_passive_count": {"mean": 0.8, "stdev": 1.2, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2a", "unit": "per_doc"},
+      "double_passive_count": {"mean": 0.3, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2b", "unit": "per_doc"},
+      "pronoun_density": {"mean": 0.015, "stdev": 0.010, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T3"},
+      "deul_overuse_rate": {"mean": 0.006, "stdev": 0.008, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T4"},
+      "relative_clause_nesting": {"mean": 0.4, "stdev": 0.6, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T5", "unit": "sentences_per_doc"},
+      "have_make_literal_count": {"mean": 0.5, "stdev": 0.9, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T6", "unit": "per_doc"},
+      "double_particle_count": {"mean": 0.4, "stdev": 0.8, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T7", "unit": "per_doc"},
+      "progressive_aspect_rate": {"mean": 0.08, "stdev": 0.06, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T8b"}
+    },
+    "blog": {
+      "lexical_diversity_ttr": {"mean": 0.60, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "lexical_density": {"mean": 0.27, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "ending_diversity": {"mean": 0.65, "stdev": 0.12, "_placeholder": true, "calibration_due": true, "axis": "simplification", "note": "블로그는 종결 다양성 자연 높음"},
+      "normalisation_score": {"mean": 0.40, "stdev": 0.18, "_placeholder": true, "calibration_due": true, "axis": "normalisation"},
+      "da_streak_rate": {"mean": 0.3, "stdev": 0.6, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "unit": "streaks_per_doc"},
+      "inanimate_subject_rate": {"mean": 0.08, "stdev": 0.06, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T1"},
+      "by_passive_count": {"mean": 0.3, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2a", "unit": "per_doc"},
+      "double_passive_count": {"mean": 0.2, "stdev": 0.5, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2b", "unit": "per_doc"},
+      "pronoun_density": {"mean": 0.018, "stdev": 0.012, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T3", "note": "1인칭 사용 빈도 높음"},
+      "deul_overuse_rate": {"mean": 0.004, "stdev": 0.007, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T4"},
+      "relative_clause_nesting": {"mean": 0.2, "stdev": 0.4, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T5", "unit": "sentences_per_doc"},
+      "have_make_literal_count": {"mean": 0.3, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T6", "unit": "per_doc"},
+      "double_particle_count": {"mean": 0.2, "stdev": 0.5, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T7", "unit": "per_doc"},
+      "progressive_aspect_rate": {"mean": 0.12, "stdev": 0.10, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T8b"}
+    },
+    "qa": {
+      "lexical_diversity_ttr": {"mean": 0.58, "stdev": 0.09, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "lexical_density": {"mean": 0.25, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "ending_diversity": {"mean": 0.50, "stdev": 0.13, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "normalisation_score": {"mean": 0.55, "stdev": 0.18, "_placeholder": true, "calibration_due": true, "axis": "normalisation"},
+      "da_streak_rate": {"mean": 0.5, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "unit": "streaks_per_doc"},
+      "inanimate_subject_rate": {"mean": 0.15, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T1"},
+      "by_passive_count": {"mean": 0.4, "stdev": 0.8, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2a", "unit": "per_doc"},
+      "double_passive_count": {"mean": 0.3, "stdev": 0.6, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2b", "unit": "per_doc"},
+      "pronoun_density": {"mean": 0.014, "stdev": 0.010, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T3"},
+      "deul_overuse_rate": {"mean": 0.007, "stdev": 0.010, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T4"},
+      "relative_clause_nesting": {"mean": 0.25, "stdev": 0.5, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T5", "unit": "sentences_per_doc"},
+      "have_make_literal_count": {"mean": 0.5, "stdev": 0.9, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T6", "unit": "per_doc"},
+      "double_particle_count": {"mean": 0.3, "stdev": 0.7, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T7", "unit": "per_doc"},
+      "progressive_aspect_rate": {"mean": 0.10, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T8b"}
+    },
+    "dialogue": {
+      "lexical_diversity_ttr": {"mean": 0.55, "stdev": 0.10, "_placeholder": true, "calibration_due": true, "axis": "simplification", "note": "대화는 반복이 자연스러움"},
+      "lexical_density": {"mean": 0.22, "stdev": 0.08, "_placeholder": true, "calibration_due": true, "axis": "simplification"},
+      "ending_diversity": {"mean": 0.70, "stdev": 0.12, "_placeholder": true, "calibration_due": true, "axis": "simplification", "note": "대화는 종결어미 자연 다양"},
+      "normalisation_score": {"mean": 0.20, "stdev": 0.15, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "note": "대화는 -한다/-된다/-이다 거의 안 씀"},
+      "da_streak_rate": {"mean": 0.1, "stdev": 0.3, "_placeholder": true, "calibration_due": true, "axis": "normalisation", "unit": "streaks_per_doc"},
+      "inanimate_subject_rate": {"mean": 0.05, "stdev": 0.05, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T1"},
+      "by_passive_count": {"mean": 0.1, "stdev": 0.3, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2a", "unit": "per_doc"},
+      "double_passive_count": {"mean": 0.1, "stdev": 0.4, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T2b", "unit": "per_doc"},
+      "pronoun_density": {"mean": 0.020, "stdev": 0.015, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T3"},
+      "deul_overuse_rate": {"mean": 0.003, "stdev": 0.006, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T4"},
+      "relative_clause_nesting": {"mean": 0.1, "stdev": 0.3, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T5", "unit": "sentences_per_doc"},
+      "have_make_literal_count": {"mean": 0.2, "stdev": 0.5, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T6", "unit": "per_doc"},
+      "double_particle_count": {"mean": 0.1, "stdev": 0.3, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T7", "unit": "per_doc"},
+      "progressive_aspect_rate": {"mean": 0.15, "stdev": 0.10, "_placeholder": true, "calibration_due": true, "axis": "interference", "type": "T8b"}
+    }
+  },
+  "axis_definitions": {
+    "simplification": {
+      "source": "Toral 2019; 보고서 line 351",
+      "metrics": ["lexical_diversity_ttr", "lexical_density", "ending_diversity"],
+      "interpretation": "low values → AI-like (repetition, function-word heavy, monotonic endings)"
+    },
+    "normalisation": {
+      "source": "Baker 1993; 보고서 line 352",
+      "metrics": ["normalisation_score", "da_streak_rate"],
+      "interpretation": "high values → AI-like (-한다/-된다/-이다 concentration, '-다' streak runs)"
+    },
+    "interference": {
+      "source": "Toury 1995 law of interference; 보고서 line 353",
+      "metrics": [
+        "inanimate_subject_rate",
+        "by_passive_count",
+        "double_passive_count",
+        "pronoun_density",
+        "deul_overuse_rate",
+        "relative_clause_nesting",
+        "have_make_literal_count",
+        "double_particle_count",
+        "progressive_aspect_rate"
+      ],
+      "interpretation": "high values → AI-like (영어 통사 보존)"
+    }
+  },
+  "z_score_thresholds": {
+    "comments": "Phase 6 integrator는 v1.6 thresholds(z>1.0 가산)를 그대로 계승. v2.0 placeholder는 calibration 완료 후 본진 baseline.json에 merge."
+  }
+}

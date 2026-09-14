@@ -1,0 +1,27 @@
+# Runtime artifacts (per-run outputs)
+_workspace/
+_workspace_prev/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Local Claude Code loader convenience (symlinks into agents/)
+.claude/

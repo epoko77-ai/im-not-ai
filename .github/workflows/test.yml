@@ -1,0 +1,28 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # This repo is stdlib-only; pytest is the sole test dependency.
+      - run: pip install pytest
+      - run: pytest tests/ -v
+      # quick-rules.md가 taxonomy(SSOT)에서 재생성한 것과 일치하는지 검사.
+      # 손으로 고쳤거나 taxonomy 수정 후 재생성을 잊으면 여기서 막힌다.
+      - run: python3 scripts/build_quick_rules.py --check
+      # diagnosis-rules.md(진단 전용 슬림 인덱스)도 동일한 drift 검사.
+      - run: python3 scripts/build_diagnosis_rules.py --check
+      # install.sh 플래그 동작(--dry-run 기반). pytest가 .sh 파일은 수집하지 않아
+      # 지금까지 CI에서 한 번도 실행된 적이 없다.
+      - run: bash tests/test_install_flags.sh
