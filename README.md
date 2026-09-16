@@ -6,9 +6,9 @@
 
 > **English**: [`README.en.md`](README.en.md)
 
-AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
+AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **사실과 의미를 보존하면서** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
 
-번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 70 서브 패턴**(+검증 대기 hold 1건)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
+번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리의 문체 패턴**을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다.
 
 ## 설치 (Install)
 
@@ -33,40 +33,42 @@ Copilot에서 `humanize-korean 스킬로 이 글의 AI 티를 없애줘:`처럼 
 /plugin install humanize-korean@im-not-ai
 ```
 
-새 세션에서 `/humanize-korean` (또는 자연어로 "이 글 AI 티 없애줘").
+새 세션에서 `/humanize-korean:humanize-korean` (또는 자연어로 "이 글 AI 티 없애줘").
 
-**Claude Code · Codex CLI — 클론 + 스크립트**
+> **명령 구분:** 위 `/plugin`은 Claude Code용입니다. Codex의 플러그인 메뉴는 [`/plugins`](https://learn.chatgpt.com/docs/developer-commands?surface=cli#browse-plugins-with-plugins)입니다. 이 저장소의 Codex 스킬은 아래 클론 + 스크립트 방식으로 설치합니다.
+
+**Claude Code · Codex CLI · Gemini CLI — 클론 + 스크립트**
 
 ```bash
 git clone https://github.com/epoko77-ai/im-not-ai.git
 cd im-not-ai
-./install.sh            # 설치된 claude/codex 자동 감지 → 전역 심링크
+./install.sh            # 설치된 claude/codex/gemini 자동 감지 → 전역 연결
 ```
 
-- Claude: `/humanize-korean` · Codex: `$humanize-korean`
-- 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
-- **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
+- Claude: `/humanize-korean` · Codex: `$humanize-korean` · Gemini: `/humanize-korean`
+- 도구 하나만: `./install.sh --claude-only` / `--codex-only` / `--gemini-only` · 제거: `./uninstall.sh`
+- **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). Claude 마켓플레이스 설치는 `/plugin marketplace update im-not-ai` 후 `/plugin update humanize-korean`.
 - Codex는 **단일 콜 경로만** 제공합니다. 다콜 경로(standard 2콜 · heavy 3+콜, 진단·finalize 포함)는 Claude Code 전용.
 
 ## 왜 한글 특화인가
 
 영어권 humanizer(QuillBot · Hix · Undetectable AI)는 한국어에 약합니다. 한글 AI 글의 티는 대부분 **영어 번역투**에서 나옵니다. 
 
-- "AI 기술을 **통해** 효율을 높**일 수 있다**" → "AI로 효율을 높인다"
+- "AI 기술을 **통해** 효율을 높**일 수 있다**" → "AI로 효율을 높일 수 있다"
 - "이에 **있어서** 중요한 **점은**" → "여기서 중요한 건"
 - "~**에 의해** 생성된" → "~가 만든"
 - "**결론적으로**, 이는 **시사하는 바가 크다**" → (삭제)
 
-이 도구는 그 한글 고유 패턴을 SSOT로 정리하고, 글의 상태에 맞는 세 경로(light 1콜 / standard 2콜 / heavy 3+콜) 중 하나로 윤문합니다. 잘 쓴 글일수록 콜 수가 줄어 빠르고 싸게 끝납니다.
+이 도구는 그 한글 문체 패턴을 SSOT로 정리하고, Claude Code에서는 글의 상태에 맞는 세 경로(light 1콜 / standard 2콜 / heavy 3+콜) 중 하나로 윤문합니다. 잘 쓴 글일수록 콜 수가 줄어 빠르고 싸게 끝납니다.
 
 ## 4대 철칙
 
 1. **의미 불변** — 사실 · 주장 · 수치 · 고유명사 · 직접 인용은 100% 원문 보존.
 2. **근거 기반** — 탐지된 span에만 수술적 수정. 탐지 없는 구간은 건드리지 않음.
 3. **장르 유지** — 칼럼을 문학으로, 리포트를 에세이로 옮기지 않음.
-4. **과윤문 금지** — 변경률 30% 초과 시 경고, 50% 초과 시 강제 중단.
+4. **과윤문 금지** — Claude Code의 코드 게이트는 변경률 30% 이상에서 경고, 50% 이상에서 강제 중단.
 
-## 아키텍처 (v2.2) — route_hint 3경로
+## 아키텍처 — Claude Code의 route_hint 3경로
 
 입력을 shim(`prepare_monolith_input.py`)이 먼저 정량 채점하고, 그 점수로 **`route_hint`(light | standard | heavy)** 를 결정적으로 산출합니다. 글의 상태가 경로를 정하고, 경로가 콜 수를 정합니다. 절감은 모델 교체가 아니라 **콜 수 축소**에서 옵니다(모델 선택은 사용자 몫).
 
@@ -85,7 +87,7 @@ cd im-not-ai
     ├─ standard ─→ [humanize-diagnostician] → [monolith 겨냥 윤문] ───→ final.md
     └─ heavy ────→ [diagnostician] → [monolith(필요시 청크 병렬)] → [humanize-finalizer]
     ↓
-[verify_change_rate.py]      ── 변경률 게이트 (결정적 코드 판정, exit code) — 모든 경로 공통
+[verify_gates.py]            ── 변경률·구조 수렴 게이트 (결정적 코드 판정) — Claude Code의 모든 경로 공통
 ```
 
 - 사용자 명시가 route_hint를 오버라이드합니다: `--strict`·"정밀 모드" → heavy 고정, "가볍게" → light 고정.
@@ -122,28 +124,28 @@ cd im-not-ai
 | I | 형식명사 과다 | "것이다", "점", "수", "바", "~할 필요가 있다" |
 | J | 시각 장식 남용 | 과도한 **볼드**, "따옴표", 대시(—) 남발 |
 
-전체 70 서브 패턴(+hold 1건)과 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
+최신 패턴 목록·보류 상태와 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
 
 ## 심각도 & 품질 등급
 
 **심각도**
-- **S1 결정적**: 한 번만 나와도 AI 확신. 무조건 제거.
+- **S1 결정적**: 패턴별 발동 조건을 충족하면 우선 수정. 단일 표현만으로 AI 작성 여부를 단정하지 않음.
 - **S2 강함**: 1~2회 허용, 3회+ 반복 시 제거.
 - **S3 약함**: 다른 패턴과 중첩될 때만 문제.
 
 **품질 등급 (윤문 후)**
-- **A**: S1 0건, S2 ≤2건, 점수 개선 70%+
-- **B**: S1 0건, S2 ≤4건, 개선 50%+
-- **C**: S1 1~2건 or 과윤문 시그널 2개 → 2차 윤문
-- **D**: S1 3건+ or 심각한 과윤문 → 사람 검토
+- **A**: S1 0건, S2 ≤2건, 변경률 10~25%, 자체검증 6항 모두 통과
+- **B**: S1 0건, S2 ≤4건, 자체검증 5항 이상 통과
+- **C**: S1 1~2건 또는 자체검증 4항 이하 통과 → 정밀 재실행 권고
+- **D**: S1 3건 이상 또는 심각한 과윤문 → 작업 중단·사람 검토
 
 ## 사용법 — 5분이면 따라합니다
 
-> **전역 설치([설치](#설치-install))를 마쳤다면** 1~2단계(클론·폴더 진입)는 건너뛰고, 아무 폴더에서나 바로 **3단계**로 가세요. 아래는 설치 없이 리포에서 곧바로 체험하는 흐름입니다.
+> **전역 설치([설치](#설치-install))를 마쳤다면** 1단계(클론·폴더 진입)를 건너뛰고, 아무 폴더에서나 **2단계**로 가세요. 아래는 설치 없이 리포에서 곧바로 체험하는 흐름입니다.
 
 ### 0. 전제
 
-아래 1~4단계는 3경로 전체를 제공하는 [Claude Code](https://claude.com/claude-code) 기준입니다. GitHub Copilot CLI·Codex CLI·Gemini CLI의 단일 호출 경로는 아래 각 도구별 방법을 참고하세요. Mac · Windows · Linux 모두 지원합니다.
+아래 1~4단계는 3경로 전체를 제공하는 [Claude Code](https://claude.com/claude-code) 기준입니다. GitHub Copilot CLI·Codex CLI의 단일 호출 경로는 아래 방법 D·E, Gemini CLI는 [`INSTALL.md`](INSTALL.md#gemini-cli-antigravity)를 참고하세요. macOS · Linux에서 사용할 수 있으며, Windows의 스크립트 설치는 WSL을 권장합니다.
 
 설치 확인:
 ```bash
@@ -162,11 +164,11 @@ cd im-not-ai
 ### 2. Claude Code 켜기
 
 ```bash
-claude
+claude --plugin-dir .
 ```
 
-> **전역 설치를 했다면** 아무 폴더에서나 켜도 `/humanize-korean`이 동작합니다([설치](#설치-install) 참고).
-> **설치 없이 체험만 하려면** 방금 클론한 `im-not-ai` 폴더 **안에서** 실행하세요(프로젝트 로컬 스킬이 로드됩니다). 다른 위치에서 켜면 일반 Claude Code처럼 동작합니다.
+> **전역 설치를 했다면** 아무 폴더에서나 `claude`로 시작하세요. 스크립트 설치는 `/humanize-korean`, 플러그인 설치는 `/humanize-korean:humanize-korean`으로 호출합니다.
+> **설치 없이 체험만 하려면** 클론한 `im-not-ai` 폴더 안에서 위 `claude --plugin-dir .` 명령으로 플러그인을 명시적으로 로드하세요.
 
 ### 3. AI가 쓴 한글 글 붙여넣고 부탁하기
 
@@ -189,11 +191,13 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Git
 - "번역투 제거"
 - "한글 AI 윤문"
 
-**방법 B — 슬래시 커맨드** *(v1.2~)*
+**방법 B — 슬래시 커맨드** *(스크립트 설치 기준)*
 
 ```
 /humanize [윤문할 텍스트 또는 파일 경로]
 ```
+
+플러그인 설치 또는 `--plugin-dir`로 실행했다면 `/humanize-korean:humanize`, `/humanize-korean:humanize-redo`처럼 플러그인 이름을 붙입니다.
 
 옵션을 인자 끝에 자연어로 적을 수 있습니다: `장르: 칼럼`, `강도: 적극`, `최소심각도: S1`. 결과가 마음에 안 들면 `/humanize-redo "번역투만 다시"` 같은 식으로 재실행. 두 진입점은 이제 스킬입니다: [`humanize`](skills/humanize/SKILL.md) · [`humanize-redo`](skills/humanize-redo/SKILL.md)
 
@@ -243,7 +247,7 @@ opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 
 ### 커뮤니티 포트
 
-공식 지원 런타임은 **Claude Code · Codex · Gemini CLI** 세 가지입니다. 저희가 라이브로 검증할 수 있는 범위를 넘어서면 "공식 지원" 을 표기하지 않는다는 정책이라, 그 밖의 런타임은 커뮤니티 포트로 안내합니다.
+공식 지원 런타임은 **Claude Code · GitHub Copilot CLI · Codex CLI · Gemini CLI** 네 가지입니다. 저희가 라이브로 검증할 수 있는 범위를 넘어서면 "공식 지원" 을 표기하지 않는다는 정책이라, 그 밖의 런타임은 커뮤니티 포트로 안내합니다.
 
 | 포트 | 런타임 | 제작 |
 |---|---|---|
@@ -267,7 +271,7 @@ opencode 로 윤문하는 커뮤니티 제작 포트입니다.
 | `01_input.txt` | 원문 그대로 |
 | `00_metrics.json` · `01_input_with_metrics.txt` | 정량 사전 점수 + `route_hint` + 점수 블록을 원문 앞에 붙인 결합 입력 (점수 계산 실패 시 standard로 자동 진행) |
 | `02_diagnosis.md` | (standard·heavy) 지배 패턴 3~6개 진단 (taxonomy ID · 근거 · 처방 · 장르/격식) |
-| `final.md` | 윤문본 + 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 주석 블록(메트릭·카테고리 탐지 before/after·자체검증 6항·등급·주요 변경 하이라이트). HTML 주석이라 마크다운 뷰어·웹 게시·복사 시 본문에만 노출 |
+| `final.md` | 윤문본 + 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 주석 블록(메트릭·카테고리 탐지 before/after·자체검증 6항·등급·주요 변경 하이라이트). 렌더링된 마크다운에서는 주석이 숨겨지지만, 원본 파일을 복사하면 주석도 포함됨 |
 
 **heavy (3+콜 · 중증 슬롭·초장문·증적 필요 · `--strict`로 강제 가능 · 5~8분)** — 진단 → 윤문(shim이 청크를 2개 이상 만든 경우에만 청크 병렬) → finalize. 위 산출물에 더해:
 
@@ -520,7 +524,7 @@ v1.6 5편 일괄 검증 중 sub-agent가 **두 번째 Write를 자체 보수 룰
 해결 — **monolith 산출물을 final.md 1개로 통합**:
 
 - final.md 본문 끝에 `<!-- HUMANIZE-SUMMARY ... -->` HTML 주석 블록 1개로 메트릭·카테고리 탐지·자체검증·등급·하이라이트·잔존 finding을 함께 박아 단일 Write로 끝
-- HTML 주석이라 마크다운 뷰어·웹 게시·복사 시 본문에만 노출. 메타 추출은 `grep -A 30 "HUMANIZE-SUMMARY"` 또는 간단한 파서로
+- 렌더링된 마크다운에서는 주석이 숨겨지지만, 원본 파일을 복사하면 주석도 포함됨. 메타 추출은 `grep -A 30 "HUMANIZE-SUMMARY"` 또는 간단한 파서로
 - monolith 도구 호출 캡 4회 → **3회**로 자연 절감 (Read 입력 + Read 룰북 + Write final). v1.4 함정 회피 마진 확대
 - `summary.md`(v1.6.0 이전 산출물 또는 외부 도구 산출물)는 그대로 보존, 삭제·갱신 금지
 
