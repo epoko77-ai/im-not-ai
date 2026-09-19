@@ -188,6 +188,7 @@ install_codex_bundle() {
     cp "$REPO/scripts/reassemble_chunks.py" "$dest/scripts/"
     cp "$REPO/scripts/verify_change_rate.py" "$dest/scripts/"
     cp "$REPO/scripts/verify_gates.py" "$dest/scripts/"
+    cp "$REPO/scripts/restore_modality.py" "$dest/scripts/"
     cp "$REPO/scripts/checks.py" "$dest/scripts/"
     cp "$REPO/scripts/console.py" "$dest/scripts/"
   fi
