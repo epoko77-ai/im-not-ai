@@ -153,7 +153,8 @@ install_one() {
     echo "error: $dest 심링크 생성 실패 — 일반 파일/디렉토리로 조용히 복사됐습니다." >&2
     echo "  원인: Windows Git Bash(MSYS)는 관리자 권한/개발자 모드 없이 ln -s 를 실행하면" >&2
     echo "  심링크 대신 일반 복사를 만듭니다." >&2
-    echo "  대안: ① ./install.sh --copy  ② MSYS=winsymlinks:nativestrict 로 재실행  ③ WSL 에서 설치(권장, INSTALL.md 참고)" >&2
+    echo "  대안: ① WSL 에서 설치(권장, INSTALL.md 참고)  ② MSYS=winsymlinks:nativestrict 로 재실행" >&2
+    echo "  주의: ./install.sh --copy 는 SKILL_ROOT 유도가 깨져 scripts/ 게이트가 동작하지 않습니다 (#144)." >&2
     echo "  참고: 이 항목 이전에 성공한 설치는 그대로 유지됩니다(되돌리지 않음)." >&2
     return 1
   fi
