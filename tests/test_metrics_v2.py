@@ -238,6 +238,32 @@ class V20InterferenceTests(unittest.TestCase):
         text = "위원회가 이 문제를 처리했다. 정부가 결정을 내렸다."
         self.assertEqual(metrics_v2.by_passive_count(text), 0)
 
+    def test_by_passive_combined_endings(self) -> None:
+        # #131 — NFC 결합형 어미(된다·된·될·됨)와 어절 경계 너머의 피동도 잡는다.
+        text = (
+            "현장 데이터는 담당자에 의해 수기로 기록되고 있다. "
+            "분석 결과가 실무진에 의해 활용될 수 있도록 한다. "
+            "구성원들에 의해 받아들여지지 않는다면 정착은 어렵다. "
+            "AI에 의해 생성된 문서. "
+            "위원회에 의해 결정되었다. "
+            "시스템에 의해 처리된다."
+        )
+        self.assertEqual(metrics_v2.by_passive_count(text), 6)
+
+    def test_by_passive_conjugation_variants(self) -> None:
+        text = (
+            "규정에 의해 명시됩니다. "
+            "절차는 위원회에 의해 정해진다. "
+            "비용은 회사에 의해 부담됨. "
+            "결과는 패널에 의해 평가될 예정이다."
+        )
+        self.assertEqual(metrics_v2.by_passive_count(text), 4)
+
+    def test_by_passive_bare_uie_hae_still_zero(self) -> None:
+        # 수동 동사 없는 단순 「에 의해」는 여전히 세지 않는다.
+        text = "그의 말에 의해 분위기가 바뀌었다. 규정에 의해 정했다."
+        self.assertEqual(metrics_v2.by_passive_count(text), 0)
+
     # T2b
     def test_double_passive_detected(self) -> None:
         text = "이 문제는 분석되어진다. 그 사실은 잊혀진 지 오래다."
