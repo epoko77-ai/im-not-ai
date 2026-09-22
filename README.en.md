@@ -18,7 +18,7 @@ LLMs write Korean that *reads* like translated English. Native speakers spot it 
 | | |
 |---|---|
 | [`docs/en/quick-rules.en.md`](docs/en/quick-rules.en.md) | **The working artifact** — the rulebook a single-call implementation loads as its system prompt |
-| [`docs/en/taxonomy.md`](docs/en/taxonomy.md) | All 71 patterns: severity, trigger, prescription, genre guards, detector schema |
+| [`docs/en/taxonomy.md`](docs/en/taxonomy.md) | English taxonomy snapshot (v2.0.1): severity, trigger, prescription, genre guards, detector schema |
 | [`docs/en/evidence.md`](docs/en/evidence.md) | The corpus study — what was confirmed, what was **rejected**, and the limits of the design |
 | [`docs/en/integration.md`](docs/en/integration.md) | Building this into a model or product, and the failure modes we hit in production |
 
@@ -28,7 +28,7 @@ Engineers integrating this should start with `integration.md`.
 
 English humanizers (QuillBot, Undetectable AI, Hix) are weak on Korean because the giveaway isn't word choice — it's **translationese**: English syntax wearing Korean morphology. Double passives, `~를 통해` for every English "through/via", left-branching relative clauses imported from English, compulsive third-person pronouns (Korean normally drops them), mechanical "first / second / third" scaffolding, and a closing paragraph that always "carries significant implications."
 
-We catalogued these as **10 categories × 70 sub-patterns**, each with a severity (S1 decisive / S2 strong / S3 weak) and a prescription, grounded in Korean translation-studies literature (KatFish, post-editese metrics, Wendler et al. ACL'24, Lost in Literalism ACL'25).
+We catalogued these as **10 categories × 85 sub-patterns**, each with a severity (S1 decisive / S2 strong / S3 weak) and a prescription, grounded in Korean translation-studies literature (KatFish, post-editese metrics, Wendler et al. ACL'24, Lost in Literalism ACL'25).
 
 | ID | Category | Example tells |
 |----|----------|---------------|
@@ -43,7 +43,7 @@ We catalogued these as **10 categories × 70 sub-patterns**, each with a severit
 | I | Dummy nouns | "것이다", "점", "수", "바", "~할 필요가 있다" |
 | J | Visual decoration | Bold, quote marks and em-dash overuse |
 
-All 71 patterns in English: [`docs/en/taxonomy.md`](docs/en/taxonomy.md). Korean SSOT with worked examples: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · playbook: [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · sources: [`scholarship.md`](skills/humanize-korean/references/scholarship.md)
+English taxonomy snapshot (v2.0.1): [`docs/en/taxonomy.md`](docs/en/taxonomy.md). Korean SSOT with worked examples: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · playbook: [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · sources: [`scholarship.md`](skills/humanize-korean/references/scholarship.md)
 
 ## Four hard rules
 
