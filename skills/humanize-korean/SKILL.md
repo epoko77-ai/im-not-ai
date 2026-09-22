@@ -16,7 +16,7 @@ description: AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람�
 작업 시작 시 가장 먼저 다음 한 줄을 사용자에게 출력한다.
 
 ```
-humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 지정}) / run_id: {YYYY-MM-DD-NNN}
+humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 지정}) / run_id: {YYYY-MM-DD-NNN-TAG}
 ```
 
 (경로는 Phase 1의 shim 실행 후에 확정되므로, 이 상태 줄은 shim 직후 출력한다.)
@@ -36,13 +36,27 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 5. **입력 길이는 경로를 바꾸지 않는다.** 1만자급도 단일 콜로 처리한다(§설계 노트의 실측 근거 참조). 길이·중증도 판단은 shim의 route_hint에 위임한다.
 
 ### run_id 결정
-- 모든 경로는 **cwd 기준**. 새 폴더 생성도 cwd 기준 `_workspace/{YYYY-MM-DD-NNN}/`에 만든다.
+- 모든 경로는 **cwd 기준**. 새 폴더 생성도 cwd 기준 `_workspace/{YYYY-MM-DD-NNN-TAG}/`에 만든다.
+- **`TAG` 는 세션 구분자다. Phase 1 맨 처음에 한 번 만들어 그 run 내내 재사용한다.**
+
+  ```bash
+  TAG=$(python3 -c "import secrets;print(secrets.token_hex(2))")   # 예: a3f9
+  ```
+
+  이후 모든 명령의 `_workspace/{run_id}` 에 같은 TAG 를 쓴다. 중간에 새로 만들지 않는다.
 - 기존 시퀀스 확인은 **`Glob` 도구**로 표지 파일을 매칭해 간접 조회.
   올바른 사용법: `Glob(pattern="_workspace/YYYY-MM-DD-*/01_input.txt")` → 결과에서 폴더명 추출 후 NNN 최댓값 + 1.
+  (`-TAG` 가 뒤에 붙어도 접두어가 같아 이 패턴은 그대로 맞는다.)
   주의: Glob은 디렉토리 자체는 매칭하지 못한다. 반드시 그 안의 표지 파일(`01_input.txt`)을 매칭할 것.
   `Bash ls`는 OS·셸 환경에 따라 경로 해석이 달라지므로 사용 금지.
 - 당일 폴더가 없으면 NNN = 001. 있으면 마지막 NNN + 1.
-- 부분 재실행 신호("이 카테고리만 다시"·"2차 윤문")일 경우 기존 run_id 재사용 + heavy 경로로 자동 승급.
+- 부분 재실행 신호("이 카테고리만 다시"·"2차 윤문")일 경우 기존 run_id 재사용(TAG 포함) + heavy 경로로 자동 승급.
+
+> 🔴 **TAG 를 빼지 마라.** 한 머신에서 세션이 여러 개 동시에 도는 환경에서는 NNN 만으로
+> 겹친다. Glob 으로 자리를 확인하고 `mkdir` 하기까지 틈이 있어 다른 세션이 같은 번호를
+> 잡기 때문이다. 두 세션이 한 디렉터리를 쓰면 서로의 `01_input.txt` 를 덮어쓰고, 게이트가
+> *남의 원문과 내 윤문본*을 비교해 있지도 않은 제목·인용이 사라졌다며 ABORT 를 낸다.
+> 윤문본 자체는 멀쩡하므로 원인을 찾기가 특히 어렵다.
 
 ## 스크립트 경로 규칙 (`${SKILL_ROOT}`)
 
@@ -78,7 +92,7 @@ SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
    python3 ${SKILL_ROOT}/scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre {genre}
    ```
    - `--genre` 값은 영문 키: `essay | column | report | blog | abstract` (생략 시 `essay`). 장르 힌트 매핑: 칼럼→`column`, 리포트→`report`, 블로그→`blog`, 공적/기타→`essay`.
-   - `--run-dir`·`--diagnosis`의 상대 경로는 **cwd 기준**으로 해석된다(위 run_id 규칙과 동일 기준). 그 외 인자: `--text`(run-dir 없이 즉석 실행 시 새 run 디렉토리 자동 생성), `--baseline`(baseline JSON 경로 override, 평소 불필요), `--diagnosis`(진단 텍스트 파일을 점수 블록 앞에 prepend — standard·heavy의 진단 결합용).
+   - `--run-dir`·`--diagnosis`의 상대 경로는 **cwd 기준**으로 해석된다(위 run_id 규칙과 동일 기준). 그 외 인자: `--text`(run-dir 없이 즉석 실행 시 새 run 디렉토리 자동 생성 — 이때는 `--session-tag {TAG}` 를 같이 준다), `--baseline`(baseline JSON 경로 override, 평소 불필요), `--diagnosis`(진단 텍스트 파일을 점수 블록 앞에 prepend — standard·heavy의 진단 결합용).
    - 산출: `00_metrics.json`(정량 점수 + **`route_hint`**) + `01_input_with_metrics.txt`(점수 블록을 원문 앞에 붙인 결합 파일).
    - **graceful degrade 내장**: metrics 계산이 실패하면 shim이 점수 블록 없이 원문만 감싼 결합 파일을 쓰고 `00_metrics.error`를 남긴다. 이 경우 route_hint 없음 → standard 경로.
 5. `00_metrics.json`의 `route_hint`를 읽어 Phase 0 규칙대로 경로를 확정하고 상태 줄을 출력한다.

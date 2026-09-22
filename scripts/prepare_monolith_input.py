@@ -71,19 +71,36 @@ except Exception:  # pragma: no cover
 # ---------------------------------------------------------------------------
 
 
-def _next_run_dir(workspace: Path) -> Path:
-    """Allocate _workspace/<today>-NNN/ with the smallest free NNN."""
+def _next_run_dir(workspace: Path, session_tag: str | None = None) -> Path:
+    """Allocate _workspace/<today>-NNN[-<tag>]/ with the smallest free NNN.
+
+    **확인과 생성을 한 번에 한다.** 예전에는 `exists()` 로 빈 자리를 보고 호출부가
+    나중에 mkdir 했다. 그 사이에 다른 프로세스가 같은 이름을 잡으면 두 실행이 한
+    디렉터리를 공유한다 — 뒤에 온 쪽이 앞선 쪽의 `01_input.txt` 를 덮어쓰고,
+    게이트는 *남의 원문과 내 윤문본*을 비교해 있지도 않은 제목·인용이 사라졌다며
+    ABORT 를 낸다. 윤문본 자체는 멀쩡하므로 원인을 찾기가 특히 어렵다.
+
+    `session_tag` 를 주면 이름 뒤에 붙어 세션끼리 번호도 겹치지 않는다.
+    `YYYY-MM-DD-` 접두어는 그대로라 기존 Glob 패턴·정렬은 영향받지 않는다.
+    """
     workspace.mkdir(parents=True, exist_ok=True)
     today = date.today().isoformat()
-    n = 1
-    while True:
-        candidate = workspace / f"{today}-{n:03d}"
-        if not candidate.exists():
+    tag = f"-{session_tag}" if session_tag else ""
+    for n in range(1, 1000):
+        candidate = workspace / f"{today}-{n:03d}{tag}"
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
             return candidate
-        n += 1
+        except FileExistsError:
+            continue
+    raise SystemExit(
+        f"run dir 자리를 못 찾았다: {workspace}/{today}-NNN{tag} 가 999개까지 찼다"
+    )
 
 
-def _resolve_run_dir(run_dir_arg: str | None, text_arg: str | None) -> Path:
+def _resolve_run_dir(
+    run_dir_arg: str | None, text_arg: str | None, session_tag: str | None = None
+) -> Path:
     """상대 경로는 **cwd** 기준으로 푼다.
 
     이전에는 PROJECT_ROOT(설치 저장소 루트) 기준이었다. SKILL.md 는 "모든 경로는
@@ -111,9 +128,7 @@ def _resolve_run_dir(run_dir_arg: str | None, text_arg: str | None) -> Path:
     if text_arg is None:
         raise SystemExit("Either --run-dir or --text is required")
     workspace = Path.cwd() / "_workspace"
-    rd = _next_run_dir(workspace)
-    rd.mkdir(parents=True, exist_ok=True)
-    return rd
+    return _next_run_dir(workspace, session_tag)  # 생성까지 원자적으로 끝난다
 
 
 # ---------------------------------------------------------------------------
@@ -708,7 +723,7 @@ def _render_chunk_header(index: int, total: int, starts_with_heading: bool) -> s
 
 
 def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
-    run_dir = _resolve_run_dir(args.run_dir, args.text)
+    run_dir = _resolve_run_dir(args.run_dir, args.text, args.session_tag)
     input_path = run_dir / "01_input.txt"
     if args.text is not None:
         input_path.write_text(args.text, encoding="utf-8")
@@ -856,6 +871,13 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Humanize KR v2.0 monolith input shim")
     p.add_argument("--run-dir", help="Existing run directory (relative ok)")
     p.add_argument("--text", help="Inline text input (creates new run dir)")
+    p.add_argument(
+        "--session-tag",
+        default=None,
+        help="run 디렉터리 이름 뒤에 붙는 세션 구분자(예: a3f9). 한 머신에서 여러 "
+        "세션이 동시에 돌 때 _workspace/<날짜>-NNN 을 서로 덮어쓰는 사고를 막는다. "
+        "--text 로 새 디렉터리를 만들 때만 쓰인다.",
+    )
     p.add_argument("--genre", default="essay", help="Genre hint (default: essay)")
     p.add_argument(
         "--baseline",
@@ -895,7 +917,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.chunk:
         return run_chunk_mode(args, diagnosis)
 
-    run_dir = _resolve_run_dir(args.run_dir, args.text)
+    run_dir = _resolve_run_dir(args.run_dir, args.text, args.session_tag)
     input_path = run_dir / "01_input.txt"
 
     # Ensure 01_input.txt exists.

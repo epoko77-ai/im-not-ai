@@ -23,7 +23,7 @@ description: AI(ChatGPT·Claude·Gemini)가 쓴 한글 텍스트를 사람이 �
 4. **탐지**: A~J 카테고리 패턴을 메모리에서 스캔해 (ID, span, severity, fix) 수집. Do-NOT span은 제외.
 5. **윤문**: D(관용구 삭제) → A → I → G → H → F → B → C·J → E 순서로 문단 단위 처리. 변경률을 모니터링하며 50% 임박 시 후속 edit 보류.
 6. **자체검증**: quick-rules "자체검증 체크리스트" 6항 점검. 위반 항목 발견 시 해당 edit 롤백 → 윤문 부분 재실행(최대 1회).
-7. **출력**: cwd 기준 `_workspace/{run_id}/final.md` 작성(run_id = `YYYY-MM-DD-NNN`, 당일 기존 폴더 있으면 NNN+1). 본문 끝에 빈 줄 하나 두고 `<!-- HUMANIZE-SUMMARY ... -->` HTML 주석 블록 1개 추가:
+7. **출력**: cwd 기준 `_workspace/{run_id}/final.md` 작성(run_id = `YYYY-MM-DD-NNN-TAG`, 당일 기존 폴더 있으면 NNN+1. **TAG 는 세션 구분자** — `python3 -c "import secrets;print(secrets.token_hex(2))"` 로 run 시작 때 한 번 만들어 끝까지 재사용한다. 한 머신에서 세션이 동시에 돌면 NNN 만으로는 서로의 `01_input.txt` 를 덮어쓴다). 본문 끝에 빈 줄 하나 두고 `<!-- HUMANIZE-SUMMARY ... -->` HTML 주석 블록 1개 추가:
    - 원본/윤문본 글자수·변경률
    - 카테고리별 탐지 건수(before → after, quick-rules ID 기준)
    - 자체검증 6항 통과 여부

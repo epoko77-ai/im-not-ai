@@ -83,7 +83,7 @@ im-not-ai/
 │           └── web-service-spec.md     # 웹 확장 스펙 (옵션)
 ├── codex/skills/humanize-korean/  # Codex Fast Path 스킬 (references → SSOT 공유 심링크)
 └── _workspace/                    # 런타임 산출물 (run_id별, gitignored)
-    └── {YYYY-MM-DD-NNN}/
+    └── {YYYY-MM-DD-NNN-TAG}/          # TAG=세션 구분자(동시 실행 충돌 방지)
         ├── 01_input.txt · 00_metrics.json · 01_input_with_metrics.txt  # 원문·점수·결합
         ├── final.md                    # 윤문본 (끝에 <!-- HUMANIZE-SUMMARY --> 블록)
         ├── 01_chunk_{NN}… · 02_chunk_{NN}_rewritten.txt · 03_reassembled.md  # (장문 청킹)
