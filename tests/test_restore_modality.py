@@ -87,6 +87,46 @@ class RestoreModalityTests(unittest.TestCase):
         self.assertIn("꺾일 수 있다", out.split("<!--")[0])
         self.assertIn("HUMANIZE-SUMMARY", out, "요약 블록은 보존해야 한다")
 
+    def test_summary_after_example_does_not_make_body_ambiguous(self) -> None:
+        """summary의 after 예문은 본문 유일성 검사에 포함하지 않는다."""
+        before = "정부는 지역 지원 체계를 구축해야 한다."
+        after_sentence = "정부는 지역 지원 체계를 구축한다."
+        summary = (
+            "<!-- HUMANIZE-SUMMARY v2.3\n"
+            "categories:\n"
+            "  - id: I-4\n"
+            f"    before: {before}\n"
+            f"    after: {after_sentence}\n"
+            "-->\n"
+        )
+        after = f"{after_sentence}\n\n{summary}"
+
+        out, restored, skipped = rm.restore(before, after)
+
+        self.assertEqual(len(restored), 1, f"summary 예문 때문에 복원 보류: {skipped}")
+        self.assertEqual(
+            out,
+            f"{before}\n\n{summary}",
+            "summary 블록은 원문 그대로 보존해야 한다",
+        )
+
+    def test_duplicate_sentence_in_body_remains_ambiguous_with_summary(self) -> None:
+        """본문에 실제 중복이 있으면 summary와 무관하게 복원을 보류한다."""
+        before = "정부는 지역 지원 체계를 구축해야 한다."
+        after_sentence = "정부는 지역 지원 체계를 구축한다."
+        summary = (
+            "<!-- HUMANIZE-SUMMARY v2.3\n"
+            f"after: {after_sentence}\n"
+            "-->\n"
+        )
+        after = f"{after_sentence} {after_sentence}\n\n{summary}"
+
+        out, restored, skipped = rm.restore(before, after)
+
+        self.assertEqual(restored, [])
+        self.assertEqual(out, after)
+        self.assertIn("유일하게 특정되지 않음", skipped[0]["reason"])
+
     def test_low_similarity_pair_is_reported_not_silent(self) -> None:
         """유사도 미달로 손대지 않은 손실도 보고에는 남아야 한다."""
         before = "이 정책의 고용 효과는 제한적일 것으로 판단된다."
