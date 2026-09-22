@@ -8,7 +8,7 @@
 
 AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
 
-번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 70 서브 패턴**(+검증 대기 hold 1건)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
+번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 85 서브 패턴**(+검증 대기 hold 1건 포함)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
 
 ## 설치 (Install)
 
@@ -122,7 +122,7 @@ cd im-not-ai
 | I | 형식명사 과다 | "것이다", "점", "수", "바", "~할 필요가 있다" |
 | J | 시각 장식 남용 | 과도한 **볼드**, "따옴표", 대시(—) 남발 |
 
-전체 70 서브 패턴(+hold 1건)과 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
+전체 85 서브 패턴(hold 1건 포함)과 처방: [`ai-tell-taxonomy.md`](skills/humanize-korean/references/ai-tell-taxonomy.md) · [`rewriting-playbook.md`](skills/humanize-korean/references/rewriting-playbook.md) · 학술 인용 외부 SSOT: [`scholarship.md`](skills/humanize-korean/references/scholarship.md) (v2.0 신규)
 
 ## 심각도 & 품질 등급
 
@@ -426,7 +426,7 @@ Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩�
 **핵심 변경**
 
 - **구조 수렴 게이트 (`scripts/verify_gates.py`, LLM 콜 0)** — ① 문자율(폭주 재작성 상한, 기존) ② **진단 목표달성**(진단이 지목한 지표가 실제로 사람 분포로 수렴했는지 z-score로 검증) ③ **대구 전멸 방지**(C-8 "A가 아니라 B"를 다 깨서 필자 목소리를 지우면 실패) ④ golden + **수치 주입 차단**. 문자 change_rate가 못 보던 구조 편집(쉼표·대구 해체)을 결정적으로 검증합니다. 기존 `verify_change_rate.py`는 하위호환 보존.
-- **진단 슬림 인덱스 (`references/diagnosis-rules.md`, 빌드 생성)** — 진단이 taxonomy 전량(74.8KB)을 읽던 것을 71패턴 전수 × 2줄(ID·정의·탐지 시그니처)의 ~13KB 인덱스로 교체(83%↓). 진단 콜 토큰 35~50% 절감, 지배 패턴 지목 품질은 실측 회귀로 동등 확인. SSOT(`ai-tell-taxonomy.md`)는 무수정 유지, `build_diagnosis_rules.py --check`가 drift 차단.
+- **진단 슬림 인덱스 (`references/diagnosis-rules.md`, 빌드 생성)** — 진단이 taxonomy 전량(74.8KB)을 읽던 것을 전 패턴 전수 × 2줄(ID·정의·탐지 시그니처)의 ~13KB 인덱스로 교체(83%↓). 진단 콜 토큰 35~50% 절감, 지배 패턴 지목 품질은 실측 회귀로 동등 확인. SSOT(`ai-tell-taxonomy.md`)는 무수정 유지, `build_diagnosis_rules.py --check`가 drift 차단.
 
 ## v2.2 — route_hint 3경로 · 단일 콜 우선 (2026-07)
 

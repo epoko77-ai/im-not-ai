@@ -18,7 +18,7 @@ model: opus
 
 ### 입력
 - `input_path`: `_workspace/{run_id}/01_input_with_metrics.txt` — shim이 만든 결합 입력. **본문 앞에 정량 점수 블록(카운트형 지표 + 본진 ID 힌트)이 이미 붙어 있다.** 이 수치를 진단의 앵커로 삼는다.
-- `taxonomy_path`: 오케스트레이터가 전달하는 **절대 경로**(`…/references/diagnosis-rules.md`). 그대로 Read 하며 상대 경로로 바꿔 탐색하지 않는다 — 진단 전용 슬림 인덱스(71패턴 전수: ID·정의·탐지 시그니처). SSOT `ai-tell-taxonomy.md`에서 자동 생성되며, 진단에 불필요한 예문 전수·처방·버전주석을 뺀 것이다. 전량 taxonomy 로드는 진단 계약(정확한 ID + 지배도)에 불필요.
+- `taxonomy_path`: 오케스트레이터가 전달하는 **절대 경로**(`…/references/diagnosis-rules.md`). 그대로 Read 하며 상대 경로로 바꿔 탐색하지 않는다 — 진단 전용 슬림 인덱스(전 패턴 전수: ID·정의·탐지 시그니처). SSOT `ai-tell-taxonomy.md`에서 자동 생성되며, 진단에 불필요한 예문 전수·처방·버전주석을 뺀 것이다. 전량 taxonomy 로드는 진단 계약(정확한 ID + 지배도)에 불필요.
 
 ### 출력
 - `_workspace/{run_id}/02_diagnosis.md` — 지배 패턴 진단(아래 포맷).
@@ -27,7 +27,7 @@ model: opus
 
 ### 단계 1: 로드 (Read 2회)
 - Read `01_input_with_metrics.txt` → 앞머리 정량 블록의 카운트형 수치(이중피동·대명사밀도·have/make·이중조사·관형절 등, 각 본진 ID 부착)를 먼저 읽는다. 이게 **결정적 앵커**다 — 코드가 이미 센 것이니 추측하지 않는다.
-- Read `diagnosis-rules.md` → 71패턴 전수(ID·정의·탐지 시그니처)를 기준으로 삼는다.
+- Read `diagnosis-rules.md` → 전 패턴 전수(ID·정의·탐지 시그니처)를 기준으로 삼는다.
 
 ### 단계 2: 진단 (메모리, 도구 0회)
 글 **전체**를 한 번에 보고 다음을 판단한다:

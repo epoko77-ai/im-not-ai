@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import re
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +58,49 @@ class QuickRulesBuildTests(unittest.TestCase):
         quick_ids = {p["id"] for p in patterns if p["quick"] is True}
         self.assertTrue(quick_ids)
         self.assertTrue(quick_ids <= taxo_ids)
+
+
+class OrphanQuickMetaTests(unittest.TestCase):
+    """`_quick:` 메타가 패턴에 귀속되지 않고 버려지는 것을 막는다 (2026-09-22).
+
+    `## J-1. 과도한 **볼드**` 가 `###` 대신 `##` 로 적혀 있어 파서에 헤딩으로
+    보이지 않았다. 그 결과 J-1 의 `_quick: true` 줄이 어느 패턴에도 귀속되지
+    못하고 조용히 버려져, **J-1 이 quick-rules.md·diagnosis-rules.md 양쪽에서
+    통째로 빠진 상태로 배포되고 있었다.** 손 동기화 드리프트를 막으려고 생성기를
+    도입했는데, 생성기 자체가 입력을 조용히 흘리면 같은 사고가 난다.
+
+    원문의 `_quick:` 메타 줄 수와 파서가 귀속시킨 수가 같아야 한다.
+    """
+
+    def setUp(self) -> None:
+        self.builder = _load_builder()
+        with open(self.builder._TAXONOMY, encoding="utf-8") as f:
+            self.taxonomy = f.read()
+
+    def test_every_quick_meta_line_is_attributed(self) -> None:
+        raw = [
+            ln
+            for ln in self.taxonomy.splitlines()
+            if self.builder._QUICK_RE.search(ln)
+        ]
+        patterns = self.builder.parse_taxonomy(self.taxonomy)
+        attributed = [p for p in patterns if p["quick"] is not None]
+        self.assertEqual(
+            len(raw),
+            len(attributed),
+            f"_quick 메타 {len(raw)}줄 중 {len(attributed)}건만 패턴에 귀속됐다. "
+            "헤딩이 `### <ID>.` 형식인지 확인하라 — `##` 로 적으면 파서가 "
+            "패턴으로 인식하지 못하고 그 규칙이 룰북에서 조용히 사라진다.",
+        )
+
+    def test_every_pattern_heading_uses_three_hashes(self) -> None:
+        """`## X-N.` 형태의 헤딩이 없어야 한다(패턴은 항상 `###`)."""
+        bad = [
+            ln.strip()
+            for ln in self.taxonomy.splitlines()
+            if re.match(r"^##\s+[A-J]-\d+\.", ln)
+        ]
+        self.assertEqual(bad, [], f"패턴 헤딩이 `##` 로 적혔다: {bad}")
 
 
 class QuickBudgetTests(unittest.TestCase):
