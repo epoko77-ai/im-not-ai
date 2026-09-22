@@ -43,6 +43,12 @@ _OUT = os.path.join(_REFS, "quick-rules.md")
 _CATEGORY_RE = re.compile(r"^## ([A-J])\.\s+(.+?)\s*$")
 # ### A-1. "~에 대하여" 남발 [S1]
 _PATTERN_RE = re.compile(r"^### ([A-J]-\d+)\.\s+(.+?)\s*(?:\[([^\]]+)\])?\s*$")
+# 심각도는 제목 **어디에** 있어도 뽑는다. 위 _PATTERN_RE 의 세 번째 그룹은 줄
+# 끝의 `[...]` 만 잡으므로, `[S1] · v1.1 신규 · v2.3 실측 최강 신호` 처럼 버전
+# 접미가 뒤에 붙은 제목에서는 심각도를 잃는다. 그 결과 quick: true 53건 중
+# 31건(C-8 포함)이 심각도 태그 없이 quick-rules.md 에 실려, monolith 가 S1
+# 우선순위를 볼 수 없었다. PR #94 가 같은 결함을 지적했다.
+_SEVERITY_RE = re.compile(r"\[(S[1-9][^\]]*)\]")
 # - _quick: true · quick_pattern: X · quick_fix: Y_
 # - _quick: false_   (false는 pattern/fix 없이 값+밑줄로 끝나는 형식도 허용)
 # `\b` 대신 명시적 경계(공백···밑줄)를 써야 `false_`를 놓치지 않는다.
@@ -91,6 +97,21 @@ class ParseError(Exception):
     pass
 
 
+def _extract_severity(heading: str, tail_group: str | None) -> str:
+    """제목에서 심각도(S1/S2/S3)를 뽑는다.
+
+    `[S1]` 이 줄 끝에 있으면 tail_group 이 이미 담고 있다. 버전 접미가 뒤에
+    붙어 tail 로 잡히지 않는 경우를 위해 제목 전체를 다시 훑는다. 줄 끝
+    `[...]` 가 심각도가 아닌 다른 메모일 수도 있으므로 S 패턴만 신뢰한다.
+    """
+    if tail_group:
+        m = _SEVERITY_RE.fullmatch(f"[{tail_group.strip()}]")
+        if m:
+            return m.group(1).strip()
+    m = _SEVERITY_RE.search(heading)
+    return m.group(1).strip() if m else ""
+
+
 def parse_taxonomy(text: str) -> list[dict]:
     """taxonomy에서 (category, id, title, severity, quick, pattern, fix)를 뽑는다.
 
@@ -123,7 +144,9 @@ def parse_taxonomy(text: str) -> list[dict]:
                 "category_name": cur_cat_name,
                 "id": m_pat.group(1),
                 "title": m_pat.group(2).strip(),
-                "severity": (m_pat.group(3) or "").strip(),
+                # 줄 끝 `[...]`(group 3)을 우선 쓰되, 비었으면 제목 전체에서
+                # `[S…]` 를 찾는다. 두 경로 모두 실패하면 빈 문자열.
+                "severity": _extract_severity(ln, m_pat.group(3)),
                 "quick": None,  # 메타 미발견 표식
                 "pattern": None,
                 "fix": None,
