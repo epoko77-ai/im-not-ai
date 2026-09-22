@@ -48,7 +48,7 @@ im-not-ai/
 │   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
 ├── gemini-extension.json          # Gemini CLI Extension 매니페스트
 ├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
-├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-redo)
+├── commands/                      # Gemini CLI 커스텀 명령 (/humanize-korean, /humanize, /humanize-scan, /humanize-redo)
 ├── install.sh / uninstall.sh / update.sh   # Claude·Codex·Gemini 전역 설치/제거 (심링크 기본)
 ├── scripts/
 │   ├── prepare_monolith_input.py  # input shim — 텍스트 위생 + 정량 점수 + route_hint 산출 + 결합 입력 (`--diagnosis`·`--chunk`·`--no-sanitize`)
@@ -69,7 +69,7 @@ im-not-ai/
 │   ├── humanize-finalizer.md      # heavy P3 마무리 (의미 15항 + 자연성)
 │   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
 │   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
-├── skills/                # 스킬 3종 (humanize-korean 오케스트레이터 + humanize·humanize-redo 진입)
+├── skills/                # 스킬 4종 (humanize-korean 오케스트레이터 + humanize·humanize-scan(정찰)·humanize-redo 진입)
 │   └── humanize-korean/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/

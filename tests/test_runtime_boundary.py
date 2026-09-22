@@ -141,7 +141,7 @@ class PluginLayoutTests(unittest.TestCase):
             (_ROOT / "skills").is_dir(),
             "스킬은 플러그인 루트 skills/ 에 있어야 한다 (로더 기본 스캔 위치)",
         )
-        for name in ("humanize-korean", "humanize", "humanize-redo"):
+        for name in ("humanize-korean", "humanize", "humanize-scan", "humanize-redo"):
             with self.subTest(skill=name):
                 self.assertTrue((_ROOT / "skills" / name / "SKILL.md").is_file())
 
