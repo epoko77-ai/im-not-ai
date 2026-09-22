@@ -1,0 +1,6 @@
+fix(payments): 결제 재시도 시 PaymentRetryQueue 순서가 꼬이는 버그 수정
+
+기존에는 재시도 큐에 넣을 때 우선순위를 계산하지 않아 순서가 뒤섞였다.
+enqueue 호출 시점에 우선순위도 함께 계산하도록 수정.
+
+Closes #480

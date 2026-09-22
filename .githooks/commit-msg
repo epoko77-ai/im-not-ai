@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+# commit-ko 경고 훅 — 실제 검사 로직은 scripts/commit_msg_lint.py, 정책은 그 파일 docstring 참고.
+# 정책: 경고만 하고 절대 커밋을 막지 않는다 — 항상 exit 0.
+#
+# 활성화(opt-in, 저장소별 1회):
+#   git config core.hooksPath .githooks
+# 비활성화:
+#   git config --unset core.hooksPath
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+python3 "$REPO_ROOT/scripts/commit_msg_lint.py" "$1"
+exit 0
