@@ -20,7 +20,7 @@ ID 드리프트가 3건 생겼다(D-3·G-1/G-2·J-3가 서로 다른 패턴을 �
 
 CLI:
     python3 scripts/build_quick_rules.py            # 생성
-    python3 scripts/build_quick_rules.py --check    # 생성물이 최신인지만 검사(쓰지 않음)
+    python3 scripts/build_quick_rules.py --check    # 최신 여부 + fast 토큰 예산 상한 검사(쓰지 않음)
 """
 
 from __future__ import annotations
@@ -52,6 +52,39 @@ _QUICK_RE = re.compile(
     r"(?:\s*·\s*quick_fix:\s*(.*?))?"
     r"_\s*$"
 )
+
+
+# ── fast 토큰 예산 가드 ─────────────────────────────────────────────
+# `quick-rules.md` 는 fast(light) 경로에서 monolith 에이전트에게 매 호출 통째로
+# 주입된다(SKILL.md). 건수가 늘면 모든 빠른 윤문의 프롬프트 비용에 그대로 얹힌다.
+# 정책은 taxonomy 머리말이 SSOT다 — 아래 상수는 그 문장과 일치해야 하고,
+# `tests/test_quick_rules_build.py` 가 둘의 일치를 검사한다.
+#
+# 2026-09-22: quick:true 가 61건까지 새어 상한(60)을 넘겼다. drift 검사만 있고
+# 건수 검사가 없어 한 방향으로만 올라갔다. 8건 강등(53건) 후 이 가드를 넣는다.
+QUICK_BUDGET_TARGET = 50
+QUICK_BUDGET_TOLERANCE_PCT = 20
+QUICK_BUDGET_MAX = QUICK_BUDGET_TARGET * (100 + QUICK_BUDGET_TOLERANCE_PCT) // 100
+
+# - fast 토큰 예산 보호: `quick: true`는 50개 내외(현행 quick-rules 규모 ±20%)를 유지한다.
+_BUDGET_POLICY_RE = re.compile(
+    r"`quick:\s*true`\s*는\s*(\d+)\s*개\s*내외.*?±\s*(\d+)\s*%"
+)
+
+
+def budget_policy_from_taxonomy(text: str) -> tuple[int, int]:
+    """taxonomy 머리말이 선언한 (목표 건수, 허용 오차 %) 를 읽는다.
+
+    정책을 문서에서만 고치고 가드는 그대로 두는 드리프트를 막기 위한 통로다.
+    문장을 못 찾으면 ParseError — 조용히 통과시키지 않는다.
+    """
+    m = _BUDGET_POLICY_RE.search(text)
+    if not m:
+        raise ParseError(
+            "taxonomy 머리말에서 quick 예산 정책 문장을 찾지 못했다. "
+            "문구를 바꿨다면 build_quick_rules.py 의 _BUDGET_POLICY_RE 도 맞춰라."
+        )
+    return int(m.group(1)), int(m.group(2))
 
 
 class ParseError(Exception):
@@ -186,7 +219,20 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        print(f"quick-rules.md 최신 (quick: true {n_true} / false {n_false})")
+        if n_true > QUICK_BUDGET_MAX:
+            print(
+                f"error: fast 토큰 예산 초과 — quick: true {n_true}건 "
+                f"(상한 {QUICK_BUDGET_MAX} = {QUICK_BUDGET_TARGET}건 "
+                f"±{QUICK_BUDGET_TOLERANCE_PCT}%). quick-rules.md 는 fast 경로 "
+                "매 호출에 주입된다. 신규 패턴은 `quick: false` 가 기본값이고, "
+                "true 가 필요하면 실측 판별력이 약한 기존 항목을 먼저 강등하라.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"quick-rules.md 최신 (quick: true {n_true} / false {n_false} "
+            f"· 예산 {n_true}/{QUICK_BUDGET_MAX})"
+        )
         return 0
 
     with open(_OUT, "w", encoding="utf-8") as f:
@@ -196,6 +242,14 @@ def main(argv: list[str] | None = None) -> int:
         f"quick-rules.md 생성 — {lines}줄 / {len(rendered)}자 "
         f"(quick: true {n_true} / false {n_false} / 전체 {len(patterns)})"
     )
+    if n_true > QUICK_BUDGET_MAX:
+        # 생성은 막지 않는다 — 강등 작업 중에도 재생성은 돌아가야 한다.
+        # 대신 --check(CI)에서 실패하므로 커밋 전에 반드시 걸린다.
+        print(
+            f"warning: quick: true {n_true}건이 예산 상한 {QUICK_BUDGET_MAX}건을 "
+            "넘었다. CI(--check)에서 실패한다.",
+            file=sys.stderr,
+        )
     return 0
 
 
