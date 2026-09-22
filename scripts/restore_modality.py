@@ -210,7 +210,7 @@ def find_losses(before: str, after: str) -> list[dict]:
 
 def restore(before: str, after: str) -> tuple[str, list[dict], list[dict]]:
     losses = find_losses(before, after)
-    result = after
+    editable_body, preserved_summary = _checks.split_summary_block(after)
     restored: list[dict] = []
     skipped: list[dict] = []
     for loss in losses:
@@ -219,7 +219,7 @@ def restore(before: str, after: str) -> tuple[str, list[dict], list[dict]]:
         if loss.get("low_sim"):
             skipped.append({**loss, "reason": "짝 유사도 낮음 — 정렬 아티팩트 가능성"})
             continue
-        if result.count(loss["after"]) != 1:
+        if editable_body.count(loss["after"]) != 1:
             skipped.append({**loss, "reason": "결과에서 유일하게 특정되지 않음"})
             continue
         foreign = [
@@ -242,9 +242,9 @@ def restore(before: str, after: str) -> tuple[str, list[dict], list[dict]]:
             )
             continue
         replacement = _strip_restored_cliche(loss["before"], loss["after"])
-        result = result.replace(loss["after"], replacement, 1)
+        editable_body = editable_body.replace(loss["after"], replacement, 1)
         restored.append({**loss, "restored_as": replacement})
-    return result, restored, skipped
+    return editable_body + preserved_summary, restored, skipped
 
 
 def main(argv: list[str] | None = None) -> int:

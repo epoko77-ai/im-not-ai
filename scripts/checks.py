@@ -423,6 +423,14 @@ def check_quotes(original: str, output: str) -> list[Failure]:
 _SUMMARY_BLOCK_RE = re.compile(r"<!--\s*HUMANIZE-SUMMARY\b.*", re.DOTALL)
 
 
+def split_summary_block(text: str) -> tuple[str, str]:
+    """본문과 보존해야 할 ``HUMANIZE-SUMMARY`` 메타 블록을 나눈다."""
+    match = _SUMMARY_BLOCK_RE.search(text)
+    if match is None:
+        return text, ""
+    return text[:match.start()], text[match.start():]
+
+
 def strip_summary_block(text: str) -> str:
     """final.md 끝의 <!-- HUMANIZE-SUMMARY --> 메타 블록을 제거한다.
 
@@ -430,7 +438,8 @@ def strip_summary_block(text: str) -> str:
     같은 표현이 들어가 채점기가 본문 주입으로 오판하는 것을 막는다
     (verify_change_rate.py와 동일한 처리).
     """
-    return _SUMMARY_BLOCK_RE.sub("", text).strip()
+    body, _ = split_summary_block(text)
+    return body.strip()
 
 
 def run_checks(original: str, output: str) -> list[Failure]:
