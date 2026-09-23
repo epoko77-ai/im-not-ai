@@ -26,3 +26,10 @@ jobs:
       # install.sh 플래그 동작(--dry-run 기반). pytest가 .sh 파일은 수집하지 않아
       # 지금까지 CI에서 한 번도 실행된 적이 없다.
       - run: bash tests/test_install_flags.sh
+      # 격리 환경 실설치 스모크. 위 flags 테스트는 --dry-run 이라 실제 설치 경로를
+      # 밟지 않는다. 그 공백에서 릴리스 두 건이 통째로 패치 회차로 나갔다(#71·#59·
+      # v2.3.2 — 셋 다 사용자가 대신 밟았다). .sh 라 pytest 가 수집하지 않으므로
+      # 여기서 명시 실행한다 — 이 줄이 없으면 머지돼 있어도 영원히 안 돌아간다.
+      # CLAUDE_HOME/CODEX_HOME 을 mktemp 로 덮고 --no-gemini 로 실행하므로
+      # 러너의 실제 홈은 건드리지 않는다.
+      - run: bash tests/test_install_smoke.sh

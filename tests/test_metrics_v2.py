@@ -264,6 +264,50 @@ class V20InterferenceTests(unittest.TestCase):
         text = "그의 말에 의해 분위기가 바뀌었다. 규정에 의해 정했다."
         self.assertEqual(metrics_v2.by_passive_count(text), 0)
 
+    def test_by_passive_adverb_and_noun_not_counted(self) -> None:
+        """어간만 열어 두면 부사·명사를 피동으로 센다 — 어미·경계 조건 회귀 방지.
+
+        2026-09-22 실측. `되레`·`되도록`은 부사, `받침`은 명사인데 어간 `되`·`받`
+        만으로 매칭돼 전부 1로 계산됐다. 어간에는 어미를 필수로 요구해 막는다.
+        """
+        for text in (
+            "정부에 의해 되레 손해를 봤다",
+            "규정에 의해 받침을 고쳤다",
+            "그에 의해 되도록 빨리 처리했다",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(metrics_v2.by_passive_count(text), 0, text)
+
+    def test_by_passive_noun_final_syllables_not_counted(self) -> None:
+        """명사 끝음절 `진·질·져`를 피동으로 세지 않는다.
+
+        합성 관형·명사형에 어절 경계를 요구하지 않으면 '본진·추진·촉진·재질·지진'
+        이 전부 걸린다. 특히 `_workspace` 의 지표 헤더 문구
+        `by_passive_count (~에 의해 피동, 본진 A-9)` 가 계측을 오염시켰다.
+        """
+        for text in (
+            "정부에 의해 추진 중인 사업",
+            "시장에 의해 촉진 효과가 났다",
+            "규정에 의해 본진 배치를 바꿨다",
+            "위원회에 의해 재질 검사를 했다",
+            "경찰에 의해 지진 대응이 늦었다",
+            "by_passive_count (~에 의해 피동, 본진 A-9): 0",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(metrics_v2.by_passive_count(text), 0, text)
+
+    def test_by_passive_keeps_real_passives_across_words(self) -> None:
+        """오탐을 막으면서 어절이 끼는 진짜 피동은 계속 잡는다."""
+        for text in (
+            "시장에 의해 자원이 배분된다",
+            "비용은 회사에 의해 부담됨",
+            "규정에 의해 명시됩니다",
+            "구성원들에 의해 받아들여지지 않는다면",
+            "그 사실은 언론에 의해 잊혀진 지 오래다",
+        ):
+            with self.subTest(text=text):
+                self.assertGreaterEqual(metrics_v2.by_passive_count(text), 1, text)
+
     # T2b
     def test_double_passive_detected(self) -> None:
         text = "이 문제는 분석되어진다. 그 사실은 잊혀진 지 오래다."
