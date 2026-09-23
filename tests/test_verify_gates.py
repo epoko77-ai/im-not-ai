@@ -464,6 +464,47 @@ class ModalityGateTests(unittest.TestCase):
                     verify_gates.count_modality(marker)[0], 1, f"해요체 당위 미검출: {marker}"
                 )
 
+    def test_deontic_excludes_noun_plus_hae_word(self) -> None:
+        """명사 + `해-` 어절을 당위로 세지 않는다 (2026-09-24 실측 과탐).
+
+        #132 가 해체·해요체 활용을 추가한 방향은 옳았으나, `야` 앞 음절을 한글
+        전체로 열어 둬서 `분야 해설서`·`시야 해석`·`광야 해가` 가 전부 당위로
+        잡혔다. 기존 `(?!이)` lookahead 는 계사 `-이야` 만 막는다.
+
+        당위는 `-아/어/여야 하다` 의 축약이므로 `야` 앞 음절은 종성이 없고
+        중성이 ㅏㅐㅓㅔㅕㅘㅙㅚㅝㅞ 중 하나여야 한다 — `분`(종성 ㄴ)·`시`(중성
+        ㅣ)·`광`(종성 ㅇ)은 그 조건에서 탈락한다.
+        """
+        for text in (
+            "이 분야 해설서를 읽었다",
+            "시야 해석이 중요하다",
+            "전 분야 해외 진출을 노린다",
+            "광야 해가 진다",
+            "분야 해체를 논의했다",
+            "우리 분야 해묵은 과제",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(
+                    verify_gates.count_modality(text)[0], 0, f"명사 과탐: {text}"
+                )
+
+    def test_deontic_covers_contracted_stems(self) -> None:
+        """축약 어간 전반을 잡는다 — 어간 조건이 참 당위를 깎지 않았는지 확인."""
+        for text in (
+            "꼭 마시어야 한다",
+            "읽어야 합니다",
+            "쉬어야 한다",
+            "모아야 한다",
+            "뛰어야 한다",
+            "자야 한다",
+            "건너야 한다",
+            "반드시 해야만 한다",
+        ):
+            with self.subTest(text=text):
+                self.assertGreaterEqual(
+                    verify_gates.count_modality(text)[0], 1, f"당위 미검출: {text}"
+                )
+
     def test_deontic_inventory_excludes_copula_iya_with_haeyo(self) -> None:
         """계사 -이야 + 해요체 활용은 당위가 아니다.
 
