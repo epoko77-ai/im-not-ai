@@ -7,7 +7,7 @@ LLMs write Korean that *reads* like translated English. Native speakers spot it 
 **im-not-ai** rewrites AI-written Korean into natural Korean **without changing a single fact** — style, rhythm and phrasing only. MIT licensed, runs as a CLI skill inside Claude Code, GitHub Copilot CLI, OpenAI Codex CLI and Gemini CLI.
 
 ```
-"AI 기술을 통해 효율을 높일 수 있다"      →  "AI로 효율을 높인다"
+"AI 기술을 통해 효율을 높일 수 있다"      →  "AI로 효율을 높일 수 있다"
 "이에 있어서 중요한 점은"                 →  "여기서 중요한 건"
 "~에 의해 생성된"                         →  "~가 만든"
 "결론적으로, 이는 시사하는 바가 크다"      →  (deleted)
