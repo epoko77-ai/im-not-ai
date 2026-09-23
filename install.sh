@@ -29,7 +29,7 @@ print_help() {
 Usage: ./install.sh [options]
 
   설치된 CLI를 자동 감지해 humanize-korean 스킬을 전역 설치한다.
-  Claude: ~/skills/{humanize-korean,humanize,humanize-scan,humanize-redo} + ~/.claude/agents/*.md
+  Claude: ~/.claude/skills/{humanize-korean,humanize,humanize-scan,humanize-redo} + ~/.claude/agents/*.md
   Codex : ~/.codex/skills/humanize-korean
   Gemini: gemini extensions link (gemini-extension.json + GEMINI.md + commands/)
 

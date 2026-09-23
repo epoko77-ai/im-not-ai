@@ -37,7 +37,7 @@ cd im-not-ai
 ./install.sh --claude-only
 ```
 
-`~/skills/`에 스킬 3개, `~/.claude/agents/`에 **스킬이 실제로 쓰는 에이전트 4개**(런타임 3 — monolith·diagnostician·finalizer, 유지보수 1 — taxonomist)를 **심링크**합니다(저장소를 수정하면 즉시 반영). 새 세션에서 `/humanize-korean`.
+`~/.claude/skills/`에 스킬 4개(humanize-korean·humanize·humanize-redo·humanize-scan), `~/.claude/agents/`에 **스킬이 실제로 쓰는 에이전트 4개**(런타임 3 — monolith·diagnostician·finalizer, 유지보수 1 — taxonomist)를 **심링크**합니다(저장소를 수정하면 즉시 반영). 새 세션에서 `/humanize-korean`.
 
 `agents/`의 나머지 5개는 릴리스 회차용 개발 도구라 기본 설치에서 제외합니다 — 서브에이전트는 description 매칭으로 자동 라우팅되므로, 윤문과 무관한 정의가 전역 풀에 상주하면 다른 작업에서 잘못 호출될 수 있습니다. 레포 기여자처럼 전부 필요하면 `./install.sh --all-agents`.
 
@@ -152,7 +152,7 @@ cd im-not-ai
 ## 트러블슈팅
 
 - **"refuse: … 가 이미 있음"** — 해당 경로에 이미 다른 파일/링크가 있습니다. `--force`(백업 후 덮어쓰기) 또는 직접 정리 후 재실행하세요.
-- **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/skills`(스크립트 설치)로 확인하세요. Copilot은 `copilot plugin list`와 `copilot skill list`, Codex는 `/skills` 메뉴로 확인합니다.
+- **스킬이 안 보임** — Claude는 **새 세션**에서 로드됩니다. `claude plugin list`(마켓플레이스 설치) 또는 `ls -l ~/.claude/skills`(스크립트 설치)로 확인하세요. Copilot은 `copilot plugin list`와 `copilot skill list`, Codex는 `/skills` 메뉴로 확인합니다.
 - **저장소 위치 이동/삭제** — 심링크 설치는 클론한 저장소 경로에 의존합니다. 저장소를 옮기면 `./uninstall.sh`(옛 경로) 후 새 경로에서 `./install.sh`를 다시 실행하거나, 위치 비의존이 필요하면 `--copy`로 설치하세요.
 - **레포 기여 개발** — 이 저장소는 에이전트를 플러그인 컨벤션(`agents/`)에, 스킬을 `skills/`에 둡니다. 저장소 안에서 직접 테스트하려면 `./install.sh`로 한 번 전역 연결한 뒤(에이전트가 `~/.claude/agents`에서 탐색됨) 사용하세요.
 
