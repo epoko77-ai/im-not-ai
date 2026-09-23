@@ -1,25 +1,27 @@
 ---
 name: humanize-korean
-version: "1.5.0"
+version: "1.6.1"
 description: AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 오케스트레이터 스킬. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 40+ AI 티 패턴을 탐지·분류해 내용은 한 글자도 건드리지 않고 문체·리듬·표현만 자연스러운 한국어로 재작성한다. 트리거 — "AI 티 없애줘", "AI 같은 글 자연스럽게", "GPT/ChatGPT 문체", "AI 번역투 고쳐", "사람이 쓴 것처럼 윤문", "AI 윤문", "ChatGPT 티 제거", "한글 AI 탐지·윤문", "AI 글 사람처럼", "번역투 제거", "영어 인용 많은 글 윤문", "AI 글 티 안 나게", "휴머나이저", "humanize Korean", "AI detector bypass 한글". 후속 작업 — "특정 카테고리만 다시", "윤문 강도 조정", "장르 바꿔서", "이 문단만", "2차 윤문" 도 모두 이 스킬. 단순 맞춤법·오탈자 교정은 직접 처리, 번역은 번역 스킬, 내용 추가·삭제를 동반한 재작성은 별도 집필 스킬.
 ---
 
-# Humanize Korean — AI 한글 티 제거 오케스트레이터 (v1.5)
+# Humanize Korean — AI 한글 티 제거 오케스트레이터 (v1.6.1)
 
 > **v1.5 변경 고지 (2026-04-26) — v1.1 베이스라인 + Monolith Fast Path**
 > v1.2(voice profile)·v1.3(candidate pool)·v1.4(역할별 모델 분산)는 모두 핫패스 비용을 잡지 못해 5,000자 입력에 25분이 걸렸습니다. v1.5는 **v1.1 단순 구조로 롤백한 뒤 단일 호출 monolith 에이전트만 추가**한 설계입니다.
 >
-> - **Fast 모드(디폴트)** — `humanize-monolith` 에이전트가 한 콜에서 탐지·윤문·자체검증 일괄 처리. 도구 호출 4~5회. 5,000자 이하 wall-clock 2~3분 목표.
+> - **Fast 모드(디폴트)** — `humanize-monolith` 에이전트가 한 콜에서 탐지·윤문·자체검증 일괄 처리. 도구 호출 3회(v1.6.1). 5,000자 이하 wall-clock 2~3분 목표.
 > - **Strict 모드(`--strict`)** — v1.1 5인 파이프라인 그대로(detector·rewriter·auditor·reviewer + taxonomist 분류 자산 유지). 정밀 검증·장문(8,000자+) 처리·etc.
 > - **삭제됨**: voice profile·candidate pool·promotion-checklist·sample-collection·권한 위계 §1~§6.
 > - **유지됨**: 분류 체계 본진(C-9·C-10·D-7·H-3·I-3·I-4 등 v1.2~v1.3.1 신규 패턴)·rewriting-playbook·5인 에이전트 정의(strict 모드 백본).
+>
+> **v1.6.1 실행 계약 (monolith 2026-05-06 개정 · 이 문서 동기 2026-09-22)** — fast는 `humanize-monolith` **도구 호출 3회**(입력 Read · 룰북 Read · `final.md` Write)이고 산출물은 **`final.md` 단일**이다. 메트릭·카테고리 탐지·자체검증·등급·하이라이트는 본문 끝 `<!-- HUMANIZE-SUMMARY -->` HTML 주석 블록에 담긴다. `summary.md`는 v1.6.0 이전 계약이라 더 이상 만들지 않는다(기존 파일은 보존). monolith에는 부분 재실행 모드가 없다 — 재윤문은 strict로 새 run을 연다.
 
 ## Phase 0: 컨텍스트 확인 및 모드 결정
 
 작업 시작 시 가장 먼저 다음 한 줄을 사용자에게 출력한다.
 
 ```
-humanize-korean v1.5 — {fast|strict} 모드 / run_id: {YYYY-MM-DD-NNN}
+humanize-korean v1.6.1 — {fast|strict} 모드 / run_id: {YYYY-MM-DD-NNN}
 ```
 
 ### 모드 결정
@@ -54,20 +56,19 @@ genre_hint: 칼럼 | 리포트 | 블로그 | 공적 | null
 ```
 
 출력 (에이전트가 직접 작성):
-- `_workspace/{run_id}/final.md` — 윤문본
-- `_workspace/{run_id}/summary.md` — 메트릭·자체검증·하이라이트
+- `_workspace/{run_id}/final.md` — 윤문본 + 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 주석 블록(메트릭·카테고리 탐지·자체검증·등급·하이라이트). **단일 산출물** — `summary.md`는 만들지 않는다
 
 monolith는 단일 호출 안에서 다음을 모두 수행 (자세히는 에이전트 정의 참조):
 1. quick-rules 룰북 로드 → 메모리에서 패턴 탐지 + 윤문 + 자체검증 6항 점검
 2. 변경률 50% 초과 시 자동 롤백
 3. 자체검증 위반 시 1회 부분 재실행
-4. final.md + summary.md 작성
+4. final.md 작성(요약은 주석 블록으로 통합) — 총 도구 호출 3회
 
 ### Phase 3: 결과 전달
 사용자에게 다음 4개를 반환:
 1. 한 줄 상태: `완료. 변경률 X% / 등급 Y / 자체검증 N/6 통과`
 2. 윤문본 본문 (마크다운 블록)
-3. summary.md의 핵심 표 (메트릭 + 카테고리 탐지 + 자체검증)
+3. final.md 끝 HUMANIZE-SUMMARY 블록의 핵심 표 (메트릭 + 카테고리 탐지 + 자체검증)
 4. 등급 B 이하면 "정밀 검증이 필요하면 `--strict`로 5인 파이프라인" 안내
 
 **디폴트 wall-clock 목표:** 5,000자 이하 2~3분, 8,000자 5~7분.
@@ -101,7 +102,7 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
 
 ### Phase D: 최종 출력
 1. `final.md`에 최종 윤문본 복사
-2. `summary.md` 생성 (fast 모드와 동일 포맷)
+2. final.md 끝에 `<!-- HUMANIZE-SUMMARY -->` 블록 생성 (fast와 동일 포맷; 02~05 JSON 산출물은 그대로 보존)
 3. 사용자에게 결과 + 등급 + 안내
 
 ## 부분 재실행 / 후속 명령
@@ -110,7 +111,7 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
 |---|---|
 | "특정 카테고리만 다시" | strict 모드로 자동 전환, 해당 카테고리 finding만 Phase B 재실행 |
 | "이 문단만" | strict 모드, 해당 문단만 입력으로 새 run_id 생성 |
-| "2차 윤문"·"`/humanize-redo`" | 기존 run_id의 `final.md`를 새 입력으로 strict Phase B 재실행 |
+| "2차 윤문"·"`/humanize-redo`" | strict run(02_detection·03_rewrite 보유)이면 잔존 finding만 Phase B 재실행. **fast run(final.md 단일)이면 final.md를 새 입력으로 strict를 Phase A부터 새 run_id로 실행**(monolith에 부분 재실행 모드 없음) |
 | "윤문 강도 조정" | strict 모드, `min_severity` 옵션 변경 후 Phase A부터 재실행 |
 | "장르 바꿔서" | `genre_hint` 변경 후 Phase A부터 재실행 |
 
@@ -128,7 +129,7 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
 01_input.txt
     ↓ [humanize-monolith — 단일 호출]
     ├ 메모리: quick-rules 로드 → 탐지 → 윤문 → 자체검증
-    └→ final.md + summary.md
+    └→ final.md (+HUMANIZE-SUMMARY 주석)
 ```
 
 ### Strict 모드
@@ -143,7 +144,7 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
     └→ [naturalness-reviewer]      → 05_naturalness_review.json
     ↓ [오케스트레이터 종합]
     ├→ (재작업) Phase B로 복귀 (최대 3회)
-    └→ (승인) final.md + summary.md
+    └→ (승인) final.md (+HUMANIZE-SUMMARY 주석)
 ```
 
 ## 에이전트 호출 규칙
@@ -155,7 +156,7 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
 2. `~/.claude/agents/` (글로벌, 본 프로젝트는 프로젝트→글로벌 심볼릭 링크)
 
 필요 에이전트 6종:
-- `humanize-monolith` (v1.5 신규, fast 전용)
+- `humanize-monolith` (v1.5 신규 · v1.6.1 3콜·`final.md` 단일 계약, fast 전용)
 - `ai-tell-detector` · `korean-style-rewriter` · `content-fidelity-auditor` · `naturalness-reviewer` (strict 5인 중 4명)
 - `korean-ai-tell-taxonomist` (분류 체계 유지·확장 — 본 스킬 실행 중에는 호출 안 됨, 별도 명령으로만 트리거)
 
@@ -170,12 +171,13 @@ v1.1 5인 파이프라인 그대로. 검증 분리·재윤문 루프가 의미 �
 - 5인 파이프라인 끝까지 실행, 변경률 18~22%, 검증팀 full_pass
 
 ### 엣지 케이스 — 이미 사람이 쓴 글
-- monolith 자체 탐지에서 매치 거의 없음 → 변경률 5% 미만 + summary.md에 "윤문 불필요 가능성" 메모
+- monolith 자체 탐지에서 매치 거의 없음 → 변경률 5% 미만 + HUMANIZE-SUMMARY 블록에 "윤문 불필요 가능성" 메모
 - 사용자가 `--strict`로 강제 검증 가능
 
 ## 주의 사항
 
 - **의미 불변이 최상위 불문율.** monolith·strict 모두에서 위반 즉시 롤백.
+- **의학·법률·정책 텍스트의 헤지는 의미다.** A-10("~할 수 있다")·G-2(추정 완곡)의 단언화 처방을 적용하지 않는다 — 강도는 유지, 형태만 변주. 이런 텍스트는 strict 권장(2026-09-22 주석; 실사고: 안과 블로그 55편 소급 윤문 rollback 40/55).
 - **수치·고유명사·직접 인용은 탐지/윤문 대상 아님.** Do-NOT list 엄수.
 - **장르 이탈 금지.** 칼럼이 에세이로, 에세이가 문학으로 옮겨가지 않는다.
 - **register 보존.** 격식체 입력 → 격식체 출력. AI 티는 문법·수사이지 격식 자체가 아님.

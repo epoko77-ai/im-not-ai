@@ -34,8 +34,8 @@ AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자�
 입력 텍스트
     ↓
 [humanize-monolith]   ── 한 콜 안에서 탐지 → 윤문 → 자체검증 일괄
-    ↓                     (도구 호출 4~5회 캡, opus, ~3분)
-final.md + summary.md
+    ↓                     (도구 호출 3회, opus, ~3분)
+final.md  (요약은 본문 끝 <!-- HUMANIZE-SUMMARY --> 주석)
 ```
 
 **Strict 모드 (`--strict` 또는 8,000자+ 자동 승급)**
@@ -52,7 +52,7 @@ final.md + summary.md
     └─ [naturalness-reviewer]      ── 탐지 재실행으로 잔존·과윤문 판정
     ↓
 [오케스트레이터 종합]
-    ├─ accept              → final.md + summary.md
+    ├─ accept              → final.md
     ├─ rewrite_round_2     → 2차 윤문 (최대 3회)
     ├─ rollback_and_rewrite → 문제 edit 롤백
     └─ hold_and_report     → 사람 검토 권고
@@ -62,7 +62,7 @@ final.md + summary.md
 
 | 에이전트 | 모드 | 역할 |
 |---------|---|------|
-| `humanize-monolith` | **Fast 디폴트** | 단일 호출 윤문 (탐지·윤문·자체검증 일괄, 도구 호출 4~5회 캡) |
+| `humanize-monolith` | **Fast 디폴트** | 단일 호출 윤문 (탐지·윤문·자체검증 일괄, 도구 호출 3회) |
 | `ai-tell-detector` | Strict | span 단위 JSON 탐지 리포트 생성 |
 | `korean-style-rewriter` | Strict | finding 기반 수술적 윤문, 변경률 모니터링 |
 | `content-fidelity-auditor` | Strict | 의미 동등성 감사 (13항), 훼손 시 롤백 지시 |
@@ -149,7 +149,7 @@ Claude Code에서는 세 가지 방법 중 편한 쪽으로 사용합니다. Cod
 - "번역투 제거"
 - "한글 AI 윤문"
 
-**방법 B — 슬래시 커맨드** *(v1.2~)*
+**방법 B — 슬래시 커맨드** *(v1.2~, v1.6.1 계약으로 갱신 2026-09-22)*
 
 ```
 /humanize [윤문할 텍스트 또는 파일 경로]
@@ -196,7 +196,7 @@ Claude Code가 입력 길이·옵션에 따라 두 모드 중 하나로 처리�
 | `03_rewrite.md` | 윤문본 |
 | `04_fidelity_audit.json` | 내용 훼손 감사 결과 |
 | `05_naturalness_review.json` | 자연도 재측정 결과 |
-| `final.md` + `summary.md` | 최종 윤문본 + 점수·주요 변경·등급 요약 |
+| `final.md` | 최종 윤문본 + 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 요약(점수·주요 변경·등급). `summary.md`는 v1.6.0 이전 계약 |
 
 부분 재실행("이 카테고리만 다시"·"2차 윤문")은 strict 모드로 자동 전환됩니다.
 
@@ -227,6 +227,15 @@ Claude Code 세션 안에서 새 글을 붙여넣고 똑같이 부탁하면 됩�
 `humanize-web-architect` 에이전트가 Next.js 15 App Router + Vercel Fluid Compute + AI Gateway 기반 웹앱 설계를 담당한다. UX는 4화면(입력 → 탐지 하이라이트 → 좌우 diff → 윤문본 복사). 상세: [`web-service-spec.md`](.claude/skills/humanize-korean/references/web-service-spec.md).
 
 로드맵: v0 MVP(익명·단일 호출) → v1(로그인·히스토리) → v2(Pro/Team · API · 웹훅) → v3(Chrome Extension) → v4(일본어·중국어 확장).
+
+## v2.0.1 — 문서 계약 동기·테스트 수리·헤지 예외 주석·후보 저장소 (2026-09-22)
+
+운영 허브(`context-reference/HUMANIZE.md`) 4중 검토(terra·sol·luna·opus)에서 드러난 L1 정비. 분류 체계 ID·severity·에이전트 정의는 무변경.
+
+- **fast 진입점 문서 동기**: `SKILL.md`(v1.5 헤더·`summary.md`)·`/humanize`(v1.2·voice profile)·`/humanize-redo`(구 Phase 계약)를 monolith v1.6.1 실계약(**도구 호출 3회·`final.md` 단일·`<!-- HUMANIZE-SUMMARY -->`**)으로 맞춤. fast run의 재윤문은 strict 새 run(monolith에 부분 재실행 모드 없음).
+- **회귀 테스트 수리**: `tests/test_metrics*.py`가 gitignore된 `_workspace/v1.6-2026-05-06/02_katfish_baseline.json`을 가리켜 어느 체크아웃에서도 실패하던 것을 `references/baseline.json`·`baseline_v2.json`으로, `test_metrics_v2.py`의 `PROJECT_ROOT`(`../../..` → `..`)와 `metrics_v2` 기본 baseline 파일명(`baseline_v2_diff.json` → `baseline_v2.json`) 정정.
+- **헤지 예외 주석**: `quick-rules.md`·`ai-tell-taxonomy.md`의 A-10·G-2에 "의학·법률·정책 텍스트 미적용(헤지=의미)" — 실사고: 안과 블로그 55편 소급 윤문 rollback 40/55(2026-07-17).
+- **영속 후보 저장소** `references/taxonomy-candidates.md` 신설(10건 등록) — taxonomist가 `_workspace/taxonomy_changelog.md` 대신 이 파일을 읽고 쓴다.
 
 ## v2.0 — 한국 번역학계 8유형 + post-editese metric 트랙 (A-17 hold) (2026-05-07)
 

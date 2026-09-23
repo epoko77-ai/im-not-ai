@@ -38,8 +38,7 @@ humanize-ko/
         ├── 03_rewrite_diff.json
         ├── 04_fidelity_audit.json
         ├── 05_naturalness_review.json
-        ├── final.md
-        └── summary.md
+        └── final.md   (본문 끝 <!-- HUMANIZE-SUMMARY --> 주석에 요약)
 ```
 
 ## 파이프라인
@@ -56,7 +55,7 @@ humanize-ko/
     └─ [naturalness-reviewer]     — 잔존 + 과윤문 판정
     ↓
 [오케스트레이터 종합 판정]
-    ├─ accept → final.md + summary.md
+    ├─ accept → final.md
     ├─ rewrite_round_2 → 윤문가 재호출 (최대 3회)
     ├─ rollback_and_rewrite → 문제 edit 롤백
     └─ hold_and_report → 사람 검토 권고
@@ -92,7 +91,7 @@ humanize-ko/
    ```
    (텍스트 첨부)
 2. 오케스트레이터가 run_id 생성하고 5단계 파이프라인 실행.
-3. 결과 `final.md` + `summary.md` 반환.
+3. 결과 `final.md` 반환(요약은 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 주석 블록).
 
 ## 파일 시스템 접근 규칙
 

@@ -21,9 +21,7 @@ sys.path.insert(0, METRICS_DIR)
 
 import metrics  # noqa: E402  (sys.path mutation is intentional)
 
-BASELINE_PATH = os.path.join(
-    PROJECT_ROOT, "_workspace", "v1.6-2026-05-06", "02_katfish_baseline.json"
-)
+BASELINE_PATH = os.path.join(METRICS_DIR, "baseline.json")
 
 
 class MetricsTests(unittest.TestCase):

@@ -44,7 +44,7 @@ AI(ChatGPT·Claude·Gemini 등)가 만든 한글 텍스트의 시그니처 패�
 
 ## 에러 핸들링
 
-- 사례가 부족(1건 이하): "실증 부족, 기각" 판정 후 대기 목록에 저장.
+- 사례가 부족(1건 이하): "실증 부족, 기각" 판정 후 대기 목록(`references/taxonomy-candidates.md` — 영속 후보·hold 저장소, 2026-09-22 신설)에 `hold` 상태와 `status_reason`으로 저장.
 - 기존 항목과 중복 감지: 상위 항목으로 병합 제안.
 - SSOT 파일 읽기 실패: 오케스트레이터에 에스컬레이션, 새 파일 생성 여부 확인.
 
@@ -56,7 +56,7 @@ AI(ChatGPT·Claude·Gemini 등)가 만든 한글 텍스트의 시그니처 패�
 
 ## 이전 산출물이 있을 때의 행동
 
-- `_workspace/taxonomy_changelog.md`가 있으면 읽고 직전 버전 이후 승격/기각 이력을 이어간다.
+- `references/taxonomy-candidates.md`(영속 후보·hold·승격 이력 — `_workspace/`는 gitignore라 여기로 이전)를 읽고 직전 버전 이후 승격/기각 이력을 이어간다. 승격·기각 결과는 이 파일의 이력 절에 append한다.
 - 기존 SSOT의 항목 ID(A-1, A-2 …)는 유지하고, 새 항목은 최하위 번호로 append (삽입 금지 — 탐지기·윤문가의 참조 안정성 보호).
 
 ## 팀 통신 프로토콜
