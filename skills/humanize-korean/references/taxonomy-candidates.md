@@ -1,0 +1,43 @@
+# Taxonomy Candidates — 영속 후보·hold·승격 이력
+
+`korean-ai-tell-taxonomist`의 대기 목록이자 승격 입력이다.
+
+**왜 이 파일이 있나.** 후보 풀은 그동안 `_workspace/taxonomy_changelog.md`에 있었는데 `_workspace/`는
+`.gitignore` 대상이다. 그 파일이 스스로를 "본진 변경의 단일 추적 원천"이라고 선언해 두고도 커밋되지
+않아, 회차 기록이 작업한 머신에만 남았다. 그래서 추적 파일인 여기로 옮긴다. v1.3이 신설했다고 기록된
+`references/pattern-candidates.md`·`promotion-checklist.md`·`sample-collection.md`는 실제 파일이
+존재하지 않는다(taxonomy 변경 이력에만 남아 있다) — 이 파일이 그 역할을 대신한다.
+
+제안·초기 10건 등록: @snubhretina (#149).
+
+## 승격 규칙
+
+- 서로 다른 입력 **2건 이상 실증**. 같은 모델·같은 필자의 연속 산출은 1건으로 센다(v1.3.1 Gate 1.3 분산 보호).
+- ID는 기존 A~J 하위 번호로 **append-only**. **새 대분류 신설 금지** — 아래 표의 `K-*`는 임시 ID이고,
+  승격 시 기존 대분류의 하위 번호를 받는다.
+- 심각도 이동은 역증거 3건+. 학술 anchor는 `scholarship.md`.
+- **quick 편성은 별도 기준**이다(`ai-tell-taxonomy.md` 머리말): ①과업매칭 캘리브레이션에서 AI > 사람
+  ②발동 가능성(임계 초과 문서 실재). 승격이 곧 `quick: true`가 아니다 — 신규 항목의 기본값은 `false`.
+
+상태: `pending`(1건 실증) · `hold`(실증 부족·판정 보류) · `promoted`(taxonomy 반영, 버전 기록) · `rejected`.
+
+## 후보 목록
+
+| 임시ID | 패턴 | 실증 | 상태 | 다음 단계 |
+|---|---|---|---|---|
+| K-1 | 열거 구분자 과치환 — 다어절 구 열거를 가운뎃점(·)으로 일괄 치환해 항목 경계가 무너짐("지역 안과 내원·정밀검사 결과·재검·추적") | afternoon-platform `2026-09-22-001/02_detection.json`·`04_fidelity_audit.json` · Claude strict | pending | 승격 시 C 또는 J 하위 번호. 처방 후보: 가운뎃점은 단어·짧은 명사 열거에만, 2어절+ 구는 쉼표 유지 |
+| C-11-X | C-11(연결어미 뒤 쉼표) 예외 조건 — 주어가 바뀌는 절 경계·낭독 무휴지 60자+에서는 쉼표 유지 또는 마침표 분할 | 위 run(공적 발제, 낭독 존) | pending | playbook C-11 레시피에 예외 조건 추가 검토 |
+| C-11-RL | C-11 run-length 회귀 — 쉼표 제거로 무휴지 구간 41→56자(60자 임계 미달이라 미탐지), 상승폭이 신호 | z-beyond 콜드리드 2026-09-22 `naturalness-reviewer` | pending | metrics 후보 `run_delta`(윤문 전후 최장 무휴지 증가율) +30% WARN |
+| C-8-X | "A가 아니라 B" 부정-긍정 대구 반복(14회) — C-8 변종 | afternoon 2026-09-22-001(GPT-우세 시그니처) | hold | v1.3.1 회차 2 hold 3건과 동일 계열. **C-8은 이미 역치 2회+·C-14 흡수 완료**이므로 갭 분석 후 중복 여부 판정 |
+| J-3/C-6-X | "**볼드 라벨** — 설명" 대시 정의 공식(6회) | afternoon 2026-09-22-001 | pending | J-3(대시)와 C-6 사이 — 갭 분석 후 하위 번호 |
+| C-1-R | 열거 결속 붕괴(역효과) — C-1 제거 후 예고문에 수사("세 가지")를 신설하면 수적 약속은 남고 이행 표지는 사라짐 | z-beyond 콜드리드 2026-09-22(fast → fidelity 이관 → naturalness S2) | pending | 처방 후보: 수사를 예고문에 넣으면 최소 1개 항목 표지(`도`·`역시`) 유지 |
+| D-X-meta | 메타담화 서두·결산("이 글에서는 …알아보겠습니다") — 범용성 미판정 | z-beyond PRODUCTION_SPEC_v2 §2 T10(10편+ 실측) | pending | 타 프로젝트 실증 1건 더 필요(현재는 프로젝트 규칙) |
+| E-2-X | 발화동사 종결 편중("봅니다/살핍니다/설명합니다" 100% 종결) — E-2 변종 | z-beyond YTR-0037/38 2026-08-25 | pending | E-2와 병합 여부 갭 분석 |
+| H-X-head | T10 제거의 문두 키워드 편중 — 메타담화 서두 제거 후 주제어 시작 문장 비율 36→50% | z-beyond 콜드리드 2026-09-22 | hold | metrics 후보 `head_repeat_ratio` — WARN 전용·자동 수정 금지(문두를 흔들면 H-1/A-16 재유입) |
+| A-17 | '-들' 복수 접미 과잉(NMT 원본 회차) | v2.0 회차(학술 근거 강함, 우리 데이터 양성 0) | hold | 재평가 조건: NMT 원본 회차에서 양성 확보. **본진에 등재돼 있으나 hold 상태** — 전체 85패턴 중 활성 84의 바깥 |
+
+## 승격·기각 이력
+
+- **2026-09-24**: 파일 신설(추적 파일로 이동). 위 10건 등록(promoted 0). 다음 회차부터 taxonomist가
+  `_workspace/taxonomy_changelog.md` 대신 이 표를 읽고 이어간다. 원 제안 #149(@snubhretina)는 폐기된
+  `.claude/skills/` 레이아웃 대상이어서 현행 경로로 옮겨 반영했다.

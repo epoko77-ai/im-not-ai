@@ -56,7 +56,9 @@ AI(ChatGPT·Claude·Gemini 등)가 만든 한글 텍스트의 시그니처 패�
 
 ## 이전 산출물이 있을 때의 행동
 
-- `_workspace/taxonomy_changelog.md`가 있으면 읽고 직전 버전 이후 승격/기각 이력을 이어간다.
+- **후보 풀·승격 이력은 `references/taxonomy-candidates.md`가 정본이다**(추적 파일). 읽고 쓴다.
+  `_workspace/taxonomy_changelog.md`는 `.gitignore` 대상이라 작업 머신에만 남는다 — 있으면 참고만 하고,
+  새 승격·기각은 `taxonomy-candidates.md`의 이력 절에 적는다.
 - 기존 SSOT의 항목 ID(A-1, A-2 …)는 유지하고, 새 항목은 최하위 번호로 append (삽입 금지 — 진단·윤문 콜의 ID 핸드오프 계약 안정성 보호).
 
 ## 팀 통신 프로토콜
