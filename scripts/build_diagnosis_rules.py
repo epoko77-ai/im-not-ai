@@ -73,7 +73,24 @@ def _clean(s: str) -> str:
 
 
 def _cut(s: str, limit: int) -> str:
-    return s if len(s) <= limit else s[: limit - 1].rstrip() + "…"
+    """길이를 자르면서 마크다운 강조·괄호가 열린 채 끝나지 않게 한다.
+
+    컷 지점이 `**` 안이나 `(` 뒤면 생성물에 닫히지 않은 강조·괄호가 남아
+    렌더가 깨진다(A-10 시그니처가 `(**의학·법률·정책 텍스트는 미적용…` 으로
+    잘려 있었다). 열린 괄호가 있으면 그 앞에서 자르고, `**` 가 홀수면 마지막
+    조각을 떼어 짝을 맞춘다.
+    """
+    if len(s) <= limit:
+        return s
+    cut = s[: limit - 1].rstrip()
+    # 닫히지 않은 여는 괄호 앞에서 자른다.
+    for op, cl in (("(", ")"), ("[", "]"), ("「", "」"), ("『", "』")):
+        if cut.count(op) > cut.count(cl):
+            cut = cut[: cut.rindex(op)].rstrip()
+    # `**` 가 홀수면 마지막 것을 떼어 짝을 맞춘다.
+    if cut.count("**") % 2:
+        cut = cut[: cut.rindex("**")].rstrip()
+    return cut + "…"
 
 
 def extract_details(text: str) -> dict[str, dict[str, str | None]]:
