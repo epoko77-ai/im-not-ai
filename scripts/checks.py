@@ -77,7 +77,18 @@ CLICHE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 
 # Sentence-final 요 (해요체/구어 종결). Counts "~인데요." "~거든요?" etc.
-YO_ENDING_RE = re.compile(r"요\s*(?:[.?!…]|$)", re.MULTILINE)
+# 해요체 종결은 용언 활용이다. 그런데 `요` 로 끝나는 한자 명사가 개조식 종결로
+# 쓰이면("보완 필요.", "추진 개요.") 같은 표면형이 된다. 그것을 구어 종결로 세면
+# `colloquial_erased` 가 발동해 **올바른 윤문 결과를 롤백시킨다**(PR #94 지적).
+#
+# `요` 직전 한 음절로 배제한다. 목록에 `고` 는 넣지 않는다 — "그렇게 하고요" 처럼
+# 진짜 해요체 연결형이 같은 음절을 쓰기 때문이다. 같은 이유로 `세`(주세요)·
+# `네`(그렇네요)·`죠` 계열도 건드리지 않는다. 아래 음절들은 해요체 활용으로
+# 나타나지 않는 한자 명사의 끝음절 앞자리다.
+_YO_NOUN_HEADS = "필중개수주소강동풍"
+YO_ENDING_RE = re.compile(
+    rf"(?<![{_YO_NOUN_HEADS}])요\s*(?:[.?!…]|$)", re.MULTILINE
+)
 
 # colloquial_erased fires only when the original is clearly colloquial
 # (>= MIN_YO endings) AND the output keeps less than KEEP_RATIO of them.

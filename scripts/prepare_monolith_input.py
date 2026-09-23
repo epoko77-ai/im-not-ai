@@ -316,10 +316,31 @@ def _fmt_z(z: float | None) -> str:
     return f"z={sign}{z:.2f}"
 
 
-def _z_marker(z: float | None) -> str:
-    """Emit a small star for values clearly above the AI band."""
+# 단순화(simplification) 축 지표는 **낮을 때** AI 티다 — baseline 이 직접 그렇게
+# 적어 둔다(`"interpretation": "low = AI-like (repetition)"`). 그런데 마커가 z 를
+# 부호 그대로 읽어 **가장 어휘가 풍부한(= 가장 사람다운) 글에 "★ S1 트리거"** 를
+# 붙이고 있었다. 모델은 그 표기를 보고 손댈 곳을 찾는다(PR #94 지적).
+# 간섭(interference)·정규화(normalisation) 축은 높을 때 AI 티라 그대로 둔다.
+_INVERTED_METRICS = frozenset(
+    {
+        "lexical_diversity",
+        "lexical_diversity_ttr",
+        "lexical_density",
+        "ending_diversity",
+    }
+)
+
+
+def _z_marker(z: float | None, key: str | None = None) -> str:
+    """Emit a small star for values clearly in the AI band.
+
+    ``key`` 가 단순화 축 지표면 부호를 뒤집어 판정한다. 키를 주지 않으면
+    기존 동작(높을수록 AI 티)을 유지한다.
+    """
     if z is None:
         return ""
+    if key in _INVERTED_METRICS:
+        z = -z
     if z >= 1.5:
         return "  ★ S1 트리거"
     if z >= 1.0:
@@ -399,7 +420,7 @@ def _render_block(metrics_obj: dict) -> str:
             return f"- {key}: n/a"
         z_part = ""
         if with_z:
-            z_part = f"  ({_fmt_z(z.get(key))} vs {metrics_obj.get('genre','essay')} 인간 baseline){_z_marker(z.get(key))}"
+            z_part = f"  ({_fmt_z(z.get(key))} vs {metrics_obj.get('genre','essay')} 인간 baseline){_z_marker(z.get(key), key)}"
         return f"- {key}: {value_fmt.format(val)}{z_part}{suffix}"
 
     lines.append(row("comma_inclusion_rate", "{:.2f}"))
