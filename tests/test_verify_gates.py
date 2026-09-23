@@ -442,5 +442,61 @@ class ModalityGateTests(unittest.TestCase):
             deo_b - deo_a, verify_gates.MODALITY_TOLERANCE
         )
 
+    def test_deontic_inventory_covers_haeyo_forms(self) -> None:
+        """해체·해요체 당위 활용도 검출해야 한다 — 구 사전은 합쇼체·해라체만 잡았다.
+
+        실측: `"그 둘을 묶어줄 무언가가 더 있어야 한다는 것."` → `"...있어야 해요."`
+        윤문에서 P5가 "서법 소실 1문장"을 냈으나, 당위(`있어야`)는 그대로 살아 있어
+        오탐이다. CLAUDE.md 철칙 #5(register 보존)에 따라 구어체 종결도 당위로 세야 한다.
+        """
+        for marker in (
+            "그 둘을 묶어줄 무언가가 더 있어야 해요",
+            "지금 손봐야 해",
+            "제도를 다시 짜야 했어요",
+            "규제를 풀어야 해서 늦어졌다",
+            "예산을 늘려야 했어",
+            "이 문제는 고쳐야 해도 방법이 없다",
+            "지금 당장 바꿔야 하죠",
+            "우리가 먼저 나서야 하지요",
+        ):
+            with self.subTest(marker=marker):
+                self.assertGreaterEqual(
+                    verify_gates.count_modality(marker)[0], 1, f"해요체 당위 미검출: {marker}"
+                )
+
+    def test_deontic_inventory_excludes_copula_iya_with_haeyo(self) -> None:
+        """계사 -이야 + 해요체 활용은 당위가 아니다.
+
+        기존 `(?!이)` 계사 배제가 해요체 활용을 추가한 뒤에도 작동하는지 확인한다.
+        `-이야 하다` 형태에서 `이`가 계사일 때만 배제한다.
+        """
+        for text in (
+            "불이야 해서 뛰쳐나갔다",
+            "내 스타일이야 해도 별수 없다",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(
+                    verify_gates.count_modality(text)[0], 0, f"계사 과탐: {text}"
+                )
+
+    def test_p5_passes_when_deontic_changes_register_only(self) -> None:
+        """격식체 당위가 해요체 당위로 바뀌면 P5는 통과해야 한다 (축 간 독립성).
+
+        회귀 방지: 구 사전에서 before=`"...있어야 한다는 것."`, after=`"...있어야 해요."`
+        일 때 당위 1→0으로 세어 P5가 FAIL을 냈고, 복원기가 격식체로 되돌렸다.
+        register 변환은 서법 소실이 아니다(CLAUDE.md 철칙 #5).
+        """
+        before = "그 둘을 묶어줄 무언가가 더 있어야 한다는 것."
+        after = "그 둘을 묶어줄 무언가가 더 있어야 해요."
+        deo_b = verify_gates.count_modality(before)[0]
+        deo_a = verify_gates.count_modality(after)[0]
+        self.assertGreaterEqual(deo_b, 1, "before에서 당위 미검출")
+        self.assertGreaterEqual(deo_a, 1, "after에서 해요체 당위 미검출")
+        self.assertLessEqual(
+            deo_b - deo_a, verify_gates.MODALITY_TOLERANCE,
+            f"register 변환이 서법 소실로 잡힘: {deo_b}→{deo_a}"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
