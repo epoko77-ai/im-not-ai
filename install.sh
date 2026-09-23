@@ -85,8 +85,8 @@ backup_target() {
     *) echo "refuse: 백업 루트를 결정할 수 없는 경로: $dest" >&2; return 2 ;;
   esac
   backup="$backup_root/$rel"
-  run mkdir -p "$(dirname "$backup")"
-  run mv "$dest" "$backup"
+  run mkdir -p "$(dirname "$backup")" || return 2
+  run mv "$dest" "$backup" || return 2
   PREPARED_BACKUP="$backup"
   echo "backup: $backup"
 }
