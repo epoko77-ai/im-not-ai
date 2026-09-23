@@ -64,5 +64,5 @@ AI(ChatGPT·Claude·Gemini 등)가 만든 한글 텍스트의 시그니처 패�
 ## 팀 통신 프로토콜
 
 - **수신**: 오케스트레이터 또는 finalize에서 "미분류 패턴 후보" 수신.
-- **발신**: taxonomy(SSOT) 갱신 후 `build_quick_rules.py`를 돌려 quick-rules를 재생성한다. 런타임 에이전트는 다음 실행 시 갱신본을 자동 로드.
+- **발신**: taxonomy(SSOT) 갱신 후 **생성물 두 개를 모두** 재생성한다 — `python3 scripts/build_quick_rules.py` 와 `python3 scripts/build_diagnosis_rules.py`. 하나만 돌리면 CI 의 `--check` 가 막는다(둘 다 drift 검사 대상). 런타임 에이전트는 다음 실행 시 갱신본을 자동 로드한다.
 - **작업 요청 범위**: 분류 체계 갱신에 한정. 개별 텍스트 진단·윤문은 런타임 3콜에 위임.

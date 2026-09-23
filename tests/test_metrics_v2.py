@@ -296,6 +296,58 @@ class V20InterferenceTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(metrics_v2.by_passive_count(text), 0, text)
 
+    def test_by_passive_lexical_jida_verbs_not_counted(self) -> None:
+        """어휘적 -지다 동사를 피동으로 세지 않는다 (2026-09-24 독립검증).
+
+        맨몸 `진다|졌다` 를 합성 종결형에 넣으면 피동이 아닌 기본 동사가 걸린다 —
+        가지다·던지다·무너지다·빠지다는 `-어지다` 파생이 아니다.
+        """
+        for text in (
+            "계약에 의해 갑은 권리를 가진다",
+            "그에 의해 질문을 던진다",
+            "상대 전략에 의해 졌다",
+            "폭우에 의해 건물이 무너진다",
+            "그에 의해 함정에 빠진다",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(metrics_v2.by_passive_count(text), 0, text)
+
+    def test_by_passive_danghae_legal_term_not_counted(self) -> None:
+        """법률 상용어 當該("당해 기관"·"당해 연도")를 피동으로 세지 않는다.
+
+        `당해` 는 `당하+어` 축약과 표면형이 같다. 법률·정책 텍스트가 이 도구의
+        주요 대상이므로 한자어 쪽을 우선한다.
+        """
+        for text in (
+            "본 법에 의해 당해 기관은 보고 의무를 진다",
+            "이 법에 의해 당해 연도 예산을 편성한다",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(metrics_v2.by_passive_count(text), 0, text)
+
+    def test_by_passive_endings_and_boundaries_are_wide_enough(self) -> None:
+        """어미·경계 집합이 좁아 진짜 피동을 놓치지 않는지 (회귀 방지).
+
+        어미 `기|까|던|자` 와 경계 `( ) 「」 ; :` 가 빠져 있어 아래가 전부
+        미탐이었다(구 정규식은 잡던 것).
+        """
+        for text in (
+            "조합에 의해 지정되기 전",
+            "위원회에 의해 결정될까",
+            "규정에 의해 부담됨으로써",
+            "위원회에 의해 결정되던 사안",
+            "위원회에 의해 결정되자 반발이 나왔다",
+            "법에 의해 결정된(제3조) 사항",
+            "법에 의해 「결정된」 사항",
+            "법에 의해 결정된; 그 뒤",
+            "기계에 의해 만들어진다",
+            "제도에 의해 뒷받침된다",
+        ):
+            with self.subTest(text=text):
+                self.assertGreaterEqual(
+                    metrics_v2.by_passive_count(text), 1, text
+                )
+
     def test_by_passive_keeps_real_passives_across_words(self) -> None:
         """오탐을 막으면서 어절이 끼는 진짜 피동은 계속 잡는다."""
         for text in (
