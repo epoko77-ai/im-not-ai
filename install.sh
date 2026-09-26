@@ -46,7 +46,7 @@ Options:
   --extras        opt-in 부속 스킬(extras/skills/) 설치.
                   기본 플러그인 범위 밖 — humanize-korean과 무관한 별도 기능이라
                   명시 요청 시에만 설치.
-  --force         대상에 일반 파일/디렉토리가 있어도 .bak.<ts> 백업 후 덮어씀
+  --force         대상에 일반 파일/디렉토리가 있어도 {CLI_HOME}/backups/<ts>/에 백업 후 덮어씀
   --dry-run       실제 변경 없이 수행할 작업만 출력
   -h, --help      이 도움말
 
@@ -77,21 +77,32 @@ run() { echo "+ $*"; [ "$DRYRUN" = 1 ] || "$@"; }
 # 성공 시 옮겨진 백업 경로를 PREPARED_BACKUP 에 남긴다 — 심링크 생성이 뒤에서
 # 실패하면 install_one 이 이 경로로 기존 설치를 원위치 복원한다.
 PREPARED_BACKUP=""
+backup_target() {
+  local dest="$1" backup_root rel backup
+  case "$dest" in
+    "$CLAUDE_HOME"/*) backup_root="$CLAUDE_HOME/backups/$TS"; rel="${dest#"$CLAUDE_HOME"/}" ;;
+    "$CODEX_HOME"/*)  backup_root="$CODEX_HOME/backups/$TS"; rel="${dest#"$CODEX_HOME"/}" ;;
+    *) echo "refuse: 백업 루트를 결정할 수 없는 경로: $dest" >&2; return 2 ;;
+  esac
+  backup="$backup_root/$rel"
+  run mkdir -p "$(dirname "$backup")" || return 2
+  run mv "$dest" "$backup" || return 2
+  PREPARED_BACKUP="$backup"
+  echo "backup: $backup"
+}
 prepare_target() {
   local dest="$1" src="$2"
   PREPARED_BACKUP=""
   if [ -L "$dest" ]; then
-    if [ "$(readlink "$dest")" = "$src" ]; then
+    if [ "$(readlink "$dest")" = "$src" ] && [ "$MODE" = symlink ]; then
       echo "ok (already linked): $dest"; return 1
     fi
-    run mv "$dest" "$dest.bak.$TS"
-    PREPARED_BACKUP="$dest.bak.$TS"
+    backup_target "$dest" || return 2
   elif [ -e "$dest" ]; then
     if [ "$FORCE" != 1 ]; then
       echo "refuse: $dest 가 이미 있음 (--force 로 백업 후 덮어쓰기 또는 --copy)"; return 2
     fi
-    run mv "$dest" "$dest.bak.$TS"
-    PREPARED_BACKUP="$dest.bak.$TS"
+    backup_target "$dest" || return 2
   fi
   return 0
 }
@@ -166,6 +177,23 @@ install_one() {
   echo "installed: $dest"
 }
 
+install_codex_bundle() {
+  local src="$REPO/codex/skills/humanize-korean"
+  local dest="$CODEX_HOME/skills/humanize-korean"
+  install_one "$src" "$dest" || return 1
+  if [ "$MODE" = copy ] && [ "$DRYRUN" != 1 ]; then
+    # Codex copy installs must work after the repository is moved or removed.
+    mkdir -p "$dest/scripts" "$dest/references"
+    cp "$REPO/scripts/prepare_monolith_input.py" "$dest/scripts/"
+    cp "$REPO/scripts/reassemble_chunks.py" "$dest/scripts/"
+    cp "$REPO/scripts/verify_change_rate.py" "$dest/scripts/"
+    cp "$REPO/scripts/verify_gates.py" "$dest/scripts/"
+    cp "$REPO/scripts/restore_modality.py" "$dest/scripts/"
+    cp "$REPO/scripts/checks.py" "$dest/scripts/"
+    cp "$REPO/scripts/console.py" "$dest/scripts/"
+  fi
+}
+
 # CLI 명령 또는 홈 디렉터리(앱만 설치한 사용자)로 대상 감지
 has_claude_target() { command -v claude >/dev/null 2>&1 || [ -d "$CLAUDE_HOME" ]; }
 has_codex_target()  { command -v codex  >/dev/null 2>&1 || [ -d "$CODEX_HOME" ]; }
@@ -222,7 +250,7 @@ fi
 if [ "$DO_CODEX" != no ] && { [ "$DO_CODEX" = yes ] || has_codex_target; }; then
   echo "== Codex =="
   run mkdir -p "$CODEX_HOME/skills"
-  install_one "$REPO/codex/skills/humanize-korean" "$CODEX_HOME/skills/humanize-korean"
+  install_codex_bundle
 else
   echo "== Codex: 건너뜀 (codex 또는 $CODEX_HOME 미감지) =="
 fi
