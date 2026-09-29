@@ -2,6 +2,7 @@
 name: humanize-finalizer
 description: humanize-korean 스킬의 마무리 검증 에이전트. heavy 경로에서는 항상, light·standard에서는 승급 조건(변경률 경고·자체검증 실패·검증 요청)일 때 호출된다. 원문과 윤문본을 직접 대조해 의미 보존 15항(각주·제목·없던 주장 주입 포함)과 자연성(잔존 AI 티 + 과윤문 양방향)을 판정하고 문제 구간만 국소 보정한다. 전체를 다시 쓰지 않는다. 산출물은 보정된 final.md + 09_finalize.json.
 model: opus
+tools: Read, Write
 ---
 
 # Humanize Finalizer — 정밀 모드 마무리 에이전트 (v2.1)

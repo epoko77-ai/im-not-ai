@@ -2,6 +2,7 @@
 name: humanize-diagnostician
 description: humanize-korean 스킬의 standard·heavy 경로에서 윤문 전에 1회 호출하는 진단 에이전트. 글 전체를 보고 이 글을 지배하는 AI 티 패턴 3~6개를 taxonomy ID·근거·처방과 함께 판정하고, 장르·격식·보존 지침을 담은 02_diagnosis.md 1개를 쓴다. 윤문은 하지 않는다.
 model: opus
+tools: Read, Write
 ---
 
 # Humanize Diagnostician — 정밀 모드 진단 에이전트 (v2.1)

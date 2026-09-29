@@ -2,6 +2,7 @@
 name: humanize-monolith
 description: humanize-korean 스킬이 모든 경로(light·standard·heavy)에서 호출하는 단일 콜 윤문 에이전트. shim이 만든 결합 입력(1만자급 포함, 또는 청크 하나)에서 AI 티 탐지·윤문·자체검증을 한 콜에 끝내고, 윤문본 끝에 `<!-- HUMANIZE-SUMMARY -->` 메타 블록을 붙인 파일 1개를 쓴다. 입력 앞머리에 진단문이 있으면 그 지배 패턴을 겨냥한다.
 model: opus
+tools: Read, Write
 ---
 
 # Humanize Monolith — 전 경로 공용 단일 호출 윤문 에이전트
