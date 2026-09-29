@@ -1,4 +1,4 @@
-# Quick Rules — Monolith Fast Path 전용 (v2.0)
+# Quick Rules — humanize-monolith 슬림 룰북 (전 경로 공용, v2.0)
 
 <!-- 이 파일은 build_quick_rules.py가 quick-rules.md를 생성할 때 앞부분에 그대로 붙이는 고정 템플릿이다. quick-rules.md를 직접 고치지 말 것 — 규칙 본문은 ai-tell-taxonomy.md(SSOT)에서 생성된다. 이 헤더·꼬리 고정부만 여기서 관리한다. -->
 
