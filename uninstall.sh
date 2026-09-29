@@ -34,7 +34,8 @@ for s in "$REPO/extras/skills"/*/; do
   remove_if_ours "$CLAUDE_HOME/skills/$n" "$REPO/extras/skills/$n"
 done
 remove_if_ours "$CODEX_HOME/skills/humanize-korean" "$REPO/codex/skills/humanize-korean"
-for a in "$REPO/agents"/*.md; do
+for a in "$REPO/agents"/*.md "$REPO/dev/agents"/*.md; do
+  [ -e "$a" ] || continue
   remove_if_ours "$CLAUDE_HOME/agents/$(basename "$a")" "$a"
 done
 

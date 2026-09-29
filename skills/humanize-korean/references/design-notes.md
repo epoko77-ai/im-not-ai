@@ -49,7 +49,7 @@
 
 ## 에이전트 계보 (은퇴·개발용)
 
-**개발용 1회성 5종 (릴리스 회차 전용 — 런타임 미로드)**
+**개발용 1회성 5종 (릴리스 회차 전용 — `dev/agents/`, 플러그인 로더·기본 설치 범위 밖)**
 - `translationese-research-distiller` · `korean-translation-scholar` · `taxonomy-gap-analyzer` · `post-editese-metric-engineer` · `quick-rules-integrator` — v2.0 학술 흡수 회차에서 사용된 개발 도구. 윤문 실행과 무관
 
 > v2.1에서 옛 정밀(strict) 파이프라인 4종(`ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`)과 미사용 `humanize-web-architect`를 은퇴시켰다. 진단·윤문·finalize 3콜이 이들을 대체한다.
