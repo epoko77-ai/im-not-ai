@@ -93,6 +93,15 @@ if __name__ == "__main__":
     unittest.main()
 
 
+# SKILL_ROOT 유도는 POSIX 셸(`cd -P`)과 심링크 의미에 의존한다. Windows 에서는
+# `bash` 가 있어도 로케일 인코딩 때문에 서브프로세스 출력 디코딩이 깨지고
+# `symlink_to` 는 권한을 요구한다. 플랫폼 결함이 아니라 계약 범위 밖이다.
+# (CI 는 ubuntu-latest 라 커버리지 손실은 없다.)
+posix_shell_only = unittest.skipUnless(
+    os.name == "posix", "SKILL_ROOT 유도는 POSIX 셸·심링크 전용"
+)
+
+
 class SkillRootDerivationTests(unittest.TestCase):
     """SKILL.md 의 SKILL_ROOT 유도가 심링크·플러그인 양쪽에서 성립하는지 (#84-①).
 
@@ -117,6 +126,7 @@ class SkillRootDerivationTests(unittest.TestCase):
         )
         return proc.stdout.strip()
 
+    @posix_shell_only
     def test_derivation_works_for_plugin_layout(self) -> None:
         """복사·플러그인 설치(실디렉터리) 레이아웃."""
         with tempfile.TemporaryDirectory() as td:
@@ -131,6 +141,7 @@ class SkillRootDerivationTests(unittest.TestCase):
                 f"플러그인 레이아웃에서 유도 실패: {got}",
             )
 
+    @posix_shell_only
     def test_derivation_works_for_symlink_install(self) -> None:
         """심링크 설치 — `cd -P` 없이는 홈 디렉터리로 올라가 실패하던 케이스."""
         with tempfile.TemporaryDirectory() as td:
