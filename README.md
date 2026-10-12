@@ -114,7 +114,7 @@ gemini extensions install https://github.com/epoko77-ai/im-not-ai.git
 | `humanize-finalizer` | heavy | 원문 직접 대조로 의미 보존 15항 + 자연성 판정, 국소 보정 |
 | `korean-ai-tell-taxonomist` | 별도 명령 | 분류 체계(SSOT) 관리, 신규 패턴 심사 승격 |
 
-이 외에 `agents/`에는 릴리스 회차 전용 개발 도구 5개(`translationese-research-distiller` · `korean-translation-scholar` · `taxonomy-gap-analyzer` · `post-editese-metric-engineer` · `quick-rules-integrator` — v2.0 학술 흡수 작업용, 윤문 실행과 무관)가 함께 들어 있습니다.
+릴리스 회차 전용 개발 도구 5개(`translationese-research-distiller` · `korean-translation-scholar` · `taxonomy-gap-analyzer` · `post-editese-metric-engineer` · `quick-rules-integrator` — v2.0 학술 흡수 작업용, 윤문 실행과 무관)는 `dev/agents/`에 있습니다. 플러그인 로더는 루트 `agents/*.md`만 세션에 올리므로 설치 사용자 세션에는 실리지 않고, 기여자는 `./install.sh --all-agents`로 함께 연결합니다.
 
 Claude Code는 루트 `agents/` 정의를 호출합니다. Codex는 같은 런타임 역할을 `references/roles/{diagnostician,monolith,finalizer}.md` 계약으로 실행합니다. 협업 에이전트를 사용할 수 있으면 역할별 독립 컨텍스트로 실행하고, 사용할 수 없으면 주 에이전트가 같은 계약을 순차 실행합니다.
 

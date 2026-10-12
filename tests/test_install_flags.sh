@@ -65,8 +65,9 @@ assert_contains "$claude_desktop_output" "+ ln -s $ROOT/skills/humanize-korean $
 assert_not_contains "$claude_desktop_output" "Claude Code: "
 rm -rf "$TMP_HOME/.claude"
 
-# 에이전트 선별 설치 — 기본은 스킬이 실제로 쓰는 4종만.
-# agents/ 의 나머지 5종은 릴리스 회차용 개발 도구라 전역 풀에 상주시키지 않는다.
+# 에이전트 선별 설치 — 기본은 스킬이 실제로 쓰는 4종만(루트 agents/ 전체).
+# 릴리스 회차용 개발 도구 5종은 dev/agents/ 에 있어 플러그인 로더 범위 밖이며,
+# 스크립트 설치도 --all-agents 일 때만 전역 풀에 넣는다.
 RUNTIME_AGENTS="humanize-monolith humanize-diagnostician humanize-finalizer korean-ai-tell-taxonomist"
 DEV_ONLY_AGENTS="translationese-research-distiller korean-translation-scholar taxonomy-gap-analyzer post-editese-metric-engineer quick-rules-integrator"
 
@@ -76,19 +77,22 @@ for a in $RUNTIME_AGENTS; do
   assert_contains "$default_agents_output" "+ ln -s $ROOT/agents/$a.md $TMP_HOME/.claude/agents/$a.md"
 done
 for a in $DEV_ONLY_AGENTS; do
-  assert_not_contains "$default_agents_output" "$ROOT/agents/$a.md"
+  assert_not_contains "$default_agents_output" "/$a.md"
 done
 
 all_agents_output="$(run_installer --claude-only --all-agents)"
 for a in "$ROOT"/agents/*.md; do
   assert_contains "$all_agents_output" "+ ln -s $a $TMP_HOME/.claude/agents/$(basename "$a")"
 done
+for a in $DEV_ONLY_AGENTS; do
+  assert_contains "$all_agents_output" "+ ln -s $ROOT/dev/agents/$a.md $TMP_HOME/.claude/agents/$a.md"
+done
 rm -rf "$TMP_HOME/.claude"
 
 # ── 구버전 링크 정리 (#73) ─────────────────────────────────────────────
 # 이 저장소가 심은 링크만 지운다. 사용자 소유 파일·남의 링크는 절대 건드리지 않는다.
 mkdir -p "$TMP_HOME/.claude/agents"
-ln -s "$ROOT/agents/quick-rules-integrator.md" "$TMP_HOME/.claude/agents/quick-rules-integrator.md"   # 범위 밖(개발용)
+ln -s "$ROOT/dev/agents/quick-rules-integrator.md" "$TMP_HOME/.claude/agents/quick-rules-integrator.md"   # 범위 밖(개발용)
 ln -s "$ROOT/agents/naturalness-reviewer.md"  "$TMP_HOME/.claude/agents/naturalness-reviewer.md"      # 은퇴 = dangling
 ln -s "/tmp/some-other-tool.md"               "$TMP_HOME/.claude/agents/other-tool.md"                # 남의 링크
 printf 'user owned\n' > "$TMP_HOME/.claude/agents/my-own-agent.md"                                    # 사용자 파일
@@ -103,7 +107,7 @@ assert_not_contains "$prune_output" "pruned: $TMP_HOME/.claude/agents/my-own-age
 # --all-agents 면 개발용도 정식 설치 대상이므로 지우지 않는다(dangling 만 정리)
 rm -rf "$TMP_HOME/.claude"
 mkdir -p "$TMP_HOME/.claude/agents"
-ln -s "$ROOT/agents/quick-rules-integrator.md" "$TMP_HOME/.claude/agents/quick-rules-integrator.md"
+ln -s "$ROOT/dev/agents/quick-rules-integrator.md" "$TMP_HOME/.claude/agents/quick-rules-integrator.md"
 ln -s "$ROOT/agents/naturalness-reviewer.md"  "$TMP_HOME/.claude/agents/naturalness-reviewer.md"
 all_prune_output="$(run_installer --claude-only --all-agents)"
 assert_not_contains "$all_prune_output" "pruned: $TMP_HOME/.claude/agents/quick-rules-integrator.md"

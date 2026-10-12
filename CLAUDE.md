@@ -66,12 +66,12 @@ im-not-ai/
 ├── tests/                         # pytest — metrics 단위 + 청킹 + 빌드 sync + golden 픽스처
 │   ├── test_metrics.py · test_metrics_v2.py · test_chunking.py · test_quick_rules_build.py · test_sanitize.py
 │   └── golden/                    # 윤문 품질 회귀 픽스처 + 결정적 채점기(checks.py)
-├── agents/                        # 서브에이전트 9종 (플러그인 컨벤션 — 루트 agents/에 둬야 로드됨)
+├── agents/                        # 서브에이전트 4종 (플러그인 컨벤션 — 루트 agents/*.md 가 전부 세션에 로드됨)
 │   ├── humanize-monolith.md       # 전 경로 공용 윤문 콜
 │   ├── humanize-diagnostician.md  # standard·heavy P1 진단 (지배 패턴 3~6개)
 │   ├── humanize-finalizer.md      # heavy P3 마무리 (의미 15항 + 자연성)
-│   ├── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
-│   └── … 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator)
+│   └── korean-ai-tell-taxonomist.md  # 유지보수 (SSOT 갱신)
+├── dev/agents/                    # 개발용 지원 5종 (scholar·distiller·gap-analyzer·metric-engineer·integrator) — 로더 범위 밖, --all-agents 전용
 ├── skills/                # 스킬 4종 (humanize-korean 오케스트레이터 + humanize·humanize-scan(정찰)·humanize-redo 진입)
 │   └── humanize-korean/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
@@ -127,7 +127,7 @@ im-not-ai/
 - light·standard 결과가 등급 C/D면 heavy 재실행을 사용자에게 권고한다(자동 전환 아님 — opt-in).
 - finalize의 `verdict=hold_and_report`면 사람 검토 권고. 수렴 판정은 LLM 재탐지가 아니라 `verify_gates.py`(결정적, exit code)가 내린다. `verify_change_rate.py`는 기존 연동을 위해 보존한다.
 
-## 에이전트 구성 (9개 — 역할 구분 필수)
+## 에이전트 구성 (루트 agents/ 4개 + dev/agents/ 5개 — 역할 구분 필수)
 
 **런타임 3종** (스킬 실행 중 호출):
 
@@ -139,7 +139,7 @@ im-not-ai/
 
 4. **korean-ai-tell-taxonomist** — 분류 체계 SSOT 관리. 신규 패턴 심사·승격.
 
-**개발용 1회성 5종** (v2.0 학술 흡수 회차 전용 — 윤문 런타임에 로드되지 않음):
+**개발용 1회성 5종** (v2.0 학술 흡수 회차 전용 — `dev/agents/`에 두어 플러그인 로더·기본 설치 범위 밖. `install.sh --all-agents`만 연결):
 
 5. **translationese-research-distiller** — 번역투 학술 보고서 구조화 증류.
 6. **korean-translation-scholar** — 학술 인용 계보를 taxonomy + scholarship.md 양면 안착.
