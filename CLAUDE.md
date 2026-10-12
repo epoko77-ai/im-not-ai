@@ -4,9 +4,9 @@
 
 AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 3경로 하네스. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 85개 AI 티 패턴(A-17 hold 1건 포함)을 탐지·분류해 **내용은 한 글자도 건드리지 않고** 문체·리듬·표현만 재작성한다.
 
-v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
+shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정한다.
 
-v2.3부터 `verify_gates.py`가 문자율·진단 목표달성·대구 전멸·golden/수치의 4축을 검증한다. Codex도 같은 route_hint와 결정적 게이트를 사용해 light·standard·heavy 전체 경로를 제공한다.
+`verify_gates.py`가 문자율·진단 목표달성·대구 전멸·golden/수치·서법(당위·추측 소실)의 5축을 검증한다(문장 터치율은 보고만). Codex도 같은 route_hint와 결정적 게이트를 사용해 light·standard·heavy 전체 경로를 제공한다.
 
 - **light (1콜)** — 잘 쓴 글(어휘 티 거의 0). 진단·finalize 생략, 보수 강도 단일 윤문. 손댈 게 거의 없으면 "이미 좋습니다" 조기 종료.
 - **standard (2콜)** — 보통의 AI 초안. 진단 1콜 + 겨냥 윤문 1콜. finalize 생략이 기본(결정적 변경률 게이트로 대체). 1만자급도 청킹 없이 단일 윤문 콜.
@@ -20,7 +20,7 @@ v2.3부터 `verify_gates.py`가 문자율·진단 목표달성·대구 전멸·g
 2. **근거 기반 (Span-Grounded)** — 모든 변경은 탐지 finding에 연결. 탐지 없는 구간은 건드리지 않음.
 3. **장르 유지 (Tone Match)** — 칼럼을 문학으로, 리포트를 에세이로 옮기지 않음.
 4. **과윤문 금지 (No Over-Polish)** — 변경률 30% 초과 시 경고, 50% 초과 시 강제 중단.
-5. **register 보존 — 양방향** — 격식체 입력은 격식체 출력, 구어 입력은 구어 출력. 원문보다 딱딱하게 만들지 않는다: **'-했-' → '-하였-' 치환 금지**, '~인데요/~거든요/~한 겁니다' 구어 종결 보존. (하향 금지만 있던 기존 단방향 규칙으로는 합쇼체가 유지되는 '했→하였' 상향을 못 잡았다.) AI 티는 문법·수사이지 격식 자체가 아니다.
+5. **register 보존 — 양방향** — 격식체 입력은 격식체 출력, 구어 입력은 구어 출력. 원문보다 딱딱하게 만들지 않는다: **'-했-' → '-하였-' 치환 금지**, '~인데요/~거든요/~한 겁니다' 구어 종결 보존. 합쇼체 종결이 그대로여도 '했→하였' 치환은 격식을 올린 것이다. AI 티는 문법·수사이지 격식 자체가 아니다.
 6. **AI 티는 빼기만 하고 넣지 않는다 (No New Tells)** — 원문에 없던 상투구("기록적인 성과를 거두었다"·"괄목할 만한"·"~로 평가된다") 신규 삽입 금지. 살아있는 구어는 사람 글의 증거이므로 보존한다. 철칙 #2가 "탐지 없는 구간은 손대지 않는다"라면, #6은 "손대는 구간에도 새 AI 티를 심지 않는다" — 모순이 아니라 보완이다.
 
 ## AI 워터마킹에 대한 입장 (2026-08-17 확정)
@@ -46,7 +46,7 @@ im-not-ai/
 ├── RELEASING.md                   # 릴리스 체크리스트 (버전 문자열 전수 + 글로벌 심링크 동기화)
 ├── CONTRIBUTORS.md
 ├── .claude-plugin/                # Claude 플러그인 + 마켓플레이스 매니페스트
-│   ├── plugin.json                # skills: ./skills/ · 에이전트는 루트 agents/ 자동탐색
+│   ├── plugin.json                # skills 필드 없음 — 루트 skills/·agents/ 기본 스캔 (marketplace source가 './'라 필드를 넣으면 기본 스캔을 대체한다 — test_runtime_boundary 가드)
 │   └── marketplace.json           # /plugin marketplace add epoko77-ai/im-not-ai
 ├── gemini-extension.json          # Gemini CLI Extension 매니페스트
 ├── GEMINI.md                      # Gemini 에이전트 컨텍스트 (monolith 룰 인라인)
@@ -58,14 +58,14 @@ im-not-ai/
 │   ├── eval_baseline.py           # 품질 기준선 촬영 — 픽스처 × 모델 × K회 반복 스냅샷
 │   ├── eval_compare.py            # 스냅샷 2개 대조 — 자체 분산을 잡음 바닥 삼아 유의한 변화만 표시
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
-│   ├── verify_gates.py            # v2.3 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치
+│   ├── verify_gates.py            # 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치·서법 5축
 │   ├── verify_change_rate.py      # 하위 호환 문자 변경률 게이트
 │   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
 │   ├── build_social_preview_v2.py
 │   └── make_thumbnail.py
 ├── tests/                         # pytest — metrics 단위 + 청킹 + 빌드 sync + golden 픽스처
 │   ├── test_metrics.py · test_metrics_v2.py · test_chunking.py · test_quick_rules_build.py · test_sanitize.py
-│   └── golden/                    # 윤문 품질 회귀 픽스처 + 결정적 채점기(checks.py)
+│   └── golden/                    # 윤문 품질 회귀 픽스처 (채점기는 scripts/checks.py — verify_gates P3가 런타임에 import)
 ├── agents/                        # 서브에이전트 9종 (플러그인 컨벤션 — 루트 agents/에 둬야 로드됨)
 │   ├── humanize-monolith.md       # 전 경로 공용 윤문 콜
 │   ├── humanize-diagnostician.md  # standard·heavy P1 진단 (지배 패턴 3~6개)
@@ -119,6 +119,7 @@ im-not-ai/
                      ↓ [verify_gates.py] (P2.5)
                    [humanize-finalizer — 의미 15항 + 자연성, 국소 보정]
                    final.md(보정) + 09_finalize.json
+    ↓ [scripts/restore_modality.py → scripts/strip_injected_commas.py — 서법·C-11 쉼표 국소 복원, 게이트 직전] — 모든 경로 공통
     ↓ [scripts/verify_gates.py — 구조 수렴 게이트 (exit code)] — 모든 경로 공통
 ```
 
@@ -131,7 +132,7 @@ im-not-ai/
 
 **런타임 3종** (스킬 실행 중 호출):
 
-1. **humanize-monolith** — 전 경로 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 3회 캡 (v1.6.1).
+1. **humanize-monolith** — 전 경로 공용 윤문 콜. 한 콜에서 탐지·윤문·자체검증. 도구 호출 3회 캡.
 2. **humanize-diagnostician** — standard·heavy P1 진단. 글 전체의 지배 패턴 3~6개를 본진 ID로 진단 → `02_diagnosis.md`.
 3. **humanize-finalizer** — heavy P3 마무리. 원문 직접 대조로 의미 15항 + 자연성(잔존·과윤문 양방향) 판정, 문제 구간만 국소 보정 → `09_finalize.json`. 도구 호출 4회 캡.
 
@@ -147,7 +148,7 @@ im-not-ai/
 8. **post-editese-metric-engineer** — post-editese 3축을 metrics_v2.py로 코드화.
 9. **quick-rules-integrator** — v2.0 변경 묶음의 quick-rules 안착 + 캡 회귀 검증 + PR 준비.
 
-**은퇴 (v2.1)**: 옛 strict 5인 파이프라인의 `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`와 웹 확장 설계용 `humanize-web-architect`는 v2.1에서 은퇴(정의 파일 삭제). 탐지·감사·리뷰 역할은 diagnostician·finalizer가 대체했고, v2.3부터 결정적 수렴 판정은 `verify_gates.py`가 담당한다.
+**정의 없음**: `ai-tell-detector`·`korean-style-rewriter`·`content-fidelity-auditor`·`naturalness-reviewer`·`humanize-web-architect`는 삭제된 에이전트다 — 문서에 이름이 남아 있어도 호출하지 않는다. 탐지·감사·리뷰는 diagnostician·finalizer가, 결정적 수렴 판정은 `verify_gates.py`가 맡는다.
 
 ## 심각도 기준
 
@@ -157,10 +158,12 @@ im-not-ai/
 
 ## 품질 등급
 
-- **A**: S1 0건, S2 2건 이하, score 개선 70%+
-- **B**: S1 0건, S2 4건 이하, score 개선 50%+
-- **C**: S1 1~2건 또는 과윤문 시그널 2개 — 2차 윤문
-- **D**: S1 3건 이상 또는 심각한 과윤문 — 사람 검토
+등급은 monolith가 `quick-rules.md` 「등급 기준」(빌드 원본 `quick-rules.footer.md`)으로 자가 채점한다.
+
+- **A**: S1 잔존 0, S2 잔존 2 이하, 변경률 10~25%, 자체검증 6항 모두 통과
+- **B**: S1 잔존 0, S2 잔존 4 이하, 자체검증 5항 이상 통과
+- **C**: S1 잔존 1~2 또는 자체검증 4항 이하 통과 — heavy(`--strict`) 재실행 권고
+- **D**: S1 잔존 3+ 또는 변경률 50% 초과 — 작업 중단 권고
 
 ## 사용 방법
 
@@ -175,7 +178,7 @@ im-not-ai/
 ## 파일 시스템 접근 규칙
 
 에이전트가 파일·디렉토리에 접근할 때는 전용 도구를 우선 사용한다.
-`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`verify_gates.py`(구조 수렴 게이트)·`verify_change_rate.py`(하위 호환)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
+`Bash` 툴의 `ls`·`cat`·`echo`는 실행 환경(OS·경로 형식)에 따라 동작이 달라져 예측 불가한 오류를 일으킬 수 있다. 예외: `prepare_monolith_input.py`(shim)·`restore_modality.py`·`strip_injected_commas.py`(게이트 직전 국소 복원)·`verify_gates.py`(구조 수렴 게이트)·`verify_change_rate.py`(하위 호환)·`reassemble_chunks.py`(청킹 재조립) 실행은 Bash `python3` 호출이 정규 경로다.
 
 | 작업 | 올바른 방법 | 피할 방법 |
 |---|---|---|
@@ -195,7 +198,7 @@ im-not-ai/
 
 ## 릴리스
 
-버전 문자열이 흩어져 있어 릴리스마다 누락 사고가 반복됐다 (v1.6.1·v2.0에서 SKILL.md 두 번 연속 누락). **릴리스 전 반드시 `RELEASING.md` 체크리스트를 따를 것.** 태그는 발행 노트·문서 갱신 커밋이 main에 머지된 뒤에 찍는다.
+버전 문자열이 여러 파일에 흩어져 있으므로 릴리스는 `RELEASING.md` 체크리스트를 따른다(매니페스트 3종은 `tests/test_version_sync.py`가 SKILL.md frontmatter와 대사). 태그는 발행 노트·문서 갱신 커밋이 main에 머지된 뒤에 찍는다.
 
 ## 확장 포인트
 

@@ -10,7 +10,7 @@ grep 전수 조사(2026-07-17, v2.0.1 기준)로 확정한 목록입니다.
 |---|------|------|------|
 | 1 | `skills/humanize-korean/SKILL.md` | frontmatter `version:` | `"X.Y.Z"` — **런타임 SSOT. 여기가 누락되면 사용자는 구버전을 실행합니다** |
 | 2 | `skills/humanize-korean/SKILL.md` | 제목(H1) + 상단 "버전 요약" 블록 | `vX.Y` |
-| 3 | `skills/humanize-korean/SKILL.md` | Phase 0 런타임 배너 (`humanize-korean vX.Y — {fast\|strict} 모드 …`) | `vX.Y` — 실행 시 사용자에게 그대로 출력됨 |
+| 3 | `skills/humanize-korean/SKILL.md` | Phase 0 런타임 배너 (`humanize-korean vX.Y — 경로: {light\|standard\|heavy} …`) | `vX.Y` — 실행 시 사용자에게 그대로 출력됨 |
 | 4 | `README.md` | 제목(H1) + "아키텍처" 헤더 | `vX.Y.Z` / `vX.Y` |
 | 5 | `README.md` | 신규 릴리스 노트 절 (`## vX.Y — …`) | 절 추가 |
 | 6 | `CLAUDE.md` | 제목(H1) | `vX.Y.Z` |
@@ -51,7 +51,7 @@ sed -n '1,40p' README.md
 - [ ] **Codex copy 설치**: 임시 `CODEX_HOME`에 `./install.sh --codex-only --copy` 후 저장소 밖 cwd에서 shim·gate 실행
 - [ ] **Codex 전체 경로**: light·standard·heavy 및 후속 재실행 산출물 계약을 E2E로 확인
 - [ ] **Copilot 패키지**: 루트 `plugin.json`이 `copilot/skills/humanize-korean` 단일 호출 스킬만 노출하고 Codex 3경로 스킬과 분리됐는지 확인
-- [ ] **문서 정합**: 도구 호출 캡·산출물 목록(fast=`final.md` 1개, strict=`final.md`+`summary.md`)이 SKILL.md·README·CLAUDE.md·에이전트 정의에서 일치하는지
+- [ ] **문서 정합**: 도구 호출 캡·산출물 목록(light=`final.md`(끝에 HUMANIZE-SUMMARY 블록), standard=+`02_diagnosis.md`, heavy=+`09_finalize.json`·`final_pre_finalize.md`)이 SKILL.md·README·CLAUDE.md·에이전트 정의에서 일치하는지
 - [ ] **발행 노트**: README에 `## vX.Y` 절 작성, 검증 결과는 실측 수치만 (추정 금지)
 - [ ] **부속물**: 썸네일·social preview 갱신이 있으면 태그 전에 머지
 

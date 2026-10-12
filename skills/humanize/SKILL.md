@@ -17,19 +17,10 @@ $ARGUMENTS
 2. 인자가 파일 경로(.txt/.md)면 `Read`로 본문 로드.
 3. 인자가 텍스트면 그대로 입력으로 사용.
 4. `humanize-korean` 스킬 SKILL.md 절차(Phase 0 → 결과 전달)를 따른다 — 경로는 **route_hint**(light|standard|heavy)가 정하고, `--strict` 시 heavy 고정.
-5. 결과 전달:
-   - 한 줄 상태(변경률 / 등급 / 자체검증 통과)
-   - 윤문본 본문(마크다운 블록)
-   - 카테고리별 탐지 건수 before/after
-   - 주요 변경 하이라이트 3~5건
-   - 등급 B 이하면 "`/humanize-redo`로 2차 윤문 가능" 안내
+5. 결과 전달은 `humanize-korean`의 「결과 전달」 절을 그대로 따른다.
 
 ## 옵션 (인자 끝에 자연어로)
 - `장르: 칼럼|리포트|블로그|공적` — 장르 명시 (생략 시 첫 300자로 자동 추정)
 - `강도: 보수|기본|적극` — 윤문 강도 (기본값: 기본)
-- `최소심각도: S1|S2|S3` — 탐지 임계값 (기본값: S2)
 - `--strict` — 정밀 3콜(진단→겨냥 윤문→finalize) 강제
 
-## 참고
-- 분류 체계: `humanize-korean/references/ai-tell-taxonomy.md`
-- 윤문 처방: `humanize-korean/references/rewriting-playbook.md`
