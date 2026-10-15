@@ -1,4 +1,4 @@
-"""Tests for scripts/verify_gates.py — Tier 1 구조 게이트 (4축 통합).
+"""Tests for scripts/verify_gates.py — Tier 1 구조 게이트 (6축 통합).
 
 Runs under pytest OR `python -m unittest` (same convention as
 test_golden.py). No LLM calls — the gate is pure Python; this suite
@@ -569,6 +569,281 @@ class ModalityGateTests(unittest.TestCase):
             deo_b - deo_a, verify_gates.MODALITY_TOLERANCE,
             f"register 변환이 서법 소실로 잡힘: {deo_b}→{deo_a}"
         )
+
+
+# ===========================================================================
+# P6 편집 발자국 — footprint_profile / judge_footprint / main() 통합
+# ===========================================================================
+
+import contextlib  # noqa: E402
+import io  # noqa: E402
+
+# 문장 길이·종결어미가 들쭉날쭉한 원문 (사람 글의 불규칙성을 흉내 낸 합성 텍스트).
+_FP_ORIGINAL = (
+    "비가 왔다. 길은 미끄러웠고 버스는 오지 않았다. 정류장에 선 사람들은 저마다 "
+    "휴대전화를 들여다보며 아무 말도 하지 않았는데 그 침묵이 이상하게 편했다. 춥다. "
+    "누군가 우산을 접었다. 그제야 비가 그쳤다는 걸 알았어요.\n\n"
+    "집에 오니 아홉 시였다. 밥을 안쳤고 창을 열었다. 젖은 흙냄새가 올라왔는데 "
+    "그게 하루 중 가장 좋은 순간이었다는 생각이 들었다. 내일도 비가 온다고 했다. "
+    "우산을 현관에 뒀다.\n\n"
+    "다음 날 아침 비는 오지 않았다. 대신 바람이 불었다. 우산은 그대로 현관에 있었고 "
+    "나는 그걸 보고 잠깐 웃었다. 괜히 챙겼다는 생각은 들지 않았다."
+)
+
+# 같은 내용을 문장 길이가 고르고 종결어미가 '-다'로만 끝나게 균일화한 윤문본.
+_FP_UNIFORMISED = (
+    "비가 와서 길이 미끄러웠다. 버스는 오지 않았고 사람들은 조용했다. "
+    "정류장의 침묵은 이상하게 편안했다. 날씨는 춥고 누군가 우산을 접었다. "
+    "그제야 비가 그쳤다는 것을 알았다. 집에 도착하니 아홉 시였다.\n\n"
+    "밥을 안치고 창문을 열어 두었다. 젖은 흙냄새가 방으로 올라왔다. "
+    "그 순간이 하루 중 가장 좋았다. 내일도 비가 온다고 예보했다. "
+    "우산을 현관에 두고 잠들었다. 다음 날 아침에는 비가 오지 않았다.\n\n"
+    "대신 바람이 세게 불었다. 우산은 그대로 현관에 놓여 있었다. "
+    "나는 그것을 보고 잠깐 웃었다. 괜히 챙겼다는 생각은 들지 않았다. "
+    "비는 결국 오지 않았다. 우산은 다음 비를 기다렸다."
+)
+
+
+class FootprintProfileTests(unittest.TestCase):
+    def test_profile_keys_and_counts(self) -> None:
+        prof = verify_gates.footprint_profile(_FP_ORIGINAL)
+        for key in verify_gates.FOOTPRINT_METRIC_ORDER:
+            self.assertIn(key, prof)
+        self.assertEqual(prof["n_paragraphs"], 3)
+        self.assertGreaterEqual(prof["n_sentences"], 10)
+
+    def test_empty_text_is_safe(self) -> None:
+        prof = verify_gates.footprint_profile("")
+        self.assertEqual(prof["n_sentences"], 0)
+        for key in verify_gates.FOOTPRINT_METRIC_ORDER:
+            self.assertEqual(prof[key], 0.0)
+
+    def test_ending_entropy_reuses_ending_keys(self) -> None:
+        """ending_entropy 는 ending_diversity 와 같은 종결 키를 써야 한다."""
+        import metrics_v2 as m
+
+        text = "오늘은 비가 온다. 길이 미끄럽다. 우산을 챙겼다. 버스가 늦게 왔어요."
+        self.assertEqual(m.ending_diversity(text), 1.0)
+        self.assertAlmostEqual(m.ending_entropy(text), 2.0)
+        flat = "오늘은 비가 온다. 길이 미끄럽다. 우산이 필요하다. 버스가 온다."
+        self.assertLess(m.ending_entropy(flat), 2.0)
+        self.assertEqual(m.ending_entropy(""), 0.0)
+
+    def test_restatement_rate_detects_echoed_closing_sentence(self) -> None:
+        plain = "배포 속도가 핵심이다. 그래서 팀은 매주 배포한다. 고객 반응도 빨라졌다."
+        rate, n = verify_gates.paragraph_restatement_rate(plain)
+        self.assertEqual((rate, n), (0.0, 1))
+        echoed = (
+            "배포 속도가 핵심이다. 그래서 팀은 매주 배포한다. 결국 배포 속도가 핵심이다."
+        )
+        rate, n = verify_gates.paragraph_restatement_rate(echoed)
+        self.assertEqual(n, 1)
+        self.assertEqual(rate, 1.0)
+
+    def test_restatement_ignores_two_eojeol_openers(self) -> None:
+        """2어절 첫 문장은 어절 하나만 겹쳐도 50% 라 재지 않는다(과탐 방지)."""
+        text = "비가 왔다. 길이 미끄러웠다. 그제야 비가 그쳤다는 걸 알았다."
+        rate, n = verify_gates.paragraph_restatement_rate(text)
+        self.assertEqual((rate, n), (0.0, 1))
+
+    def test_single_sentence_paragraphs_are_not_eligible(self) -> None:
+        rate, n = verify_gates.paragraph_restatement_rate("한 문장.\n\n또 한 문장.")
+        self.assertEqual((rate, n), (0.0, 0))
+
+
+class JudgeFootprintTests(unittest.TestCase):
+    def _prof(self, **over) -> dict:
+        base = {
+            "n_sentences": 20, "n_paragraphs": 5, "n_restatement_eligible": 5,
+            "sentence_length_cv": 0.50, "ending_entropy": 2.5, "lexical_density": 0.05,
+            "paragraph_length_cv": 0.40, "paragraph_restatement_rate": 0.0,
+        }
+        base.update(over)
+        return base
+
+    def test_identity_passes(self) -> None:
+        results, warn = verify_gates.judge_footprint(self._prof(), self._prof())
+        self.assertFalse(warn)
+        self.assertEqual(len(results), len(verify_gates.FOOTPRINT_METRIC_ORDER))
+        self.assertTrue(all(r["verdict"] == "OK" for r in results))
+
+    def test_sentence_cv_collapse_is_warn(self) -> None:
+        results, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(sentence_length_cv=0.20)
+        )
+        self.assertTrue(warn)
+        by = {r["metric"]: r["verdict"] for r in results}
+        self.assertTrue(by["sentence_length_cv"].startswith("WARN"))
+
+    def test_entropy_drop_is_warn(self) -> None:
+        _, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(ending_entropy=1.5)
+        )
+        self.assertTrue(warn)
+
+    def test_lexical_density_rise_is_warn(self) -> None:
+        _, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(lexical_density=0.09)
+        )
+        self.assertTrue(warn)
+
+    def test_paragraph_cv_collapse_is_warn(self) -> None:
+        _, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(paragraph_length_cv=0.10)
+        )
+        self.assertTrue(warn)
+
+    def test_restatement_injection_is_warn(self) -> None:
+        _, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(paragraph_restatement_rate=0.4)
+        )
+        self.assertTrue(warn)
+
+    def test_opposite_direction_never_warns(self) -> None:
+        """더 불규칙해지는 쪽(엔트로피 상승·CV 상승·밀도 하락)은 대상이 아니다."""
+        _, warn = verify_gates.judge_footprint(
+            self._prof(),
+            self._prof(sentence_length_cv=0.9, ending_entropy=3.5, lexical_density=0.01,
+                       paragraph_length_cv=0.9),
+        )
+        self.assertFalse(warn)
+
+    def test_small_relative_move_below_threshold_passes(self) -> None:
+        """잡음 바닥(정상 윤문 픽스처에서 관측된 ≤12% CV 하락)은 통과해야 한다."""
+        _, warn = verify_gates.judge_footprint(
+            self._prof(), self._prof(sentence_length_cv=0.44)
+        )
+        self.assertFalse(warn)
+
+    def test_relative_only_move_on_tiny_values_passes(self) -> None:
+        """작은 값에서 비율만 튀는 것(0.01→0.02)은 abs 임계가 걸러낸다."""
+        _, warn = verify_gates.judge_footprint(
+            self._prof(lexical_density=0.01), self._prof(lexical_density=0.02)
+        )
+        self.assertFalse(warn)
+
+    def test_small_sample_is_skipped_not_warn(self) -> None:
+        results, warn = verify_gates.judge_footprint(
+            self._prof(n_sentences=3, n_paragraphs=1, n_restatement_eligible=0),
+            self._prof(n_sentences=3, n_paragraphs=1, n_restatement_eligible=0,
+                       sentence_length_cv=0.1, ending_entropy=0.5),
+        )
+        self.assertFalse(warn)
+        self.assertTrue(all(r["verdict"].startswith("스킵") for r in results))
+
+    def test_default_thresholds_report_uncalibrated(self) -> None:
+        th, calibrated, source = verify_gates.load_footprint_thresholds()
+        self.assertFalse(calibrated, "코퍼스 임계가 없는데 보정됐다고 보고하면 안 된다")
+        self.assertIn("미보정", source)
+        self.assertEqual(set(th), set(verify_gates.FOOTPRINT_METRIC_ORDER))
+
+    def test_baseline_override_is_honoured(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            path = _write(td, "bv2.json", json.dumps({
+                "footprint_thresholds": {
+                    "source": "unit-test",
+                    "sentence_length_cv": {"rel": 0.10, "abs": 0.01},
+                }
+            }))
+            th, calibrated, source = verify_gates.load_footprint_thresholds(path)
+        self.assertTrue(calibrated)
+        self.assertEqual(source, "unit-test")
+        self.assertEqual(th["sentence_length_cv"]["rel"], 0.10)
+        # 덮어쓰지 않은 지표는 기본값 유지
+        self.assertEqual(
+            th["ending_entropy"]["rel"],
+            verify_gates.FOOTPRINT_DEFAULT_THRESHOLDS["ending_entropy"]["rel"],
+        )
+
+    def test_placeholder_cell_is_treated_as_uncalibrated(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            path = _write(td, "bv2.json", json.dumps({
+                "footprint_thresholds": {"_placeholder": True}
+            }))
+            _, calibrated, _ = verify_gates.load_footprint_thresholds(path)
+        self.assertFalse(calibrated)
+
+
+def _run_main_json(before: str, after: str, *extra: str) -> tuple[int, dict]:
+    """main(--json) 을 실행해 (exit code, report dict) 를 돌려준다."""
+    with tempfile.TemporaryDirectory() as td:
+        b = _write(td, "b.txt", before)
+        a = _write(td, "a.md", after)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = verify_gates.main(["--before", b, "--after", a, "--json", *extra])
+    out = buf.getvalue()
+    report = json.loads(out[out.index("{"):])
+    return code, report
+
+
+class FootprintGateIntegrationTests(unittest.TestCase):
+    def test_identical_input_passes_with_footprint_ok(self) -> None:
+        """(i) 동일 입력 → exit 0, 발자국 축 OK, --json 에 전후 값 포함."""
+        code, report = _run_main_json(_FP_ORIGINAL, _FP_ORIGINAL)
+        self.assertEqual(code, 0)
+        fp = report["footprint"]
+        self.assertEqual(fp["verdict"], "OK")
+        self.assertFalse(fp["calibrated"])
+        for key in verify_gates.FOOTPRINT_METRIC_ORDER:
+            self.assertIn(key, fp["before"])
+            self.assertIn(key, fp["after"])
+            self.assertEqual(fp["before"][key], fp["after"][key])
+
+    def test_uniformised_rewrite_is_warn(self) -> None:
+        """(ii) 문장 길이·종결어미를 일부러 균일화한 윤문본 → exit 1 + 발자국 WARN."""
+        code, report = _run_main_json(_FP_ORIGINAL, _FP_UNIFORMISED)
+        fp = report["footprint"]
+        self.assertTrue(fp["verdict"].startswith("WARN"), fp)
+        flagged = {r["metric"] for r in fp["metrics"] if r["verdict"].startswith("WARN")}
+        self.assertTrue(
+            {"sentence_length_cv", "ending_entropy"} & flagged,
+            f"균일화를 잡지 못함: {flagged}",
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(report["gate"]["exit_code"], 1)
+
+    def test_footprint_warn_never_escalates_to_abort(self) -> None:
+        """발자국은 WARN 까지만 — exit 2 는 문자율 전용이다."""
+        code, _ = _run_main_json(_FP_ORIGINAL, _FP_UNIFORMISED)
+        self.assertLess(code, 2)
+
+    def test_existing_axes_unchanged_on_plain_identity(self) -> None:
+        """(iii) 기존 축 회귀 — 평이한 동일 입력은 여전히 exit 0 이고 축 키가 모두 남아 있다."""
+        code, report = _run_main_json(_PLAIN, _PLAIN)
+        self.assertEqual(code, 0)
+        for key in ("change_rate", "s1_targets", "antithesis", "golden",
+                    "sentence_touch", "numbers_dropped", "modality", "gate"):
+            self.assertIn(key, report)
+        self.assertEqual(report["change_rate"]["verdict"], "OK")
+        self.assertEqual(report["modality"]["verdict"], "OK")
+
+    def test_legitimate_fixture_rewrites_do_not_trip_footprint(self) -> None:
+        """저장소의 정상 윤문 픽스처(golden good_output + fixtures.json)는 발자국 WARN 이 없어야 한다.
+
+        기본 임계가 이 잡음 바닥 위에 있다는 증거. 임계를 낮출 때 이 테스트가 먼저 깨진다.
+        """
+        pairs: list[tuple[str, str, str]] = []
+        golden = os.path.join(PROJECT_ROOT, "tests", "golden", "fixtures")
+        for name in sorted(os.listdir(golden)):
+            d = os.path.join(golden, name)
+            with open(os.path.join(d, "input.txt"), encoding="utf-8") as f:
+                inp = f.read()
+            with open(os.path.join(d, "good_output.txt"), encoding="utf-8") as f:
+                good = f.read()
+            pairs.append((name, inp, good))
+        with open(os.path.join(PROJECT_ROOT, "tests", "fixtures.json"), encoding="utf-8") as f:
+            for fx in json.load(f)["fixtures"]:
+                if fx.get("output_text"):
+                    pairs.append((fx["id"], fx["input_text"], fx["output_text"]))
+        self.assertGreaterEqual(len(pairs), 6)
+        for name, inp, good in pairs:
+            with self.subTest(fixture=name):
+                results, warn = verify_gates.judge_footprint(
+                    verify_gates.footprint_profile(inp),
+                    verify_gates.footprint_profile(good),
+                )
+                self.assertFalse(warn, [r for r in results if r["verdict"].startswith("WARN")])
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처
 
 v2.2부터 shim이 정량 점수로 산출하는 **`route_hint`(light | standard | heavy)** 가 디폴트 경로를 정한다(사용자 명시가 오버라이드). 글의 상태가 콜 수를 정하는 구조로, 구 "fast 1콜 / 정밀 3콜" 이분법을 대체한다.
 
-v2.3부터 `verify_gates.py`가 문자율·진단 목표달성·대구 전멸·golden/수치의 4축을 검증한다. Codex도 같은 route_hint와 결정적 게이트를 사용해 light·standard·heavy 전체 경로를 제공한다.
+v2.3부터 `verify_gates.py`가 문자율·진단 목표달성·대구 전멸·golden/수치의 4축을 검증한다. 이후 서법 보존(P5)과 편집 발자국(P6 — 윤문 후 원문보다 더 균질해졌는가: 문장 길이 변동·종결어미 엔트로피·어휘밀도·문단 길이 변동·문단 말 재진술률)이 더해졌다. Codex도 같은 route_hint와 결정적 게이트를 사용해 light·standard·heavy 전체 경로를 제공한다.
 
 - **light (1콜)** — 잘 쓴 글(어휘 티 거의 0). 진단·finalize 생략, 보수 강도 단일 윤문. 손댈 게 거의 없으면 "이미 좋습니다" 조기 종료.
 - **standard (2콜)** — 보통의 AI 초안. 진단 1콜 + 겨냥 윤문 1콜. finalize 생략이 기본(결정적 변경률 게이트로 대체). 1만자급도 청킹 없이 단일 윤문 콜.
@@ -58,7 +58,7 @@ im-not-ai/
 │   ├── eval_baseline.py           # 품질 기준선 촬영 — 픽스처 × 모델 × K회 반복 스냅샷
 │   ├── eval_compare.py            # 스냅샷 2개 대조 — 자체 분산을 잡음 바닥 삼아 유의한 변화만 표시
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
-│   ├── verify_gates.py            # v2.3 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치
+│   ├── verify_gates.py            # v2.3 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치·서법·편집 발자국
 │   ├── verify_change_rate.py      # 하위 호환 문자 변경률 게이트
 │   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
 │   ├── build_social_preview_v2.py

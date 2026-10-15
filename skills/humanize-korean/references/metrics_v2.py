@@ -334,6 +334,24 @@ def lexical_density(text: str) -> float:
     return hits / len(tokens)
 
 
+def _ending_keys(text: str) -> list[str]:
+    """문장별 종결어미 표층 키(마지막 2음절, 없으면 1음절) 목록.
+
+    ``ending_diversity``(고유/총수)와 ``ending_entropy``(분포 엔트로피)가 같은
+    키 추출을 공유한다 — 두 지표가 다른 종결 정의를 쓰면 서로 비교할 수 없다.
+    """
+    keys: list[str] = []
+    for s in _split_sentences(text):
+        m = _ENDING_FINAL_RE.search(s)
+        if m:
+            keys.append(m.group(1))
+            continue
+        m2 = _ENDING_FINAL_FALLBACK_RE.search(s)
+        if m2:
+            keys.append(m2.group(1))
+    return keys
+
+
 def ending_diversity(text: str) -> float:
     """Sentence-ending diversity — unique endings / total sentences.
 
@@ -342,19 +360,26 @@ def ending_diversity(text: str) -> float:
     used as the ending key. Higher = more diverse (more human-like).
     Returns 0.0 when no sentence ends with valid punctuation.
     """
-    sents = _split_sentences(text)
-    keys: list[str] = []
-    for s in sents:
-        m = _ENDING_FINAL_RE.search(s)
-        if m:
-            keys.append(m.group(1))
-            continue
-        m2 = _ENDING_FINAL_FALLBACK_RE.search(s)
-        if m2:
-            keys.append(m2.group(1))
+    keys = _ending_keys(text)
     if not keys:
         return 0.0
     return len(set(keys)) / len(keys)
+
+
+def ending_entropy(text: str) -> float:
+    """종결어미 분포의 섀넌 엔트로피(bit) — 편집 발자국 축.
+
+    ``ending_diversity`` 는 고유 종결 수만 보므로 "다섯 종결 중 하나가 90%"
+    같은 쏠림을 못 잰다. 엔트로피는 분포의 쏠림까지 본다. AI 편집은 생성과
+    달리 엔트로피를 **낮추는** 방향으로 움직인다(Shan·Lee·Hao 2026) —
+    verify_gates 의 발자국 축이 윤문 전후 하락폭을 판정한다.
+    종결 키가 없으면 0.0.
+    """
+    keys = _ending_keys(text)
+    if not keys:
+        return 0.0
+    n = len(keys)
+    return -sum((c / n) * math.log2(c / n) for c in Counter(keys).values())
 
 
 # ---------------------------------------------------------------------------
