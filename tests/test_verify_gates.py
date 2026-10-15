@@ -8,7 +8,9 @@ with synthetic z dicts and hand-made tiny texts. 사용자 원고 픽스처 없�
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import sys
@@ -188,6 +190,36 @@ class MainExitCodeTests(unittest.TestCase):
             "원문과 겹치는 표면이 거의 없어서 문자율이 오십 퍼센트를 넘는다."
         )
         self.assertEqual(self._run(_PLAIN, after), 2)
+
+    def test_short_commaless_abstract_not_warned_by_segment_length(self) -> None:
+        """#130 — 쉼표 0개 학술 초록은 comma_segment_length 가 문장 길이로 바뀌어
+        z 가 부풀었고, 쉼표를 주입하지 않고는 해소할 수 없는 WARN 을 냈다."""
+        abstract = (
+            "본 연구는 대규모 언어 모델이 생성한 한국어 학술 초록의 문체적 특징을 "
+            "인간 연구자가 작성한 초록과 비교하여 정량적으로 분석하였다. "
+            "분석 결과 생성 초록은 문장 길이의 분산이 작고 명사화 어미의 비율이 높은 "
+            "경향을 보였으며 이러한 특징은 장르 관습과 구분되는 신호로 해석된다."
+        )
+        self.assertEqual(self._run(abstract, abstract, ["--genre", "abstract"]), 0)
+
+    def test_selected_segment_metric_judged_even_if_after_drops_commas(self) -> None:
+        """가드는 원문 선정에만 건다 — 윤문이 쉼표를 걷어내 가드 아래로 숨지 못한다."""
+        before = (
+            "대규모 언어 모델이 생성한 한국어 학술 초록의 문체적 특징을 정량적으로 분석하기 위하여, "
+            "인간 연구자가 작성한 초록 이백 편과 모델이 생성한 초록 이백 편을 같은 주제로 짝지어 수집하였고, "
+            "문장 길이의 분산과 명사화 어미의 비율과 접속 표현의 빈도를 각각 측정하여 비교하였으며, "
+            "그 결과 생성 초록은 장르 관습과 구분되는 일관된 신호를 보였다."
+        )
+        after = before.replace(",", "")
+        with tempfile.TemporaryDirectory() as d:
+            b = _write(d, "before.txt", before)
+            a = _write(d, "after.md", after)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                verify_gates.main(["--before", b, "--after", a, "--genre", "abstract"])
+        line = next(l for l in buf.getvalue().splitlines()
+                    if "comma_segment_length" in l)
+        self.assertIn("미달", line)  # 판정불가로 숨지 않는다
 
     def test_exit_3_missing_file(self) -> None:
         with tempfile.TemporaryDirectory() as d:

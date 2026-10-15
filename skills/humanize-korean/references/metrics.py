@@ -153,6 +153,13 @@ def ending_comma_rate(text: str) -> float:
     return with_comma / len(boundary_endings)
 
 
+# 쉼표가 이보다 적으면 comma_segment_length 의 z-score 를 판정 불가(None)로 둔다 (#130).
+# 쉼표 없는 문장은 통째로 세그먼트 1개가 되므로, 쉼표가 거의 없는 짧은 글에서 이
+# 지표는 "쉼표 분절 길이"가 아니라 평균 문장 길이로 바뀌어 baseline 과 비교할 수 없다.
+# 원시값은 그대로 보고하고 P1 게이팅(S1 타깃팅)·risk 에서만 뺀다.
+MIN_COMMAS_FOR_SEGMENT_METRIC = 3
+
+
 def comma_segment_length(text: str) -> float:
     """Average eojeol-count of comma-delimited segments across sentences."""
     text = _strip_digit_commas(text)
@@ -363,6 +370,12 @@ def compute_all(
         else:
             z_scores[key] = None
 
+    unguarded: dict[str, float] = {}
+    if _strip_digit_commas(text).count(",") < MIN_COMMAS_FOR_SEGMENT_METRIC:
+        if z_scores.get("comma_segment_length") is not None:
+            unguarded["comma_segment_length"] = z_scores["comma_segment_length"]
+        z_scores["comma_segment_length"] = None
+
     # hanja_nominalizer_density baseline: report says 12 occurrences per doc
     # = S2 strong signal. We approximate by treating density 0.06 as human
     # reference and 0.12 as AI reference (rough proxy when no per-doc cells).
@@ -393,6 +406,10 @@ def compute_all(
             "safe_balances": _evidence_spans(text, safe_lex),
         },
     }
+    if unguarded:
+        # 표본 부족으로 판정에서 뺀 z. 게이트는 원문에서 이미 S1 대상으로 뽑힌 지표의
+        # 윤문본 판정에만 쓴다 — 윤문이 쉼표를 걷어내 가드에 숨는 것을 막는다.
+        out["z_scores_unguarded"] = unguarded
     if fallback_warning:
         out["warning"] = fallback_warning
     return out

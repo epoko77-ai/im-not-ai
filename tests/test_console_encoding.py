@@ -17,7 +17,6 @@ UnicodeEncodeError 로 즉사**했다.
 from __future__ import annotations
 
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -94,6 +93,15 @@ if __name__ == "__main__":
     unittest.main()
 
 
+# SKILL_ROOT 유도는 POSIX 셸(`cd -P`)과 심링크 의미에 의존한다. Windows 에서는
+# `bash` 가 있어도 로케일 인코딩 때문에 서브프로세스 출력 디코딩이 깨지고
+# `symlink_to` 는 권한을 요구한다. 플랫폼 결함이 아니라 계약 범위 밖이다.
+# (CI 는 ubuntu-latest 라 커버리지 손실은 없다.)
+posix_shell_only = unittest.skipUnless(
+    os.name == "posix", "SKILL_ROOT 유도는 POSIX 셸·심링크 전용"
+)
+
+
 class SkillRootDerivationTests(unittest.TestCase):
     """SKILL.md 의 SKILL_ROOT 유도가 심링크·플러그인 양쪽에서 성립하는지 (#84-①).
 
@@ -106,7 +114,10 @@ class SkillRootDerivationTests(unittest.TestCase):
     # 고정 깊이는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다.
     DERIVE = (
         'd="$(cd -P "$CLAUDE_SKILL_DIR" && pwd)"; '
-        'while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ]; do d="$(dirname "$d")"; done; '
+        'while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ] '
+        '&& [ ! -f "$d/scripts/prepare_monolith_input.py" ]; do d="$(dirname "$d")"; done; '
+        '[ "$d" = / ] && s="$(dirname "$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)")/humanize-korean" '
+        '&& [ -f "$s/scripts/prepare_monolith_input.py" ] && d="$s"; '
         'echo "$d"'
     )
 
@@ -118,6 +129,7 @@ class SkillRootDerivationTests(unittest.TestCase):
         )
         return proc.stdout.strip()
 
+    @posix_shell_only
     def test_derivation_works_for_plugin_layout(self) -> None:
         """복사·플러그인 설치(실디렉터리) 레이아웃."""
         with tempfile.TemporaryDirectory() as td:
@@ -132,6 +144,7 @@ class SkillRootDerivationTests(unittest.TestCase):
                 f"플러그인 레이아웃에서 유도 실패: {got}",
             )
 
+    @posix_shell_only
     def test_derivation_works_for_symlink_install(self) -> None:
         """심링크 설치 — `cd -P` 없이는 홈 디렉터리로 올라가 실패하던 케이스."""
         with tempfile.TemporaryDirectory() as td:
@@ -145,67 +158,43 @@ class SkillRootDerivationTests(unittest.TestCase):
                 f"심링크 설치에서 유도 실패: {got} (cd -P 누락 의심)",
             )
 
-    # ── 복사 설치 폴백 (#144) ──────────────────────────────────────────
-    # SKILL.md 의 실제 한 줄을 그대로 뽑아 실행한다 — 위 DERIVE 상수와 달리 문서가
-    # 바뀌면 이 테스트도 같이 바뀐 줄을 검증한다.
+    @posix_shell_only
+    def test_derivation_works_for_copy_install(self) -> None:
+        """`install.sh --copy` — 조상에 마커가 없고 스크립트가 스킬 안에 복사된 레이아웃 (#144).
 
-    @staticmethod
-    def _skill_md_one_liner() -> str:
+        마커만 찾던 유도는 `/` 까지 올라가 SKILL_ROOT 가 빈 루트가 됐다.
+        """
+        with tempfile.TemporaryDirectory() as td:
+            skill = Path(td) / "home" / ".claude" / "skills" / "humanize-korean"
+            (skill / "scripts").mkdir(parents=True)
+            (skill / "scripts" / "prepare_monolith_input.py").touch()
+            got = self._derive(skill)
+            self.assertEqual(Path(got).resolve(), skill.resolve(),
+                             f"--copy 설치에서 유도 실패: {got}")
+
+    @posix_shell_only
+    def test_derivation_works_for_copy_install_wrapper_skill(self) -> None:
+        """복사 설치에서 /humanize 등 래퍼 스킬로 진입 — 형제 humanize-korean/ 폴백."""
+        with tempfile.TemporaryDirectory() as td:
+            skills = Path(td) / "home" / ".claude" / "skills"
+            core = skills / "humanize-korean"
+            (core / "scripts").mkdir(parents=True)
+            (core / "scripts" / "prepare_monolith_input.py").touch()
+            for w in ("humanize", "humanize-scan", "humanize-redo"):
+                (skills / w).mkdir()
+                got = self._derive(skills / w)
+                self.assertEqual(Path(got).resolve(), core.resolve(),
+                                 f"--copy 래퍼 {w} 에서 유도 실패: {got}")
+
+    def test_skill_md_derivation_matches_tested_loop(self) -> None:
+        """테스트가 검증하는 유도 조건이 SKILL.md 본문과 어긋나지 않게 고정한다."""
         skill = (_ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(
             encoding="utf-8"
         )
-        m = re.search(r'^SKILL_ROOT="\$\(.*?\)"$', skill, re.S | re.M)
-        assert m, "SKILL.md 에서 SKILL_ROOT 유도 한 줄을 찾지 못함"
-        return m.group(0) + '\necho "$SKILL_ROOT"'
-
-    def _derive_from_skill_md(self, skill_dir: Path, home: Path) -> str:
-        proc = subprocess.run(
-            ["bash", "-c", self._skill_md_one_liner()],
-            capture_output=True, text=True, timeout=30,
-            env={**os.environ, "CLAUDE_SKILL_DIR": str(skill_dir), "HOME": str(home)},
-        )
-        return proc.stdout.strip()
-
-    def _copy_install(self, home: Path) -> Path:
-        """`install.sh --copy` 결과를 흉내 낸다 — 마커 없는 실디렉터리 복사본."""
-        dest = home / ".claude" / "skills" / "humanize-korean"
-        dest.mkdir(parents=True)
-        (dest / "SKILL.md").write_text("stub", encoding="utf-8")
-        return dest
-
-    def test_copy_install_falls_back_to_vendor_clone(self) -> None:
-        """복사 설치 + ~/.claude/vendor/im-not-ai 클론 → 클론이 SKILL_ROOT."""
-        with tempfile.TemporaryDirectory() as td:
-            home = Path(td) / "home"
-            dest = self._copy_install(home)
-            vendor = home / ".claude" / "vendor" / "im-not-ai"
-            (vendor / ".claude-plugin").mkdir(parents=True)
-            (vendor / "scripts").mkdir()
-            (vendor / "scripts" / "prepare_monolith_input.py").touch()
-            got = self._derive_from_skill_md(dest, home)
-            self.assertEqual(Path(got).resolve(), vendor.resolve(), f"폴백 미작동: {got}")
-            self.assertTrue((Path(got) / "scripts" / "prepare_monolith_input.py").is_file())
-
-    def test_marker_layout_ignores_vendor_fallback(self) -> None:
-        """마커를 찾았으면 vendor 클론이 있어도 폴백이 개입하지 않는다."""
-        with tempfile.TemporaryDirectory() as td:
-            home = Path(td) / "home"
-            vendor = home / ".claude" / "vendor" / "im-not-ai"
-            (vendor / ".claude-plugin").mkdir(parents=True)
-            root = Path(td) / "plugin-root"
-            (root / ".claude-plugin").mkdir(parents=True)
-            (root / "skills" / "humanize-korean").mkdir(parents=True)
-            got = self._derive_from_skill_md(root / "skills" / "humanize-korean", home)
-            # macOS 의 /var → /private/var 처럼 tmp 가 심링크일 수 있어 양쪽을 resolve 한다.
-            self.assertEqual(Path(got).resolve(), root.resolve())
-
-    def test_copy_install_without_vendor_stays_at_root(self) -> None:
-        """폴백 대상도 없으면 `/` 로 남아 확인 단계(ls 실패)에서 걸린다 — 조용히 추측하지 않는다."""
-        with tempfile.TemporaryDirectory() as td:
-            home = Path(td) / "home"
-            dest = self._copy_install(home)
-            got = self._derive_from_skill_md(dest, home)
-            self.assertEqual(got, "/")
+        for cond in ('[ ! -d "$d/.claude-plugin" ]',
+                     '[ ! -f "$d/scripts/prepare_monolith_input.py" ]',
+                     '/humanize-korean" && [ -f "$s/scripts/prepare_monolith_input.py" ] && d="$s"'):
+            self.assertIn(cond, skill, f"SKILL.md 유도 조건 누락: {cond}")
 
     def test_skill_md_uses_absolute_script_paths(self) -> None:
         """SKILL.md 에 cwd 상대 `python3 scripts/` 호출이 남아 있으면 안 된다."""

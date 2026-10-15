@@ -170,11 +170,28 @@ install_one() {
     echo "  원인: Windows Git Bash(MSYS)는 관리자 권한/개발자 모드 없이 ln -s 를 실행하면" >&2
     echo "  심링크 대신 일반 복사를 만듭니다." >&2
     echo "  대안: ① WSL 에서 설치(권장, INSTALL.md 참고)  ② MSYS=winsymlinks:nativestrict 로 재실행" >&2
-    echo "  주의: ./install.sh --copy 는 SKILL_ROOT 유도가 깨져 scripts/ 게이트가 동작하지 않습니다 (#144)." >&2
+    echo "  ③ ./install.sh --copy (저장소와 분리된 복사 설치, 갱신은 재설치로)" >&2
     echo "  참고: 이 항목 이전에 성공한 설치는 그대로 유지됩니다(되돌리지 않음)." >&2
     return 1
   fi
   echo "installed: $dest"
+}
+
+# 런타임 스크립트 — 스킬이 ${SKILL_ROOT}/scripts/ 로 부르는 것과 그 import 대상.
+# 복사 설치는 저장소를 지워도 동작해야 하므로 스킬 디렉터리 안 scripts/ 로 함께
+# 복사한다. 스크립트는 scripts/ 옆 references/ 로 폴백해 룰북·지표를 찾는다.
+RUNTIME_SCRIPTS=(
+  prepare_monolith_input.py reassemble_chunks.py verify_change_rate.py
+  verify_gates.py restore_modality.py strip_injected_commas.py sanitize_text.py
+  checks.py console.py
+)
+
+copy_runtime_scripts() {
+  local dest="$1" f
+  mkdir -p "$dest/scripts"
+  for f in "${RUNTIME_SCRIPTS[@]}"; do
+    cp "$REPO/scripts/$f" "$dest/scripts/"
+  done
 }
 
 install_codex_bundle() {
@@ -183,14 +200,8 @@ install_codex_bundle() {
   install_one "$src" "$dest" || return 1
   if [ "$MODE" = copy ] && [ "$DRYRUN" != 1 ]; then
     # Codex copy installs must work after the repository is moved or removed.
-    mkdir -p "$dest/scripts" "$dest/references"
-    cp "$REPO/scripts/prepare_monolith_input.py" "$dest/scripts/"
-    cp "$REPO/scripts/reassemble_chunks.py" "$dest/scripts/"
-    cp "$REPO/scripts/verify_change_rate.py" "$dest/scripts/"
-    cp "$REPO/scripts/verify_gates.py" "$dest/scripts/"
-    cp "$REPO/scripts/restore_modality.py" "$dest/scripts/"
-    cp "$REPO/scripts/checks.py" "$dest/scripts/"
-    cp "$REPO/scripts/console.py" "$dest/scripts/"
+    mkdir -p "$dest/references"
+    copy_runtime_scripts "$dest"
   fi
 }
 
@@ -205,6 +216,12 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   for s in humanize-korean humanize humanize-scan humanize-redo; do
     install_one "$REPO/skills/$s" "$CLAUDE_HOME/skills/$s"
   done
+  # --copy 는 스킬 디렉터리만 떼어 와 조상에 .claude-plugin/ 마커가 없다. 스크립트를
+  # 스킬 안에 함께 두어야 SKILL.md 의 SKILL_ROOT 유도가 scripts/ 에 닿는다(#144).
+  if [ "$MODE" = copy ] && [ "$DRYRUN" != 1 ] && [ -d "$CLAUDE_HOME/skills/humanize-korean" ]; then
+    copy_runtime_scripts "$CLAUDE_HOME/skills/humanize-korean"
+    echo "installed: $CLAUDE_HOME/skills/humanize-korean/scripts (런타임 스크립트 ${#RUNTIME_SCRIPTS[@]}종)"
+  fi
   if [ "$EXTRAS" = 1 ]; then
     for s in "$REPO/extras/skills"/*/; do
       [ -d "$s" ] || continue

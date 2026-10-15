@@ -44,7 +44,9 @@ from collections import Counter
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.abspath(os.path.join(_HERE, ".."))
-_REFS = os.path.join(_ROOT, "skills", "humanize-korean", "references")
+_PLUGIN_REFS = os.path.join(_ROOT, "skills", "humanize-korean", "references")
+# 복사 설치(install.sh --copy)·Codex 번들은 scripts/ 옆에 references/ 가 있다.
+_REFS = _PLUGIN_REFS if os.path.isdir(_PLUGIN_REFS) else os.path.join(_ROOT, "references")
 for _p in (_REFS, _HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)

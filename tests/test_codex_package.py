@@ -14,6 +14,14 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "codex" / "skills" / "humanize-korean"
 
+# install.sh 를 실제로 실행하는 테스트들. 설치 스크립트는 심링크·백업·권한을
+# POSIX 의미로 다루므로 Windows 에서는 `bash` 가 있어도 exit 1 로 끝난다.
+# 플랫폼 결함이 아니라 계약 범위 밖이라, 스킵해 신호를 흐리지 않는다.
+# (CI 는 ubuntu-latest 라 커버리지 손실은 없다.)
+posix_installer_only = unittest.skipUnless(
+    os.name == "posix", "install.sh 는 POSIX 셸 설치 경로 전용"
+)
+
 
 class CodexPackageTests(unittest.TestCase):
     def assert_core_role_contracts(
@@ -175,6 +183,7 @@ class CodexPackageTests(unittest.TestCase):
             metrics = json.loads((run_dir / "00_metrics.json").read_text(encoding="utf-8"))
             self.assertIn(metrics["route_hint"], {"light", "standard", "heavy"})
 
+    @posix_installer_only
     def test_copy_install_is_self_contained(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             fake_home = Path(td) / "home"
@@ -244,6 +253,7 @@ class CodexPackageTests(unittest.TestCase):
                     self.assertEqual(report["modality"]["lost_pairs"], expected_losses)
                     self.assertEqual(report["modality"]["uncertain_pairs"], [])
 
+    @posix_installer_only
     def test_copy_install_backs_up_existing_symlink_outside_skills(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             fake_home = Path(td) / "home"
@@ -267,6 +277,7 @@ class CodexPackageTests(unittest.TestCase):
             self.assertEqual(len(backups), 1)
             self.assertTrue(backups[0].is_symlink())
 
+    @posix_installer_only
     def test_copy_install_preserves_existing_skill_if_backup_fails(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             codex_home = Path(td) / ".codex"
@@ -286,6 +297,7 @@ class CodexPackageTests(unittest.TestCase):
             self.assertTrue(installed.is_symlink())
             self.assertEqual(installed.resolve(), SKILL.resolve())
 
+    @posix_installer_only
     def test_force_install_backs_up_directory_outside_skills(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             fake_home = Path(td) / "home"

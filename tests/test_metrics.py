@@ -205,6 +205,34 @@ class MetricsTests(unittest.TestCase):
         self.assertIsNone(rep["z_scores"]["comma_inclusion_rate"])
 
     # ------------------------------------------------------------------
+    # #130 — 쉼표 최소 표본 가드
+    # ------------------------------------------------------------------
+
+    def test_comma_segment_z_suppressed_on_short_commaless_text(self) -> None:
+        """쉼표 0~2개 짧은 글은 comma_segment_length 가 평균 문장 길이로 바뀐다 (#130)."""
+        text = (
+            "본 연구는 대규모 언어 모델이 생성한 한국어 학술 초록의 문체적 특징을 "
+            "인간 연구자가 작성한 초록과 비교하여 정량적으로 분석하였다. "
+            "분석 결과 생성 초록은 문장 길이의 분산이 작고 명사화 어미의 비율이 높은 "
+            "경향을 보였으며 이러한 특징은 장르 관습과 구분되는 신호로 해석된다."
+        )
+        rep = metrics.compute_all(text, genre="abstract", baseline_path=BASELINE_PATH)
+        self.assertIsNone(rep["z_scores"]["comma_segment_length"])
+        self.assertGreater(rep["metrics"]["comma_segment_length"], 0)  # 원시값은 보고
+        self.assertIn("comma_segment_length", rep.get("z_scores_unguarded", {}))
+
+    def test_comma_segment_z_kept_with_enough_commas(self) -> None:
+        text = "오늘은, 비가 왔고, 우산을 폈다. 길은, 젖어 있었다. 집에, 일찍 갔다."
+        rep = metrics.compute_all(text, genre="essay", baseline_path=BASELINE_PATH)
+        self.assertIsNotNone(rep["z_scores"]["comma_segment_length"])
+        self.assertNotIn("z_scores_unguarded", rep)
+
+    def test_digit_commas_do_not_count_toward_sample(self) -> None:
+        text = "매출은 1,200억원이었다. 직원은 12,000명이다. 이익은 3,400억원이다."
+        rep = metrics.compute_all(text, genre="essay", baseline_path=BASELINE_PATH)
+        self.assertIsNone(rep["z_scores"]["comma_segment_length"])
+
+    # ------------------------------------------------------------------
     # CLI smoke
     # ------------------------------------------------------------------
 

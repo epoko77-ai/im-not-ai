@@ -183,7 +183,8 @@ def _load_input(input_path: Path, run_dir: Path, enabled: bool) -> str:
 #
 # 3-tier 판정 (전부 결정적 · 실측 기반):
 #   light    — 카운트형 어휘·피동 티 합 ≤ 2 AND risk_band low~medium.
-#              이미 잘 쓴 글. 단일 콜·최소 파이프라인 권장.
+#              카운터에 잡힌 티가 적은 글. 단일 콜·최소 파이프라인 권장.
+#              ⚠️ "티가 없다"가 아니라 "세는 항목에 안 걸렸다"다(#104).
 #   standard — 그 외 (티가 섞여 있거나, 카운트형 0이어도 구조 지표로 risk high).
 #              진단 + 단일 윤문 권장. 실측 글(카운트 0·risk high)이 여기 온다.
 #   heavy    — risk high AND 카운트형 티 합 ≥ 8 (AI 슬롭 밀집),
@@ -225,7 +226,20 @@ _V26_ROUTE_PATTERNS = (
     ("감각술어(D-14b)", _re.compile(r"(?:진단|경고|분석|통계|현실|숫자|전망|결론)[은는이가]\s*(?:서늘하|아프|차갑|뜨겁|묵직하|섬뜩하)")),
     ("피동진행(A-20)", _re.compile(r"(?:되|지)고\s*있(?:다|으며|고|는)")),
     ("범용동사(F-7)", _re.compile(r"(?:확대|강화|개선|확보|마련|구축)(?:해야|하[여어]야|가\s*필요)")),
+    # D-1 결산 변이형 (#104) — taxonomy D-1 본문·quick_pattern 에 이미 있는 어휘인데
+    # baseline lexicon(결론적으로/따라서/이를 통해/그러므로)에 빠져 라우터가 못 셌다.
+    # "~를 통해" 일반형은 넣지 않는다 — 사람 글이 더 쓴다(최희경 2016 기각과 같은 판단).
+    ("결산변이(D-1)", _re.compile(r"(?:^|[.!?]\s+)(?:요약하면|요컨대|종합하면|정리하자면|결론부터\s*(?:말씀드리면|말하자면|말하면))", _re.M)),
 )
+
+# 서수 열거(C-1) — 문두 "첫째/둘째/셋째", "첫 번째/두 번째"가 문서에 3회 이상일 때만
+# 센다(#104). C-1 처방은 "기본 보존"이라 이 카운트는 윤문 지시가 아니라 라우팅
+# 신호다 — 열거로 짠 글은 진단을 거치게 할 뿐, 열거 표지를 지우라는 뜻이 아니다.
+_ORDINAL_ENUM = _re.compile(
+    r"(?:^|[.!?]\s+|\n)\s*(?:첫째|둘째|셋째|넷째|다섯째|(?:첫|두|세|네|다섯)\s*번째)\s*[,는로]",
+    _re.M,
+)
+ORDINAL_ENUM_MIN = 3
 
 # 관통 은유 — 은유성 동사 어근이 문서에서 3회 이상 반복(가족 사전 밖이어도).
 # ⚠️ 한국어 활용에서 어근이 축약된다 — "쥘"(쥐+ㄹ)은 "쥐"와 다른 음절이라 어근만 매칭하면
@@ -251,6 +265,12 @@ def count_v26_tells(text: str) -> tuple[int, dict]:
         if n >= 3:
             per[f"관통은유({root})"] = n
             total += n
+    n = len(_ORDINAL_ENUM.findall(text))
+    if n >= ORDINAL_ENUM_MIN:
+        per["서수열거(C-1)"] = n
+        # 기여는 역치값으로 캡 — 열거가 길다고 heavy 로 밀어 올리지 않는다.
+        # "열거로 짠 글이면 진단을 거친다"까지만 신호로 쓴다.
+        total += ORDINAL_ENUM_MIN
     return total, per
 
 
@@ -286,8 +306,8 @@ def compute_route_hint(metrics_obj: dict) -> dict:
     elif tells <= ROUTE_LIGHT_MAX_TELLS and risk in ("low", "medium"):
         hint = "light"
         reason = (
-            f"카운트형 어휘·피동 티 {tells}건 · risk_band {risk} — "
-            f"이미 잘 쓴 글, 단일 콜·최소 파이프라인 권장"
+            f"카운트형 티 {tells}건(라우터가 세는 항목 기준) · risk_band {risk} — "
+            f"단일 콜·최소 파이프라인 권장. 카운터 밖 티는 monolith 가 룰북으로 잡는다"
         )
     else:
         hint = "standard"

@@ -141,5 +141,38 @@ readable "$CODEX_HOME/skills/humanize-korean/references/ai-tell-taxonomy.md" \
   || fail "--copy 에서 codex references 실체화 실패"
 ok "복사 설치 — references 실체화 확인"
 
+# #144 — 복사 설치는 조상에 .claude-plugin/ 이 없다. SKILL.md 유도를 그대로 돌려
+# 설치 트리 안의 scripts/ 에 닿는지, 그 스크립트가 저장소 없이 실행되는지 본다.
+SKILL_DIR="$CLAUDE_HOME/skills/humanize-korean"
+# SKILL.md 의 SKILL_ROOT= 블록을 글자 그대로 떼어 실행한다(복붙 사본과 어긋나지 않게).
+DERIVE_BLOCK="$(awk '/^SKILL_ROOT="\$\(/{f=1} f{print} f&&/"\)"$/{exit}' "$REPO/skills/humanize-korean/SKILL.md")"
+[ -n "$DERIVE_BLOCK" ] || fail "SKILL.md 에서 SKILL_ROOT 유도 블록을 찾지 못함"
+derive() { CLAUDE_SKILL_DIR="$1" bash -c "$DERIVE_BLOCK"'; echo "$SKILL_ROOT"'; }
+EXPECT="$(cd -P "$SKILL_DIR" && pwd)"
+for s in humanize-korean humanize humanize-scan humanize-redo; do
+  got="$(derive "$CLAUDE_HOME/skills/$s")"
+  [ "$got" = "$EXPECT" ] || fail "--copy 에서 $s 진입 시 SKILL_ROOT 유도 실패: '$got' (#144 회귀)"
+done
+COPY_ROOT="$EXPECT"
+WORK2="$TMP/work2"; mkdir -p "$WORK2"
+( cd "$WORK2" && python3 "$COPY_ROOT/scripts/prepare_monolith_input.py" \
+    --run-dir _workspace/copy-001 \
+    --text 'AI 기술을 통해 효율성을 제고할 수 있을 것으로 보인다. 결론적으로, 이는 시사하는 바가 크다.' \
+    >"$TMP/shim-copy.log" 2>&1 ) || { cat "$TMP/shim-copy.log" >&2; fail "복사 설치 shim 실행 실패"; }
+grep -q '"route_hint"' "$WORK2/_workspace/copy-001/00_metrics.json" || fail "복사 설치에서 route_hint 미산출"
+printf 'AI 기술을 통해 효율성을 제고할 수 있을 것으로 보인다.\n' > "$WORK2/b.txt"
+printf 'AI로 효율을 높인다.\n' > "$WORK2/a.txt"
+set +e
+( cd "$WORK2" && python3 "$COPY_ROOT/scripts/verify_gates.py" --before b.txt --after a.txt ) >"$TMP/gates-copy.log" 2>&1
+GATE_RC=$?
+set -e
+# 판정값(OK/WARN/ABORT)이 아니라 축이 실제로 돌았는지를 본다 — 예문은 변경률이 커 ABORT 가 정상.
+grep -q '\[P3 golden\]' "$TMP/gates-copy.log" && grep -q '^gate:' "$TMP/gates-copy.log" \
+  || { cat "$TMP/gates-copy.log" >&2; fail "복사 설치에서 게이트 실행 불가 (rc=$GATE_RC)"; }
+for f in restore_modality strip_injected_commas sanitize_text reassemble_chunks; do
+  python3 "$COPY_ROOT/scripts/$f.py" --help >/dev/null 2>&1 || fail "복사 설치에서 $f.py 실행 불가"
+done
+ok "복사 설치 — SKILL_ROOT 유도 + shim·게이트·보정 스크립트 동작 (#144)"
+
 echo ""
 echo "install smoke tests passed"

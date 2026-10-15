@@ -36,6 +36,8 @@ _REFS = os.path.join(
     _HERE, "..", "skills", "humanize-korean", "references"
 )
 _REFS = os.path.abspath(_REFS)
+if not os.path.isdir(_REFS):  # 복사 설치·Codex 번들: scripts/ 옆 references/
+    _REFS = os.path.abspath(os.path.join(_HERE, "..", "references"))
 if _REFS not in sys.path:
     sys.path.insert(0, _REFS)
 

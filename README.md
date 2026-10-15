@@ -6,7 +6,7 @@
 
 > **English**: [`README.en.md`](README.en.md)
 
-AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **내용은 한 글자도 건드리지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
+AI(ChatGPT · Claude · Gemini 등)가 쓴 한글 글을 **사실 · 주장 · 수치는 바꾸지 않고** 문체 · 리듬 · 표현만 자연스러운 한국어로 되돌리는 CLI 스킬입니다.
 
 번역투, 과도한 영어 인용, 기계적 병렬 ("첫째 · 둘째 · 셋째"), "결론적으로 / 시사하는 바가 크다" 같은 AI 특유 관용구, 피동태 남용, 문두 접속사 남발, 이모지·불릿 남용 등 **10대 카테고리 × 85 서브 패턴**(+검증 대기 hold 1건 포함)을 심각도(S1/S2/S3)로 분류해 스팬 단위로 탐지한 뒤, 윤문합니다. 
 
@@ -44,9 +44,19 @@ cd im-not-ai
 ```
 
 - Claude: `/humanize-korean` · Codex: `$humanize-korean`
-- 한쪽만: `./install.sh --claude-only` / `--codex-only` · 제거: `./uninstall.sh`
+- 한쪽만: `./install.sh --claude-only` / `--codex-only` / `--gemini-only` · 제거: `./uninstall.sh`
 - **업데이트**: `./update.sh` — 새 버전 자동 감지 후 `git pull` + 재설치(`--check`는 감지만). 마켓플레이스 설치는 `/plugin update`.
 - Codex도 **light·standard·heavy 전체 경로**를 제공합니다. 협업 에이전트가 있으면 진단·윤문·finalize를 독립 실행하고, 없으면 같은 역할을 순차 실행합니다.
+
+**Gemini CLI — 원격 설치 (클론 불필요, Gemini CLI 0.14.0 이상)**
+
+```bash
+gemini extensions install https://github.com/epoko77-ai/im-not-ai.git
+```
+
+새 세션에서 `/humanize-korean`(또는 `/humanize`). 업데이트는 `gemini extensions update im-not-ai`, 제거는 `gemini extensions uninstall im-not-ai`입니다. 클론해 둔 경우 `./install.sh --gemini-only`로도 연결됩니다.
+
+> **Gemini 확장은 별도 룰북을 씁니다.** `GEMINI.md`에 패턴 47종을 내장한 독립 배포물(확장 버전 1.5.0)이라, 본체 분류 체계(85 서브 패턴)와 `route_hint` 3경로·결정적 게이트는 적용되지 않습니다. 자세한 내용: [`RELEASING.md`](RELEASING.md) · [`INSTALL.md`](INSTALL.md#gemini-cli-antigravity)
 
 ## 왜 한글 특화인가
 
@@ -130,7 +140,7 @@ Claude Code는 루트 `agents/` 정의를 호출합니다. Codex는 같은 런�
 ## 심각도 & 품질 등급
 
 **심각도**
-- **S1 결정적**: 한 번만 나와도 AI 확신. 무조건 제거.
+- **S1 결정적**: 한 번만 나와도 강한 AI 신호. 윤문 시 우선 제거. 단, 단일 패턴·단일 지표만으로 AI 작성 여부를 판정하지는 않습니다([#110](https://github.com/epoko77-ai/im-not-ai/pull/110)).
 - **S2 강함**: 1~2회 허용, 3회+ 반복 시 제거.
 - **S3 약함**: 다른 패턴과 중첩될 때만 문제.
 
@@ -156,7 +166,7 @@ claude --version
 codex --version
 ```
 
-> 웹 버전 Claude.ai나 일반 ChatGPT가 아니라, 파일·셸·에이전트 기능을 제공하는 Claude Code 또는 Codex CLI에서 실행합니다.
+> 웹 버전 Claude.ai나 일반 ChatGPT가 아니라, 파일·셸·에이전트 기능을 제공하는 CLI에서 실행합니다. 아래 1~6단계는 Claude Code와 Codex 기준입니다. GitHub Copilot CLI는 방법 D, Gemini CLI는 [설치](#설치-install) 섹션을 참고하세요.
 
 ### 1. 리포 받기
 
@@ -531,7 +541,7 @@ v1.6이 KatFish/LREAD 정량 결정타로 잔존 약점을 잡았다면, v2.0은
 - E-7 dialogue 코퍼스 별도 회차(소설 대화·인터뷰 트랜스크립트)
 - 004 relative_clause +1 잔존 결정타 — quick-rules A-18 가드 강화
 
-상세 산출물: `_workspace/v2.0-2026-05-07/01_distill ~ 07_pr/` · 외부 회차 보고: `_workspace/v2.0-2026-05-07/05_regression/v2_external_samples/H1_revisited.md` · PR: [#19](https://github.com/epoko77-ai/im-not-ai/pull/19)
+상세 산출물: PR [#19](https://github.com/epoko77-ai/im-not-ai/pull/19) (`_workspace/` 작업 산출물은 gitignore 대상이라 저장소에 포함되지 않습니다)
 
 ---
 
@@ -567,7 +577,7 @@ v1.6은 monolith·5인 에이전트 정의를 무수정한 채 **본진 분류 �
 - 정책·공적 문서(run 007)는 ending_comma z=+2.47 잔존. 장르별 baseline 별도 카탈로그 필요
 - 일부 케이스에서 char_count 증가(쉼표 제거 부작용으로 분절 길이 증가). 룰북에 분절 재조정 가이드 추가 검토
 
-상세 산출물: `_workspace/v1.6-2026-05-06/01_pattern_candidates.md` · `02_katfish_baseline.json`(`references/baseline.json`로 정식 배치) · `03_taxonomy_diff.md` · `04_input_shim_spec.md` · `05_regression_report.md`.
+KatFish baseline은 [`references/baseline.json`](skills/humanize-korean/references/baseline.json)으로 정식 배치했습니다. 나머지 작업 산출물(`_workspace/v1.6-2026-05-06/`)은 gitignore 대상이라 저장소에 포함되지 않습니다.
 
 ### v1.6.1 hotfix — final.md 통합 산출물 (2026-05-07)
 

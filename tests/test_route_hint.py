@@ -158,6 +158,62 @@ class RouteHintTests(unittest.TestCase):
         self.assertNotIn("route_hint", block)
 
 
+class RouteCoverageTests(unittest.TestCase):
+    """#104 — 카운트형 키가 못 보는 전형적 AI 초안이 light 로 빠지던 회귀."""
+
+    ISSUE_104 = (
+        "결론부터 말씀드리면, 이번 업데이트는 매우 중요한 의미를 갖습니다. "
+        "첫째, 사용자 경험이 개선되었습니다. 둘째, 성능이 향상되었습니다. "
+        "셋째, 안정성이 강화되었습니다. 이러한 변화들은 단순한 기능 추가를 넘어, "
+        "제품의 방향성 자체가 재정의되었음을 보여줍니다. 물론 아직 해결해야 할 "
+        "과제들이 남아있는 것도 사실입니다. 하지만 중요한 것은, 우리가 올바른 "
+        "방향으로 나아가고 있다는 점입니다. 앞으로도 지속적인 개선을 통해 더 나은 "
+        "서비스를 제공할 수 있도록 최선을 다하겠습니다."
+    )
+
+    def test_issue_104_sample_is_not_light(self) -> None:
+        obj = _metrics_stub(risk_band="low", char_count=len(self.ISSUE_104))
+        obj["_text"] = self.ISSUE_104
+        out = PREP.compute_route_hint(obj)
+        self.assertEqual(out["route_hint"], "standard")
+        per = out["route_signals"]["v26_tells"]
+        self.assertEqual(per.get("서수열거(C-1)"), 3)
+        self.assertEqual(per.get("결산변이(D-1)"), 1)
+
+    def test_long_enumeration_contribution_is_capped(self) -> None:
+        """서수 8개 + risk high 가 열거만으로 heavy 가 되면 안 된다."""
+        text = " ".join(f"{o}, 항목이 있다." for o in
+                        ("첫째", "둘째", "셋째", "넷째", "다섯째",
+                         "여섯 번째", "일곱 번째", "여덟 번째"))
+        total, per = PREP.count_v26_tells(text)
+        self.assertEqual(total, PREP.ORDINAL_ENUM_MIN)
+        obj = _metrics_stub(risk_band="high", char_count=len(text))
+        obj["_text"] = text
+        self.assertEqual(PREP.compute_route_hint(obj)["route_hint"], "standard")
+
+    def test_two_ordinals_not_counted(self) -> None:
+        """C-1 은 기본 보존 — 2항 열거는 사람 글에도 흔해 세지 않는다."""
+        _, per = PREP.count_v26_tells("첫째, 값이 싸다. 둘째, 가깝다.")
+        self.assertNotIn("서수열거(C-1)", per)
+
+    def test_ordinal_mid_sentence_not_counted(self) -> None:
+        _, per = PREP.count_v26_tells(
+            "그는 첫째 아들이다. 둘째 딸은 서울에 산다. 셋째 아이는 아직 어리다."
+        )
+        self.assertNotIn("서수열거(C-1)", per)
+
+    def test_bare_tonghae_not_counted(self) -> None:
+        """'~를 통해' 일반형은 사람 글이 더 쓴다 — 결산 변이형으로 세지 않는다."""
+        _, per = PREP.count_v26_tells("꾸준한 연습을 통해 실력이 늘었다.")
+        self.assertNotIn("결산변이(D-1)", per)
+
+    def test_light_reason_does_not_claim_well_written(self) -> None:
+        out = PREP.compute_route_hint(_metrics_stub(risk_band="low"))
+        self.assertEqual(out["route_hint"], "light")
+        self.assertNotIn("잘 쓴 글", out["route_reason"])
+        self.assertIn("라우터가 세는 항목", out["route_reason"])
+
+
 class RouteHintCliTests(unittest.TestCase):
     @unittest.skipUnless(PREP._metrics_mod is not None, "metrics 모듈 없음")
     def test_single_mode_writes_route_hint(self) -> None:

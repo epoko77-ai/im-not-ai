@@ -100,7 +100,7 @@ cd im-not-ai
 | 옵션 | 설명 |
 |---|---|
 | (없음) | `claude`·`codex`·`gemini` 자동 감지 후 각각 설치 (심링크) |
-| `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
+| `--copy` | 심링크 대신 복사. 저장소를 지워도 유지(references 심링크는 실체화, 런타임 스크립트는 스킬 안 `scripts/`로 함께 복사). ⚠ 복사본은 `uninstall.sh`가 자동 삭제하지 않음 |
 | `--claude-only` / `--codex-only` / `--gemini-only` | 한쪽만 |
 | `--no-gemini` | Gemini 건너뜀 (Claude/Codex만) |
 | `--extras` | opt-in 부속 스킬(`extras/skills/`, 현재 commit-ko만)도 함께 설치 |

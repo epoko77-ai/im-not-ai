@@ -70,13 +70,11 @@ Phase 1 시작 전에 한 번 정한다.
 
 ```bash
 SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
-  while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ]; do d="$(dirname "$d")"; done; \
-  [ "$d" = / ] && [ -d "$HOME/.claude/vendor/im-not-ai/.claude-plugin" ] && d="$HOME/.claude/vendor/im-not-ai"; echo "$d")"
+  while [ "$d" != / ] && [ ! -d "$d/.claude-plugin" ] && [ ! -f "$d/scripts/prepare_monolith_input.py" ]; do d="$(dirname "$d")"; done; \
+  [ "$d" = / ] && s="$(dirname "$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)")/humanize-korean" && [ -f "$s/scripts/prepare_monolith_input.py" ] && d="$s"; echo "$d")"
 ```
 
-`.claude-plugin/` 디렉터리를 만날 때까지 거슬러 올라간다. **고정된 횟수로 올라가지 않는 이유**는 스킬 위치가 배포 방식마다 다를 수 있어서다 — 고정 깊이는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다.
-
-**폴백 — 복사 설치(`install.sh --copy`)용.** 스킬 디렉터리가 저장소의 복사본이면 위로 아무리 올라가도 `.claude-plugin/` 이 없어 `d` 가 `/` 로 떨어진다(#144). 그 경우에만 관례 위치 `~/.claude/vendor/im-not-ai` 에 저장소 클론이 있으면 그곳을 `SKILL_ROOT` 로 쓴다. 마커를 찾은 경우(심링크·플러그인 설치)에는 폴백이 개입하지 않는다. 폴백도 없으면 `d` 는 `/` 로 남고 아래 확인 단계에서 걸린다.
+`.claude-plugin/` 디렉터리, 또는 `scripts/prepare_monolith_input.py` 를 품은 디렉터리를 만날 때까지 거슬러 올라간다. 뒤 조건은 `install.sh --copy` 설치용이다 — 복사 설치는 스킬 디렉터리만 떼어 오므로 조상에 마커가 없고, 대신 런타임 스크립트를 스킬 디렉터리 안 `scripts/` 에 함께 복사한다(#144). 둘째 줄은 `/humanize`·`/humanize-scan`·`/humanize-redo` 로 들어온 복사 설치용 폴백이다 — 이 래퍼 스킬에는 `scripts/` 가 없으므로, `/` 까지 올라가도 못 찾으면 형제 `humanize-korean/` 을 본다. **고정된 횟수로 올라가지 않는 이유**는 스킬 위치가 배포 방식마다 다를 수 있어서다 — 고정 깊이는 레이아웃이 바뀌면 조용히 엉뚱한 곳을 가리킨다.
 
 **`cd -P` 가 핵심이다.** 심링크 설치(`install.sh` 기본)에서는 스킬 디렉터리가 저장소를 가리키는 심링크라, 그냥 `cd` 하면 셸이 논리 경로를 유지해 엉뚱한 곳(홈 디렉터리)으로 올라간다. `-P` 로 물리 경로를 먼저 푼 뒤 올라가야 심링크·플러그인 양쪽에서 같은 답이 나온다. 이후 모든 스크립트 호출에 `${SKILL_ROOT}/scripts/...` 를 쓴다.
 

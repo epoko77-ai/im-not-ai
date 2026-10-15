@@ -21,7 +21,21 @@ CLAUDE_BIN = shutil.which("claude")
 
 
 class SkillUnavailable(RuntimeError):
-    """claude CLI 부재 / 타임아웃 / 출력 파싱 실패."""
+    """하네스가 스킬을 **돌리지 못했다** — claude CLI 부재 / 타임아웃.
+
+    환경 문제이므로 호출자는 이를 "판정 불가"로 다뤄도 된다(live 테스트는 skip).
+    """
+
+
+class SkillOutputInvalid(SkillUnavailable):
+    """스킬이 **돌았는데** 출력이 계약을 위반했다 — 센티넬 파싱 실패.
+
+    이건 환경이 아니라 회귀 신호다. live 테스트는 이것만은 skip 하지 않고
+    실패로 남긴다 — 출력 계약이 깨진 것을 환경 탓으로 넘기면 "검증이 조용히
+    죽는" 실패 형태가 된다(#59·#84 와 같은 계열).
+
+    기존 호출자가 `except SkillUnavailable` 로 받고 있어 하위 클래스로 둔다.
+    """
 
 
 def _prompt(text: str, strict: bool) -> str:
@@ -62,5 +76,5 @@ def run_humanize(
     out = proc.stdout or ""
     match = _SENTINEL.search(out)
     if not match:
-        raise SkillUnavailable(f"센티넬 파싱 실패. 원출력 앞부분: {out[:200]!r}")
+        raise SkillOutputInvalid(f"센티넬 파싱 실패. 원출력 앞부분: {out[:200]!r}")
     return match.group(1).strip()
