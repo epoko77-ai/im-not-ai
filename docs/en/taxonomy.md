@@ -135,7 +135,7 @@ Stock expressions Korean human writers rarely produce and LLMs emit repeatedly. 
 | **H-1** | Sentence-initial `또한/따라서/즉/나아가/아울러/게다가/더욱이`, 5+ | Delete most; let the sentences carry the flow | ✅ |
 | **H-2** | `하지만` and `그러나` in every paragraph | Delete more than half — an obvious contrast needs no connective | ❌ |
 | **H-3** | Meta lead-ins `이는 ~/이 점에서/이 관점에서/이 말은`, 3+ | Dissolve into the prose or delete | ✅ |
-| **H-4** | `즉` overused | Vary (`곧`, `말하자면`) or drop; ≤2 per document | ✅ |
+| **H-4** | `즉` in a non-restating slot, or 3+ in one paragraph | Fix only that spot; 3+ in one paragraph → remove all there; otherwise keep restating `즉` (no per-document cap, v2.9) | ✅ |
 
 ## I. Dummy and bound nouns (I-1 ~ I-6) — S2
 
