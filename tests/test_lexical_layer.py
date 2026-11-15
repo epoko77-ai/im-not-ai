@@ -124,6 +124,15 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(fixed, after)
         self.assertTrue(any("고치던 중" in s["reason"] for s in skipped))
 
+    def test_no_restore_when_sentence_was_split(self):
+        # 원문 한 문장이 둘로 쪼개진 경우 — 되돌리면 나머지 조각과 명제가 중복된다 → 보류
+        before = "규제 비용이 늘면서 중소기업의 부담이 커졌다는 점이 분명히 드러난다."
+        after = "규제 비용 위에 새 의무가 얹히면서 중소기업 부담이 커졌다. 이 점이 분명히 드러난다."
+        fixed, restored, skipped = ll.restore(before, after)
+        self.assertEqual(restored, [])
+        self.assertEqual(fixed, after)
+        self.assertTrue(any("분할" in s["reason"] for s in skipped), skipped)
+
     def test_summary_block_preserved(self):
         after = ("기존 규제 위에 새 의무를 하나 얹는다. 기업은 내년부터 보고서를 내야 한다.\n\n"
                  "<!-- HUMANIZE-SUMMARY\n원본: 얹는다\n-->\n")
