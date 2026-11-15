@@ -13,6 +13,8 @@ LLMs write Korean that *reads* like translated English. Native speakers spot it 
 "결론적으로, 이는 시사하는 바가 크다"      →  (deleted)
 ```
 
+> **New in v2.4 — the lexical layer.** Fixing structure is not enough: some *words* trip native readers — "잠재력을 **잠금 해제**한다" (*unlock* potential), "두 **렌즈**를 섞지 말 것" (*lens*), "대안을 **쥔**" (*hold*). 148 candidates were blind-rated by a native reader; the 111 rated awkward ship in `references/lexicon.json` with per-word *change when / keep when / how*. Only words found in the input are passed to the rewriter as an `[어휘 점검]` hint block — context decides, no blanket replacement. A deterministic step reverts sentences where the rewriter itself *introduced* such a word. On 24 real AI-written paragraphs × 2 runs, the share of flagged words surviving rewrite dropped **94% → 34%** (rated "clearly awkward": 96% → 22%) with no increase in edit volume. Details: [v2.4 release notes (Korean)](README.md#v24--어휘-레이어-읽다가-걸리는-낱말-111개-2026-11).
+
 ## Documentation
 
 | | |
