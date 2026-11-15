@@ -471,8 +471,28 @@ def _render_block(metrics_obj: dict) -> str:
     return "\n".join(lines)
 
 
+def _lexical_block(text: str, genre: str | None) -> str:
+    """원문에서 발견된 어색한 낱말만 [어휘 점검] 블록으로 (scripts/lexical_layer.py).
+
+    전 경로 공통 입력이라 light 경로(진단 없음)에도 실린다. 사전이 없거나 깨져도
+    윤문을 막지 않는다 — 빈 문자열로 degrade.
+    """
+    try:
+        _here = os.path.dirname(os.path.abspath(__file__))
+        if _here not in sys.path:
+            sys.path.insert(0, _here)
+        from lexical_layer import hint_block_for  # noqa: E402
+
+        return hint_block_for(text, genre)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _render_combined(
-    text: str, metrics_obj: dict | None, diagnosis: str | None = None
+    text: str,
+    metrics_obj: dict | None,
+    diagnosis: str | None = None,
+    genre: str | None = None,
 ) -> str:
     parts: list[str] = []
     if diagnosis:
@@ -482,6 +502,10 @@ def _render_combined(
         parts.append("")
     if metrics_obj is not None:
         parts.append(_render_block(metrics_obj))
+    lexical = _lexical_block(text, genre)
+    if lexical:
+        parts.append(lexical)
+        parts.append("")
     parts.append("[원문 시작]")
     parts.append(text.rstrip("\n"))
     parts.append("[원문 끝]")
@@ -861,7 +885,9 @@ def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
                     )
             combined = _render_chunk_header(
                 i, total, starts_with_heading
-            ) + _render_combined(chunk_text, metrics_obj, diagnosis=diagnosis)
+            ) + _render_combined(
+                chunk_text, metrics_obj, diagnosis=diagnosis, genre=args.genre
+            )
             (run_dir / entry["input_file"]).write_text(combined, encoding="utf-8")
         entries.append(entry)
 
@@ -1009,7 +1035,8 @@ def main(argv: list[str] | None = None) -> int:
 
     combined_path = run_dir / "01_input_with_metrics.txt"
     combined_path.write_text(
-        _render_combined(text, metrics_obj, diagnosis=diagnosis), encoding="utf-8"
+        _render_combined(text, metrics_obj, diagnosis=diagnosis, genre=args.genre),
+        encoding="utf-8",
     )
 
     rb = (metrics_obj or {}).get("risk_band", "absent")
