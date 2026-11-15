@@ -20,7 +20,10 @@ import subprocess
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.abspath(os.path.join(_HERE, ".."))
 _START, _END = "<<<H>>>", "<<</H>>>"
-_SENTINEL = re.compile(re.escape(_START) + r"(.*?)" + re.escape(_END), re.S)
+# 닫는 표지는 꺾쇠 2~3개까지 받는다. 모델이 `<<</H>>>`를 `<</H>>>`로 줄여 쓰는 일이 반복됐고
+# (본문은 멀쩡한데 파싱만 실패해 live 테스트가 회귀로 오판), 여는 표지·본문·닫는 표지가 모두
+# 있어야 한다는 계약의 핵심은 그대로다.
+_SENTINEL = re.compile(re.escape(_START) + r"(.*?)" + r"<{2,3}/H>{2,3}", re.S)
 
 CLAUDE_BIN = shutil.which("claude")
 
