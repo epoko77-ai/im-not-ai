@@ -16,7 +16,7 @@
    싣지 않으므로 프롬프트 비용은 발견 수에 비례한다. 공통 입력 단계(prepare_monolith_input)가
    부르므로 light·standard·heavy 전 경로에 적용된다.
 2. `restore` — 윤문이 **원문 문서에 없던** `restore=true` 표제어(평가 2점)를 새로 만들면
-   그 문장만 원문 문장으로 되돌린다. 프롬프트 금지 조항은 확률적이라 샌다(실측: 같은 설정
+   그 문장만 원문 문장으로 되돌린다. 힌트와 같은 넓은 정규식을 쓴다(v2.4.2 — 원문 부재 조건이 안전장치). 프롬프트 금지 조항은 확률적이라 샌다(실측: 같은 설정
    두 번 실행에 주입 문서 6편 ↔ 17편). 정렬·안전 원칙은 restore_modality.py와 같다.
 
 ## 안전 원칙 (restore)
@@ -186,7 +186,10 @@ def restore(before: str, after: str, lexicon: dict | None = None) -> tuple[str, 
     lex = lexicon or load_lexicon()
     targets = [e for e in lex["entries"] if e.get("restore")]
     before_body = rm._checks.strip_summary_block(before)
-    absent = [e for e in targets if not _matches(e, before_body)]
+    # 복원도 힌트와 같은 넓은 정규식을 쓴다. 안전장치는 '원문 문서 전체에 없던 낱말'이라는 조건이다 —
+    # 좁은 정규식은 활용형을 놓쳤다(실측: "세 가지 렌즈로 살펴본다" 주입을 못 되돌림). r4 120건 재적용:
+    # 되돌림 6→8, 평균 변화량 0.0014→0.0018, 애매한 1건(문자 그대로의 '갈린다')도 원문 문장으로 돌아갈 뿐이다.
+    absent = [e for e in targets if not _matches(e, before_body, detect=True)]
     if not absent:
         return after, [], []
     body, summary = rm._checks.split_summary_block(after)
@@ -197,7 +200,7 @@ def restore(before: str, after: str, lexicon: dict | None = None) -> tuple[str, 
         b, a = b.strip(), a.strip()
         if not a:
             continue
-        new = [e["headword"] for e in absent if _matches(e, a)]
+        new = [e["headword"] for e in absent if _matches(e, a, detect=True)]
         if not new:
             continue
         rec = {"after": a, "before": b, "headwords": new}
