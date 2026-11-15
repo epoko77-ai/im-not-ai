@@ -1,4 +1,4 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.4.0)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.4.1)
 
 ## 프로젝트 개요
 
