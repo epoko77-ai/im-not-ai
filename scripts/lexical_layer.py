@@ -4,7 +4,7 @@
 ## 왜 필요한가
 
 문장 구조(대구·결말 공식) 윤문과 별개로, AI 글에는 한국어 독자가 읽다가 걸리는 낱말이
-있다 — "잠재력을 잠금 해제한다", "성공을 달성한다", "~의 렌즈로 보면", "논의에 결을
+있다 — "~의 렌즈로 보면", "세 개의 축으로", "성공을 달성한다", "논의에 결을
 더한다". 목록은 `references/lexicon.json`(메인테이너 블라인드 평가 148개 중 어색하다고 판정된
 111개). **일괄 치환하지 않는다** — 같은 낱말도 장르·문맥·정당 용법에 따라 두어야 할 때가
 있고, 고정 대체어는 그 자체가 새 상투어가 된다.
@@ -96,15 +96,33 @@ def _matches(entry: dict, text: str, detect: bool = False) -> list[re.Match]:
     return out
 
 
+# 직접 인용 구간 — Do-NOT list(인용 원형 보존). 인용 안의 낱말은 힌트에서 뺀다.
+# 실측(v2.4.1): AI 티를 설명하는 글이 "잠금 해제한다" 같은 예문을 인용하자 그 인용까지
+# 힌트로 실려 실행자가 인용을 고칠 뻔했다. 한 줄 안, 200자 이내의 짝 맞는 인용부만 본다.
+_QUOTE_RE = re.compile(
+    r'"[^"\n]{1,200}"|“[^”\n]{1,200}”|‘[^’\n]{1,200}’|「[^」\n]{1,200}」|『[^』\n]{1,200}』'
+    r"|(?<![A-Za-z0-9])'[^'\n]{1,200}'(?![A-Za-z0-9])"
+)
+
+
+def quote_spans(text: str) -> list[tuple[int, int]]:
+    return [(m.start(), m.end()) for m in _QUOTE_RE.finditer(text)]
+
+
+def _outside_quotes(ms: list[re.Match], spans: list[tuple[int, int]]) -> list[re.Match]:
+    return [m for m in ms if not any(a <= m.start() < b for a, b in spans)]
+
+
 def find_hits(text: str, genre: str | None = None, lexicon: dict | None = None) -> list[dict]:
-    """원문에서 발견된 항목. 장르가 skip_genres에 있으면 제외한다."""
+    """원문에서 발견된 항목. 장르가 skip_genres에 있으면 제외하고, 직접 인용 안의 낱말은 세지 않는다."""
     lex = lexicon or load_lexicon()
     g = genre_key(genre)
+    spans = quote_spans(text)
     hits = []
     for e in lex["entries"]:
         if g in e.get("skip_genres", []):
             continue
-        ms = _matches(e, text, detect=True)
+        ms = _outside_quotes(_matches(e, text, detect=True), spans)
         if not ms:
             continue
         hits.append({

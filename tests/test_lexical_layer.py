@@ -67,6 +67,20 @@ class HintTests(unittest.TestCase):
         self.assertIn("잠재력을 잠금 해제", block)
         self.assertEqual(block.count("\n- ["), 1)
 
+    def test_quoted_examples_are_not_hinted(self):
+        # v2.4.1 회귀: AI 티를 설명하며 인용한 예문은 직접 인용(Do-NOT) — 힌트에서 뺀다
+        text = '예를 들어 "이 교육은 직원의 잠재력을 잠금 해제한다." 같은 문장이 걸립니다.'
+        self.assertEqual(ll.hint_block_for(text, "column"), "")
+        for q in ("“두 렌즈를 섞지 말 것.”", "「두 렌즈를 섞지 말 것」", "'두 렌즈를 섞지 말 것'"):
+            with self.subTest(q=q):
+                self.assertEqual(ll.find_hits(f"이런 문장은 {q} 처럼 보입니다.", "column"), [])
+
+    def test_same_word_outside_quotes_still_hinted(self):
+        text = '"두 렌즈를 섞지 말 것"이라는 말도 있지만, 우리는 세 가지 렌즈로 이 시장을 본다.'
+        hits = ll.find_hits(text, "column")
+        self.assertEqual([h["headword"] for h in hits if h["headword"].startswith("렌즈")], ["렌즈"])
+        self.assertEqual([h for h in hits if h["headword"].startswith("렌즈")][0]["count"], 1)
+
     def test_skip_genre_respected(self):
         lex = ll.load_lexicon()
         skipping = [e for e in lex["entries"] if "논문" in e.get("skip_genres", [])]
