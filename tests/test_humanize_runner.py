@@ -67,5 +67,48 @@ class GatedRunTests(unittest.TestCase):
         self.assertNotIn("protected", p)
 
 
+@unittest.skipUnless(os.name == "posix", "가짜 CLI 를 sh 스크립트로 만든다")
+class ExitCodeClassificationTests(unittest.TestCase):
+    """CLI 종료 코드로 '실행 불가'와 '출력 계약 위반'을 가른다.
+
+    실측: `claude` 가 깔려 있고 로그아웃된 환경에서 `claude -p` 는 stdout 에
+    "Not logged in · Please run /login" 을 쓰고 exit 1 로 끝난다. 러너가 종료
+    코드를 보지 않으면 이게 센티넬 파싱 실패 → SkillOutputInvalid(회귀)로
+    분류돼 live 테스트가 skip 이 아니라 fail 로 끝난다.
+    """
+
+    def setUp(self):
+        import tempfile
+
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self._orig_bin = hr.CLAUDE_BIN
+        self.addCleanup(setattr, hr, "CLAUDE_BIN", self._orig_bin)
+
+    def _fake_cli(self, stdout: str, code: int) -> None:
+        path = os.path.join(self._tmp.name, "claude")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(f"#!/bin/sh\nprintf '%s\\n' '{stdout}'\nexit {code}\n")
+        os.chmod(path, 0o755)
+        hr.CLAUDE_BIN = path
+
+    def test_logged_out_cli_is_unavailable_not_invalid(self):
+        self._fake_cli("Not logged in · Please run /login", 1)
+        with self.assertRaises(hr.SkillUnavailable) as cm:
+            hr.run_humanize("문장입니다.")
+        self.assertNotIsInstance(cm.exception, hr.SkillOutputInvalid)
+        self.assertIn("Not logged in", str(cm.exception))
+
+    def test_clean_exit_without_sentinel_is_still_invalid(self):
+        # 정상 종료했는데 계약을 어긴 출력 — 회귀 신호는 그대로 실패로 남는다
+        self._fake_cli("센티넬 없는 출력", 0)
+        with self.assertRaises(hr.SkillOutputInvalid):
+            hr.run_humanize("문장입니다.")
+
+    def test_clean_exit_with_sentinel_returns_body(self):
+        self._fake_cli("<<<H>>>본문<<</H>>>", 0)
+        self.assertEqual(hr.run_humanize("문장입니다."), "본문")
+
+
 if __name__ == "__main__":
     unittest.main()

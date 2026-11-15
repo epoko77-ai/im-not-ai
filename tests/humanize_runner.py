@@ -36,7 +36,7 @@ import metrics_v2 as _m  # noqa: E402
 
 
 class SkillUnavailable(RuntimeError):
-    """하네스가 스킬을 **돌리지 못했다** — claude CLI 부재 / 타임아웃.
+    """하네스가 스킬을 **돌리지 못했다** — claude CLI 부재 / 타임아웃 / 0 이 아닌 종료.
 
     환경 문제이므로 호출자는 이를 "판정 불가"로 다뤄도 된다(live 테스트는 skip).
     """
@@ -97,6 +97,13 @@ def run_humanize(
         )
     except subprocess.TimeoutExpired as exc:
         raise SkillUnavailable(f"claude 호출 타임아웃 ({timeout}s)") from exc
+
+    # 0 이 아닌 종료는 CLI 가 요청을 끝내지 못한 것이다(로그아웃·인증·사용량 한도 등).
+    # 로그아웃 상태의 `claude -p` 는 안내문을 stdout 에 쓰고 exit 1 로 끝나므로,
+    # 종료 코드를 보지 않으면 센티넬 파싱 실패 → SkillOutputInvalid(회귀)로 잘못 분류된다.
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "").strip()[:200]
+        raise SkillUnavailable(f"claude 호출 실패 (exit {proc.returncode}): {detail!r}")
 
     out = proc.stdout or ""
     match = _SENTINEL.search(out)
