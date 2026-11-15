@@ -18,7 +18,9 @@ or from the CLI:
 
 Failure codes (stable API — tests and fixtures reference these):
     empty_output       output is blank
-    hayeot_injection   '하였' count increased vs original
+    hayeot_injection   '하였' count increased vs original. Exception: when
+                       the original is pure 하였체 (no '했' at all), clause
+                       splitting may add up to one '하였' per new sentence
     cliche_injection   a boilerplate phrase appeared/increased vs original
     colloquial_erased  colloquial sentence endings (해요체) wiped out
     heading_lost       a heading line disappeared entirely
@@ -62,6 +64,20 @@ def _norm_ws(s: str) -> str:
 # ===========================================================================
 
 HAYEOT_RE = re.compile(r"하였")
+HAESS_RE = re.compile(r"했")
+
+# '하였' 증가가 곧 격식 상향은 아니다. 등위절 분절("확인하고, 명시하였다" →
+# "확인하였다. 명시하였다.")은 공유되던 과거 표지를 문장마다 하나씩 요구하므로
+# 같은 register 안에서도 '하였' 을 늘린다. 새 표지는 원문의 과거 문체를
+# 물려받는다 — 원문에 '했' 이 없고 '하였' 만 있으면(순수 '하였'체) 물려받을 수
+# 있는 형태가 '하였' 뿐이라 증가가 상향이 아니다. '했' 이 하나라도 있거나 과거
+# 표지가 아예 없는 원문은 기존대로 증가 자체를 FAIL 로 본다.
+#
+# 허용량은 새로 생긴 문장 수까지다. 분절은 문장을 늘리고, 현재형을 과거형으로
+# 바꾸는 시제 변경("공개한다" → "공개하였다")은 늘리지 않는다. 상한 없이 열면
+# 시제 변경이 P0~P5 전부를 통과한다. 문장 경계는 종결 부호 + 공백·끝으로 센다
+# — "3.5%" 같은 소수점은 뒤에 공백이 없어 세지 않는다.
+SENT_END_RE = re.compile(r"[.?!…]+(?=\s|$)")
 
 # Boilerplate phrases the rewriter must never ADD. Increase-only gate:
 # if the original already contains one, keeping it is not a failure.
@@ -102,7 +118,10 @@ def check_register(original: str, output: str) -> list[Failure]:
 
     a = len(HAYEOT_RE.findall(original))
     b = len(HAYEOT_RE.findall(output))
-    if b > a:
+    pure_hayeot = a > 0 and not HAESS_RE.search(original)
+    new_sents = len(SENT_END_RE.findall(output)) - len(SENT_END_RE.findall(original))
+    allowed = max(0, new_sents) if pure_hayeot else 0
+    if b - a > allowed:
         fails.append(Failure(
             "hayeot_injection",
             f"'하였' 계열이 원문 {a}회 → 윤문본 {b}회로 늘었습니다 (격식 상향 주입)",
