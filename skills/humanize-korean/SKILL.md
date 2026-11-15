@@ -1,11 +1,12 @@
 ---
 name: humanize-korean
-version: "2.3.2"
+version: "2.4.0"
 description: AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람이 쓴 글처럼" 윤문해주는 오케스트레이터 스킬. 번역투·영어 인용 과다·기계적 병렬·관용구·피동태 남용·접속사 남발·리듬 균일성·이모지/불릿 과다 등 10대 카테고리 85개 AI 티 패턴을 탐지·분류해 내용은 한 글자도 건드리지 않고 문체·리듬·표현만 자연스러운 한국어로 재작성한다. shim의 route_hint(light|standard|heavy)로 경로를 정해 잘 쓴 글은 1콜, 표준은 2콜, 중증·장문만 3+콜(진단→겨냥 윤문→finalize)로 처리한다. 트리거 — "AI 티 없애줘", "AI 같은 글 자연스럽게", "GPT/ChatGPT 문체", "AI 번역투 고쳐", "사람이 쓴 것처럼 윤문", "AI 윤문", "ChatGPT 티 제거", "한글 AI 탐지·윤문", "AI 글 사람처럼", "번역투 제거", "영어 인용 많은 글 윤문", "AI 글 티 안 나게", "휴머나이저", "humanize Korean", "AI detector bypass 한글". 후속 작업 — "특정 카테고리만 다시", "윤문 강도 조정", "장르 바꿔서", "이 문단만", "2차 윤문" 도 모두 이 스킬. 단순 맞춤법·오탈자 교정은 직접 처리, 번역은 번역 스킬, 내용 추가·삭제를 동반한 재작성은 별도 집필 스킬.
 ---
 
-# Humanize Korean — AI 한글 티 제거 오케스트레이터 (v2.3)
+# Humanize Korean — AI 한글 티 제거 오케스트레이터 (v2.4)
 
+> **v2.4.0** — 어휘 레이어. 한국어 독자가 읽다가 걸리는 낱말 111개(블라인드 평가)를 원문에서 찾아 `[어휘 점검]` 블록으로 실행자에게 넘긴다(문맥 판단, 일괄 치환 금지). 윤문이 새로 만든 '바꿈 우선' 낱말은 Phase 2.4에서 문장 단위로 되돌린다. `scripts/lexical_layer.py`·`references/lexicon.json`.
 > **v2.3.2** — 플러그인 스킬을 관례 위치(루트 `skills/`)로 이동. 마켓플레이스 설치에서 shim·진단이 조용히 누락되던 경로 문제 해소.
 > **v2.3.1** — 경로 해석·런타임 경계·계약 정합 수정 회차(외부 제보 반영). 기능 변경 없음.
 > **v2.3.0** — 구조 수렴 게이트(`verify_gates.py` 4축: 목표달성·대구 전멸·수치·golden) + 진단 슬림 인덱스(`diagnosis-rules.md`, taxonomy 83%↓). (v2.2: route_hint 3경로 + 단일 콜 우선)
@@ -16,7 +17,7 @@ description: AI(ChatGPT·Claude·Gemini 등)가 쓴 한글 텍스트를 "사람�
 작업 시작 시 가장 먼저 다음 한 줄을 사용자에게 출력한다.
 
 ```
-humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 지정}) / run_id: {YYYY-MM-DD-NNN-TAG}
+humanize-korean v2.4 — 경로: {light|standard|heavy} ({route_hint|사용자 지정}) / run_id: {YYYY-MM-DD-NNN-TAG}
 ```
 
 (경로는 Phase 1의 shim 실행 후에 확정되므로, 이 상태 줄은 shim 직후 출력한다.)
@@ -193,7 +194,22 @@ python3 ${SKILL_ROOT}/scripts/strip_injected_commas.py \
     --before _workspace/{run_id}/01_input.txt \
     --after  _workspace/{run_id}/final.md \
     --out    _workspace/{run_id}/final.md
+python3 ${SKILL_ROOT}/scripts/lexical_layer.py restore \
+    --before _workspace/{run_id}/01_input.txt \
+    --after  _workspace/{run_id}/final.md \
+    --out    _workspace/{run_id}/final.md
 ```
+
+세 번째 명령은 **어휘 주입 복원** — 윤문이 원문 문서에 없던 '바꿈 우선' 낱말
+(`references/lexicon.json`의 `restore: true`, 블라인드 평가 2점 — 얹다·겹·붙들다·렌즈·
+"성공을 달성하다" 등)을 새로 만든 문장만 원문 문장으로 되돌린다. 프롬프트로 금지해도
+확률적으로 샌다(실측: 같은 설정 두 번 실행에 주입 문서 6편↔17편). 정렬·보류 원칙은
+서법 복원과 같다. LLM 콜 0회.
+
+> **입력 쪽 어휘 점검(자동)**: Phase 1 shim이 원문에서 사전 항목을 찾으면 결합 파일의
+> `[원문 시작]` 앞에 `[어휘 점검]` 블록을 싣는다. 발견된 항목만, 최대 15개, 항목마다
+> 바꿀 때/둘 때/방식. 실행자는 **일괄 치환하지 않고** 문맥으로 판단한다 — '둘 때'면 둔다.
+> 진단을 거치지 않는 light 경로에도 같은 블록이 실린다.
 
 두 번째 명령은 **C-11 역주입 제거** — 윤문이 새로 쓴 문장에서만 연결어미 뒤
 쉼표를 걷어낸다(원문에 있던 문장은 불가침 — 필자 쉼표 보호). light 실측에서

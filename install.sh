@@ -183,7 +183,7 @@ install_one() {
 RUNTIME_SCRIPTS=(
   prepare_monolith_input.py reassemble_chunks.py verify_change_rate.py
   verify_gates.py restore_modality.py strip_injected_commas.py sanitize_text.py
-  checks.py console.py
+  checks.py console.py lexical_layer.py
 )
 
 copy_runtime_scripts() {

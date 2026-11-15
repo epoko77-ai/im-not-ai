@@ -1,4 +1,4 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.3.2)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.4.0)
 
 ## 프로젝트 개요
 
@@ -59,6 +59,7 @@ im-not-ai/
 │   ├── eval_compare.py            # 스냅샷 2개 대조 — 자체 분산을 잡음 바닥 삼아 유의한 변화만 표시
 │   ├── reassemble_chunks.py       # 장문 청킹 재조립 (passthrough 원문 삽입 + 문자수 대사)
 │   ├── verify_gates.py            # v2.3 구조 수렴 게이트 — 문자율·목표달성·대구·golden/수치
+│   ├── lexical_layer.py           # v2.4 어휘 레이어 — hints([어휘 점검] 블록, shim이 자동 호출) · restore(주입 낱말 문장 복원)
 │   ├── verify_change_rate.py      # 하위 호환 문자 변경률 게이트
 │   ├── build_quick_rules.py       # taxonomy quick 메타 → quick-rules.md 빌드 (ID 드리프트 차단)
 │   ├── build_social_preview_v2.py
@@ -77,6 +78,7 @@ im-not-ai/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
 │           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
+│           ├── lexicon.json            # v2.4 어휘 사전 — 블라인드 평가 1·2점 111개 (힌트용 넓은 정규식 + 복원용 좁은 정규식 + 바꿀 때/둘 때/방식)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
 │           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 85 패턴(활성 84 + A-17 hold) (+ _quick 빌드 메타)
 │           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
