@@ -1,6 +1,7 @@
 """계층3 (live integration) — 실제 스킬을 돌려 갓 나온 출력에 판정.
 
-**스킬 회귀를 실제로 잡는 유일한 층.** test_humanize_e2e.py(얼린 fixture)와 달리
+**모델 윤문 회귀를 잡는 층.** 단, `claude -p`에 "파일은 만들지 마"로 호출하므로 스킬의 스크립트 단계
+(shim·복원·게이트)는 여기서 돌지 않는다 — 그쪽은 `test_pipeline_scripts.py`가 얼린 윤문본으로 검증한다. test_humanize_e2e.py(얼린 fixture)와 달리
 매번 스킬을 새로 실행하므로, 스킬/룰이 망가지면 여기서 실패한다.
 
 - `claude` CLI 없으면 전체 skip → 바닐라 CI(크레덴셜 없음)에서도 안전.

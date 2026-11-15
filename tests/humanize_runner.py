@@ -1,5 +1,10 @@
 """Live humanize runner — 배포된 humanize-korean 스킬을 `claude -p`로 실제 호출.
 
+⚠️ 범위: 비대화형 실행에서 권한이 필요한 도구를 쓰지 않도록 "파일은 만들지 마"로 호출한다.
+그래서 스킬의 **스크립트 단계(입력 shim·서법/쉼표/어휘 복원·구조 게이트)는 여기서 돌지 않는다** —
+이 층은 모델이 룰북만으로 내는 윤문을 잰다. 스크립트 사슬은 `test_pipeline_scripts.py`가 얼린
+윤문본으로 결정적으로 검증한다(v2.4.2).
+
 살아있는 스킬을 돌려 갓 나온 윤문본을 얻는다. test_humanize_live.py와
 generate_fixtures.py가 공유한다. `claude` CLI(Claude Code, 구독 인증)만 있으면 되고
 별도 API 키는 필요 없다. 스킬은 이 레포의 skills/humanize-korean 에서 탐색됨
