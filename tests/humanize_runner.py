@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.abspath(os.path.join(_HERE, ".."))
@@ -26,6 +27,12 @@ _START, _END = "<<<H>>>", "<<</H>>>"
 _SENTINEL = re.compile(re.escape(_START) + r"(.*?)" + r"<{2,3}/H>{2,3}", re.S)
 
 CLAUDE_BIN = shutil.which("claude")
+
+# 철칙 #4 게이트 상수의 SSOT(metrics_v2)를 그대로 쓴다 — 러너가 문턱을 따로 들고 있지 않게.
+_REFS = os.path.join(_REPO_ROOT, "skills", "humanize-korean", "references")
+if _REFS not in sys.path:
+    sys.path.insert(0, _REFS)
+import metrics_v2 as _m  # noqa: E402
 
 
 class SkillUnavailable(RuntimeError):
@@ -46,17 +53,27 @@ class SkillOutputInvalid(SkillUnavailable):
     """
 
 
-def _prompt(text: str, strict: bool) -> str:
+# SKILL.md Phase 2.5 exit 2 분기의 재실행 지시 — "윤문본 채택 금지, 롤백 지시 후 1회 재실행,
+# 보수 강도 재강조". 픽스처 정답(보호 토큰·픽스처별 상한)은 넣지 않는다(계측 무효화 방지).
+_ROLLBACK = (
+    "직전 윤문본은 변경률 게이트(50% 이상 강제 중단)에 걸려 폐기됐다. 원문에서 다시 시작해 "
+    "보수 강도로 윤문해 — 내용 앵커를 원형대로 두고, 확신 없는 구간은 그대로 둔다. "
+)
+
+
+def _prompt(text: str, strict: bool, rollback: bool = False) -> str:
     mode = "strict(5인 파이프라인)" if strict else "Fast"
     return (
         f"다음 텍스트를 humanize-korean 스킬 {mode} 모드로 윤문해줘. "
-        f"설명·헤딩·지표 전부 빼고, 윤문된 본문만 반드시 {_START} 와 {_END} 사이에 "
+        + (_ROLLBACK if rollback else "")
+        + f"설명·헤딩·지표 전부 빼고, 윤문된 본문만 반드시 {_START} 와 {_END} 사이에 "
         f"한 덩어리로 출력해. 파일은 만들지 마.\n\n텍스트:\n" + text
     )
 
 
 def run_humanize(
-    text: str, *, strict: bool = False, timeout: int = 300, model: str | None = None
+    text: str, *, strict: bool = False, timeout: int = 300, model: str | None = None,
+    rollback: bool = False,
 ) -> str:
     """스킬을 실제 호출해 윤문본을 반환. 실패 시 SkillUnavailable.
 
@@ -68,7 +85,7 @@ def run_humanize(
     cmd = [CLAUDE_BIN]
     if model:
         cmd += ["--model", model]
-    cmd += ["-p", _prompt(text, strict)]
+    cmd += ["-p", _prompt(text, strict, rollback)]
     try:
         proc = subprocess.run(
             cmd,
@@ -86,3 +103,20 @@ def run_humanize(
     if not match:
         raise SkillOutputInvalid(f"센티넬 파싱 실패. 원출력 앞부분: {out[:200]!r}")
     return match.group(1).strip()
+
+
+def run_humanize_gated(
+    text: str, *, strict: bool = False, timeout: int = 300, model: str | None = None
+) -> tuple[str, bool]:
+    """스킬 호출 + Phase 2.5 강제 중단 분기 흉내. (윤문본, 롤백 재실행 여부)를 돌려준다.
+
+    라이브 호출은 비대화형이라 스킬의 `verify_gates.py`가 돌지 않는다. 그러면 실제 사용에서는
+    게이트가 잡아 롤백했을 과윤문(≥50%)이 그대로 채점돼, 과윤문 가드 픽스처가 상한 근처에서
+    흔들렸다(실측 18회 중 1회 0.530). 오케스트레이터와 같은 문턱·같은 1회 재실행을 여기서 한다.
+    재실행 뒤에도 ≥50%면 그대로 돌려준다 — 그건 hold_and_report 사례라 채점이 실패로 잡아야 한다.
+    """
+    out = run_humanize(text, strict=strict, timeout=timeout, model=model)
+    if _m.change_rate(text, out) < _m.CHANGE_RATE_ABORT:
+        return out, False
+    return run_humanize(text, strict=strict, timeout=timeout, model=model, rollback=True), True
+

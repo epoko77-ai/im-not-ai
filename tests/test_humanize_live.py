@@ -1,7 +1,8 @@
 """계층3 (live integration) — 실제 스킬을 돌려 갓 나온 출력에 판정.
 
 **모델 윤문 회귀를 잡는 층.** 단, `claude -p`에 "파일은 만들지 마"로 호출하므로 스킬의 스크립트 단계
-(shim·복원·게이트)는 여기서 돌지 않는다 — 그쪽은 `test_pipeline_scripts.py`가 얼린 윤문본으로 검증한다. test_humanize_e2e.py(얼린 fixture)와 달리
+(shim·복원·게이트)는 여기서 돌지 않는다. 예외로 철칙 #4 강제 중단(≥50% → 롤백 1회 재실행)은
+러너(`run_humanize_gated`)가 같은 문턱으로 흉내 낸다 — 그쪽은 `test_pipeline_scripts.py`가 얼린 윤문본으로 검증한다. test_humanize_e2e.py(얼린 fixture)와 달리
 매번 스킬을 새로 실행하므로, 스킬/룰이 망가지면 여기서 실패한다.
 
 - `claude` CLI 없으면 전체 skip → 바닐라 CI(크레덴셜 없음)에서도 안전.
@@ -69,7 +70,10 @@ class HumanizeLiveTests(unittest.TestCase):
                 # 같은 이유로 못 돌기 때문에, subTest 안에서 skip 하면 fixture 수
                 # × K 만큼 타임아웃을 반복해 기다리게 된다.
                 try:
-                    out = hr.run_humanize(fx["input_text"], strict=False)
+                    # 스킬의 강제 중단 게이트(≥50% → 롤백 1회 재실행)까지 포함한 계약을 채점한다.
+                    out, rolled_back = hr.run_humanize_gated(fx["input_text"], strict=False)
+                    if rolled_back:
+                        print(f"[live] {fx['id']} run={i}: 강제 중단 게이트 → 롤백 재실행", file=sys.stderr)
                 except hr.SkillOutputInvalid:
                     # 스킬이 돌았는데 출력 계약이 깨진 것 — 회귀다. 숨기지 않는다.
                     raise
