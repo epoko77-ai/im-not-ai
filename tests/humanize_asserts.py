@@ -6,7 +6,6 @@
 """
 from __future__ import annotations
 
-import difflib
 import os
 import re
 import sys
@@ -33,8 +32,18 @@ _REF = _find_ref()
 
 
 def change_rate(src: str, out: str) -> float:
-    """문자 단위 변경률 [0,1]. 0=동일. difflib 유사도의 여집합."""
-    return 1.0 - difflib.SequenceMatcher(None, src, out).ratio()
+    """문자 단위 변경률 [0,1]. 0=동일. 철칙 #4 게이트의 SSOT(`metrics_v2.change_rate`)를 그대로 쓴다.
+
+    예전에는 difflib 기본값(autojunk=True)으로 따로 계산했다. 200자가 넘는 글에서 흔한 글자(공백·
+    자주 나오는 음절)를 무시해 값이 부풀었고(fx_b_heavy 얼린 출력: 0.613 vs 게이트 0.468), 게이트는
+    50% 미만이라 통과시킨 출력을 과윤문 가드 픽스처가 0.501·0.582로 실패 처리했다. 같은 상한을
+    다른 잣대로 재던 것이다.
+    """
+    if _REF not in sys.path:
+        sys.path.insert(0, _REF)
+    import metrics_v2  # noqa: E402 (sys.path mutation intentional)
+
+    return float(metrics_v2.change_rate(src, out))
 
 
 def missing_protected_tokens(out: str, tokens: list[str]) -> list[str]:

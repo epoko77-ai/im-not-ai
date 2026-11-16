@@ -30,5 +30,42 @@ class SentinelTests(unittest.TestCase):
         self.assertIsNone(self._parse("본문만 있다."))
 
 
+class GatedRunTests(unittest.TestCase):
+    """Phase 2.5 강제 중단 분기 흉내 — LLM 대신 가짜 호출로 분기만 검증한다."""
+
+    def setUp(self):
+        self._orig = hr.run_humanize
+        self.calls = []
+
+    def tearDown(self):
+        hr.run_humanize = self._orig
+
+    def _fake(self, outputs):
+        def fake(text, *, strict=False, timeout=300, model=None, rollback=False):
+            self.calls.append(rollback)
+            return outputs[len(self.calls) - 1]
+        hr.run_humanize = fake
+
+    def test_no_rollback_under_abort_threshold(self):
+        src = "첫째 문장은 그대로 둔다. 둘째 문장도 거의 그대로다."
+        self._fake(["첫째 문장은 그대로 둔다. 둘째 문장도 거의 같다."])
+        out, rolled = hr.run_humanize_gated(src)
+        self.assertFalse(rolled)
+        self.assertEqual(self.calls, [False])
+
+    def test_rollback_once_when_over_abort_threshold(self):
+        src = "첫째 문장은 그대로 둔다. 둘째 문장도 거의 그대로다."
+        self._fake(["완전히 다른 글이 나왔고 원문과 닮은 데가 하나도 없다.", "첫째 문장은 그대로 둔다. 둘째 문장도 거의 같다."])
+        out, rolled = hr.run_humanize_gated(src)
+        self.assertTrue(rolled)
+        self.assertEqual(self.calls, [False, True])  # 두 번째 호출만 롤백 지시
+        self.assertTrue(out.startswith("첫째 문장은"))
+
+    def test_rollback_prompt_carries_no_fixture_answers(self):
+        p = hr._prompt("본문", strict=False, rollback=True)
+        self.assertIn("50%", p)  # 스킬 전역 상수(철칙 #4)만 — 픽스처별 상한·보호 토큰은 없다
+        self.assertNotIn("protected", p)
+
+
 if __name__ == "__main__":
     unittest.main()
