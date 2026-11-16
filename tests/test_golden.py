@@ -116,6 +116,60 @@ class RegisterCheckTests(unittest.TestCase):
         self.assertEqual(checks.check_register(orig, kept), [])
         self.assertEqual(checks.check_register(orig, reduced), [])
 
+    def test_hayeot_split_in_pure_hayeot_text_is_not_injection(self) -> None:
+        """순수 '하였'체 원문의 등위절 분절은 상향이 아니다.
+
+        "확인하고, 명시하였다" 를 둘로 자르면 앞 문장도 과거 표지가 필요해
+        '하였' 이 1 → 2 가 된다. 원문에 '했' 이 없으므로 새 표지가 물려받을
+        문체는 '하였' 뿐이다 — register 보존이다. C-11 처방(3절 이상 문장
+        분절)이 학술 원고에서 매번 이 오탐을 냈다(38,621자 논문 실측 +16건).
+        """
+        orig = "대법원은 처리자의 결합 수단을 확인하고, 그 판단 기준을 명시하였다."
+        split = "대법원은 처리자의 결합 수단을 확인하였다. 그 판단 기준도 명시하였다."
+        self.assertEqual(checks.check_register(orig, split), [])
+
+    def test_hayeot_tense_change_in_pure_hayeot_text_is_injection(self) -> None:
+        """순수 '하였'체라도 문장이 늘지 않았는데 '하였' 이 늘면 시제 변경이다.
+
+        분절 허용이 이 경우까지 열면 현재형 → 과거형 변경이 모든 게이트를
+        통과한다(P0~P5 전부 OK 실측). 분절은 문장 수를 늘리고 시제 변경은
+        늘리지 않는다 — 허용량을 새로 생긴 문장 수로 묶는 이유.
+        """
+        orig = "위원회는 안건을 의결하였다. 결과를 공개한다."
+        out = "위원회는 안건을 의결하였다. 결과를 공개하였다."
+        codes = {x.code for x in checks.check_register(orig, out)}
+        self.assertIn("hayeot_injection", codes)
+
+    def test_hayeot_split_in_haess_text_is_injection(self) -> None:
+        """'했'체 원문에서 분절이 '하였' 을 쓰면 격식 혼입이다 — 계속 잡는다.
+
+        '했' 개수가 줄지 않으므로 '했↓ 그리고 하였↑' 짝 판정으로는 놓치는
+        경우다. 문체 조건부 판정이 짝 판정보다 엄격한 지점.
+        """
+        orig = "대법원은 결합 수단을 확인하고 판단 기준을 명시했다."
+        split = "대법원은 결합 수단을 확인하였다. 판단 기준을 명시했다."
+        codes = {x.code for x in checks.check_register(orig, split)}
+        self.assertIn("hayeot_injection", codes)
+
+    def test_hayeot_into_tenseless_text_is_injection(self) -> None:
+        """과거 표지가 아예 없던 원문에 '하였' 이 생기면 물려받을 문체가 없다."""
+        orig = "위원회는 안건을 의결한다."
+        out = "위원회는 안건을 의결하였다."
+        codes = {x.code for x in checks.check_register(orig, out)}
+        self.assertIn("hayeot_injection", codes)
+
+    def test_hayeot_mixed_register_stays_strict(self) -> None:
+        """'했'·'하였' 혼용 원문은 기존대로 증가 자체를 FAIL 로 본다.
+
+        혼용 글에서는 분절이 어느 문체를 물려받아야 하는지 원문만으로 정할 수
+        없다. 보수적으로 경고(→ finalize 승급)를 유지한다. 완화하려면 이
+        테스트를 의도적으로 바꿔야 한다.
+        """
+        orig = "위원회는 안건을 검토했다. 결과는 확인하고 공개하였다."
+        out = "위원회는 안건을 검토했다. 결과는 확인하였다. 이후 공개하였다."
+        codes = {x.code for x in checks.check_register(orig, out)}
+        self.assertIn("hayeot_injection", codes)
+
     def test_cliche_injection_detected(self) -> None:
         fails = checks.run_checks(
             "매출이 크게 늘었다.", "매출이 늘어 기록적인 성과를 거두었다."
