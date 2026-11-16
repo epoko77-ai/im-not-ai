@@ -1,4 +1,4 @@
-# Humanize KR — AI 한글 티 제거 하네스 (v2.4.4)
+# Humanize KR — AI 한글 티 제거 하네스 (v2.4.5)
 
 ## 프로젝트 개요
 
@@ -78,7 +78,7 @@ im-not-ai/
 │       ├── SKILL.md               # 오케스트레이터 (route_hint 3경로 분기·shim 배선, quick_rules_path: ${CLAUDE_SKILL_DIR}/...)
 │       └── references/
 │           ├── quick-rules.md          # monolith 슬림 룰북 (build_quick_rules.py가 taxonomy에서 생성)
-│           ├── lexicon.json            # v2.4 어휘 사전 — 블라인드 평가 1·2점 111개 (힌트용 넓은 정규식 + 복원용 좁은 정규식 + 바꿀 때/둘 때/방식)
+│           ├── lexicon.json            # v2.4 어휘 사전 — 블라인드 평가 1·2점 111개 + 추가 2개 = 113개 (힌트용 넓은 정규식 + 복원용 좁은 정규식 + 바꿀 때/둘 때/방식)
 │           ├── quick-rules.header.md · quick-rules.footer.md  # 빌드 고정 템플릿
 │           ├── ai-tell-taxonomy.md     # SSOT — 10대분류 × 85 패턴(활성 84 + A-17 hold) (+ _quick 빌드 메타)
 │           ├── rewriting-playbook.md   # 카테고리별 치환 레시피
