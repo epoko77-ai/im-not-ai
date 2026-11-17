@@ -41,7 +41,7 @@ sed -n '1,40p' README.md
 
 ## 2. 릴리스 전 확인 항목
 
-- [ ] **글로벌 에이전트 심링크 동기화** (에이전트를 추가·은퇴한 릴리스만): `~/.claude/agents/`는 프로젝트 `agents/*.md`로의 파일별 심링크다. 신규 에이전트는 `ln -sf`로 링크를 걸고, 은퇴한 에이전트는 죽은 링크를 `rm`한다. 링크가 없으면 세션이 그 에이전트를 로드하지 못한다(정밀 3콜이 안 돎). 확인: `ls -la ~/.claude/agents/ | grep humanize`로 링크 대상이 실재 파일인지 검사.
+- [ ] **글로벌 에이전트 심링크 동기화** (에이전트를 추가·은퇴한 릴리스만): `~/.claude/agents/`는 프로젝트 `agents/*.md`(기여자 기기는 `--all-agents`로 `dev/agents/*.md`까지)로의 파일별 심링크다. 신규 에이전트는 `ln -sf`로 링크를 걸고, 은퇴한 에이전트는 죽은 링크를 `rm`한다. 링크가 없으면 세션이 그 에이전트를 로드하지 못한다(정밀 3콜이 안 돎). 확인: `ls -la ~/.claude/agents/ | grep humanize`로 링크 대상이 실재 파일인지 검사.
 
 
 - [ ] **테스트**: `python3 -m pytest tests/ -q` 전체 통과 (pytest 미설치 환경이면 `pip install pytest` 후 실행)
