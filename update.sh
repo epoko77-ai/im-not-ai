@@ -57,8 +57,8 @@ fi
 
 # 여기 도달 = behind, fast-forward 가능
 BEHIND="$(g rev-list --count "HEAD..$UPSTREAM")"
-echo "🔔 업데이트 있음: $BEHIND개 커밋 ($UPSTREAM)"
-g --no-pager log --oneline "HEAD..$UPSTREAM" 2>/dev/null | head -10 | sed 's/^/    /'
+echo "🔔 업데이트 있음: ${BEHIND}개 커밋 ($UPSTREAM)"
+g --no-pager log --oneline -10 "HEAD..$UPSTREAM" 2>/dev/null | sed 's/^/    /'
 
 if [ "$CHECK_ONLY" = 1 ]; then
   echo "(--check: 적용하지 않음. 적용하려면 ./update.sh)"
