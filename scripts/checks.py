@@ -284,14 +284,19 @@ def check_footnotes(original: str, output: str) -> list[Failure]:
     # marker (numbers are immutable under the skill's iron rules, so they
     # survive a legitimate rewrite). Markers with no nearby number in the
     # original are skipped — count/set checks still cover their existence.
-    out_first_pos = {}
+    # The k-th marker of a number is compared with the k-th marker of the same
+    # number in the output; a missing k-th marker is left to the count check.
+    out_pos: dict[str, list[int]] = {}
     for n, p in out_markers:
-        out_first_pos.setdefault(n, p)
+        out_pos.setdefault(n, []).append(p)
+    seen: dict[str, int] = {}
     for num, pos in in_markers:
+        k = seen.get(num, 0)
+        seen[num] = k + 1
         anchor = _nearest_num_before(original, pos)
-        if anchor is None or num not in out_first_pos:
+        if anchor is None or k >= len(out_pos.get(num, [])):
             continue
-        out_anchor = _nearest_num_before(output, out_first_pos[num])
+        out_anchor = _nearest_num_before(output, out_pos[num][k])
         if out_anchor != anchor:
             fails.append(Failure(
                 "footnote_anchor",

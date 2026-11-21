@@ -242,6 +242,25 @@ class StructureCheckTests(unittest.TestCase):
         codes = {x.code for x in checks.check_footnotes(orig, out)}
         self.assertIn("footnote_anchor", codes)
 
+    # --- 같은 번호 표시가 여러 번 나오는 글 --------------------------------
+    # 위치 검사는 같은 번호의 k번째 표시끼리 비교한다. 윤문본의 첫 표시와만
+    # 비교하면 원문을 그대로 넣어도 footnote_anchor 가 났다.
+
+    def test_repeated_marker_identity_passes(self) -> None:
+        text = "목록은 「1)」 꼴이다. 2024년 매출은 10억 원이다.1)\n"
+        self.assertEqual(checks.run_checks(text, text), [])
+
+    def test_repeated_marker_rewrite_in_place_passes(self) -> None:
+        orig = "목록은 「1)」 꼴이다. 2024년 매출은 10억 원이다.1) 이익은 2억 원이다."
+        out = "목록은 「1)」 꼴이다. 2024년 매출이 10억 원이었다.1) 이익은 2억 원이다."
+        self.assertEqual(checks.check_footnotes(orig, out), [])
+
+    def test_repeated_marker_moved_still_fails(self) -> None:
+        orig = "목록은 「1)」 꼴이다. 2024년 매출은 10억 원이다.1) 이익은 2억 원이다."
+        out = "목록은 「1)」 꼴이다. 2024년 매출은 10억 원이다. 이익은 2억 원이다.1)"
+        codes = {x.code for x in checks.check_footnotes(orig, out)}
+        self.assertIn("footnote_anchor", codes)
+
     def test_footnote_definition_alteration_detected(self) -> None:
         orig = "본문이다.1)\n1) 김철수, 「연구」, 2024, 10쪽."
         out = "본문이다.1)\n1) 김철수, 「연구」, 2023, 10쪽."
