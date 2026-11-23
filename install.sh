@@ -18,10 +18,11 @@ ALL_AGENTS=0
 EXTRAS=0
 TS="$(date +%Y%m%d-%H%M%S)"
 
-# 스킬 런타임이 호출하는 3종 + 별도 명령으로만 트리거되는 유지보수 1종.
-# agents/ 의 나머지(릴리스 회차용 개발 도구)는 --all-agents 일 때만 설치한다 —
+# 스킬 런타임이 호출하는 3종 + 별도 명령으로만 트리거되는 유지보수 1종 = 루트 agents/ 전체.
+# 릴리스 회차용 개발 도구 5종은 dev/agents/ 에 있고 --all-agents 일 때만 설치한다 —
 # 서브에이전트는 description 매칭으로 자동 라우팅되므로, 윤문과 무관한 정의가
-# 전역 풀에 상주하면 다른 작업에서 잘못 호출될 수 있다.
+# 전역 풀에 상주하면 다른 작업에서 잘못 호출될 수 있다. 플러그인 로더도 루트
+# agents/*.md 만 세션에 올리므로 dev/agents/ 는 설치 사용자 세션에 실리지 않는다.
 INSTALLED_AGENTS="humanize-monolith humanize-diagnostician humanize-finalizer korean-ai-tell-taxonomist"
 
 print_help() {
@@ -40,7 +41,7 @@ Options:
   --codex-only    Codex만 설치 시도(codex 명령 또는 ~/.codex 감지 시)
   --gemini-only   Gemini만 설치
   --no-gemini     Gemini 건너뜀 (claude/codex만)
-  --all-agents    agents/ 전체를 전역 설치(개발용 1회성 정의 포함).
+  --all-agents    agents/ + dev/agents/ 전체를 전역 설치(개발용 1회성 정의 포함).
                   기본은 스킬이 실제로 쓰는 4종만 — 런타임 3(monolith·
                   diagnostician·finalizer) + 유지보수 1(taxonomist).
   --extras        opt-in 부속 스킬(extras/skills/) 설치.
@@ -128,8 +129,8 @@ prune_stale_agents() {
     [ -L "$f" ] || continue
     target="$(readlink "$f")"
     case "$target" in
-      "$REPO/agents/"*) ;;   # 이 저장소가 심은 것 → 대상
-      *) continue ;;         # 남의 것 → 손대지 않음
+      "$REPO/agents/"*|"$REPO/dev/agents/"*) ;;   # 이 저장소가 심은 것 → 대상
+      *) continue ;;                              # 남의 것 → 손대지 않음
     esac
     base="$(basename "$f" .md)"
     if [ -e "$target" ]; then
@@ -231,7 +232,7 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
   fi
   agents=()
   if [ "$ALL_AGENTS" = 1 ]; then
-    for a in "$REPO/agents"/*.md; do
+    for a in "$REPO/agents"/*.md "$REPO/dev/agents"/*.md; do
       if [ -e "$a" ]; then agents[${#agents[@]}]="$a"; fi
     done
   else
@@ -254,7 +255,7 @@ if [ "$DO_CLAUDE" != no ] && { [ "$DO_CLAUDE" = yes ] || has_claude_target; }; t
     prune_stale_agents
   fi
   if [ "$ALL_AGENTS" != 1 ]; then
-    echo "note: 릴리스 회차용 개발 에이전트는 설치하지 않음 (전체 설치는 --all-agents)"
+    echo "note: 릴리스 회차용 개발 에이전트(dev/agents/)는 설치하지 않음 (전체 설치는 --all-agents)"
   fi
   if [ "$EXTRAS" != 1 ]; then
     echo "note: opt-in 부속 스킬(commit-ko 등)은 설치하지 않음 (설치하려면 --extras)"

@@ -33,6 +33,19 @@ RUNTIME_AGENTS = (
 )
 MAINTENANCE_AGENTS = ("korean-ai-tell-taxonomist",)
 
+# 릴리스 회차용 개발 도구 — 윤문 런타임이 호출하지 않는다. 플러그인 로더는
+# 루트 `agents/*.md`를 전부 세션 에이전트 목록에 올리므로(설명문이 매 세션
+# 컨텍스트에 실림), 이 5종은 `dev/agents/`에 두어 설치 사용자 세션에서 뺀다.
+# `install.sh --all-agents`만 이 폴더를 함께 설치한다.
+_DEV_AGENTS_DIR = os.path.join(_ROOT, "dev", "agents")
+DEV_AGENTS = (
+    "translationese-research-distiller",
+    "korean-translation-scholar",
+    "taxonomy-gap-analyzer",
+    "post-editese-metric-engineer",
+    "quick-rules-integrator",
+)
+
 
 def _read(path: str) -> str:
     with open(path, encoding="utf-8") as f:
@@ -43,6 +56,13 @@ def agent_files() -> list[str]:
     return sorted(
         os.path.splitext(os.path.basename(p))[0]
         for p in glob.glob(os.path.join(_AGENTS_DIR, "*.md"))
+    )
+
+
+def dev_agent_files() -> list[str]:
+    return sorted(
+        os.path.splitext(os.path.basename(p))[0]
+        for p in glob.glob(os.path.join(_DEV_AGENTS_DIR, "*.md"))
     )
 
 
@@ -65,6 +85,25 @@ class AgentInventoryTests(unittest.TestCase):
         for name in RUNTIME_AGENTS + MAINTENANCE_AGENTS:
             with self.subTest(agent=name):
                 self.assertIn(name, actual, f"SKILL.md가 호명하는 {name}.md 가 agents/에 없음")
+
+    def test_plugin_scope_holds_only_runtime_and_maintenance_agents(self) -> None:
+        """루트 `agents/`는 플러그인이 세션에 올리는 범위다 — 런타임 3 + 유지보수 1만."""
+        self.assertEqual(
+            set(agent_files()),
+            set(RUNTIME_AGENTS + MAINTENANCE_AGENTS),
+            f"agents/ 실물이 런타임·유지보수 4종과 다름: {agent_files()}",
+        )
+
+    def test_dev_agents_live_outside_plugin_scope(self) -> None:
+        """개발용 5종은 `dev/agents/`에 있고 루트 `agents/`에는 없어야 한다."""
+        in_scope = set(agent_files())
+        dev_actual = set(dev_agent_files())
+        for name in DEV_AGENTS:
+            with self.subTest(agent=name):
+                self.assertNotIn(
+                    name, in_scope, f"{name}.md 가 agents/에 있음 — 플러그인 설치 세션에 로드됨"
+                )
+                self.assertIn(name, dev_actual, f"{name}.md 가 dev/agents/에 없음")
 
     def test_skill_does_not_reference_missing_agent_dir(self) -> None:
         """이 레포는 에이전트를 플러그인 컨벤션대로 루트 `agents/`에 둔다.
