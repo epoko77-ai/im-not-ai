@@ -102,7 +102,7 @@ Stock expressions Korean human writers rarely produce and LLMs emit repeatedly. 
 | **E-2** | S2 | Same sentence ending 4+ consecutively; automatic progressive `~고 있다` | Vary endings; reduce `~고 있다` to simple tense where possible (`읽고 있다` → `읽는다`) | ✅ |
 | **E-3** | — | Every paragraph 3–4 sentences long | Deliberately mix a one-sentence paragraph and a six-sentence one | ❌ |
 | **E-4** | S2 | Nothing but simple sentences — almost no compound or complex structure. Common when the model was told to "be concise" | Bind 2–3 adjacent simple sentences with connective endings (`-며·-고·-는데·-면서·-자`), adnominal clauses or quotative clauses. Target ~60% simple, 30%+ complex; save simple sentences for emphasis and turns | ❌ |
-| **E-5** | S2 | Average clause length between commas grows long — English-style long sentences with stacked subordinate clauses (KatFish: human 4.35 eojeol vs AI 8.56, 1.97×) | Score above 7 eojeol average; split 8+ eojeol clauses at a period, or compress English subordination into a Korean adnominal clause. Weighted when co-occurring with E-4 | ❌ |
+| **E-5** | S2 | Average clause length between commas grows long — English-style long sentences with stacked subordinate clauses (KatFish: human 4.35 eojeol vs AI 8.56, 1.97×) | Score above 7 eojeol average; split 8+ eojeol clauses at a period. Do not compress them into a Korean adnominal clause — that creates the long left-branching modifier A-18 targets. Weighted when co-occurring with E-4 | ❌ |
 | **E-6** | S2 | POS diversity around commas explodes — commas inserted indiscriminately at every kind of boundary (KatFish: human 24.38 vs AI 59.39, 2.44×) | Restrict commas to (a) main-clause boundaries and (b) clear appositives. **Genre guard: essays, news, blogs, QA and reports only** — in poetry and fiction the signal disappears (1.03×) | ❌ |
 | **E-7** | S2 *(estimated)* | Addressee honorific levels (해라/하게/하오/해요/합쇼) mixed within one document or dialogue | Fix one grade at the outset and hold it. Render *Will you help me?* as one appropriate level (`좀 도와주시겠어요?` / `도와줄래?`), not both. Don't flatten modality to `~수 있다` — vary with `~을지 모른다·~을 가능성도 있다·~을 수도 있겠다` | ✅ |
 
@@ -118,7 +118,7 @@ Stock expressions Korean human writers rarely produce and LLMs emit repeatedly. 
 | **F-2** | — | Synonym doubling: `중요하고 핵심적인 역할`, `새롭고 혁신적인 접근`, `지속적이고 꾸준한 노력` | Keep one of the two modifiers | ❌ |
 | **F-3** | — | Function+role compounds: `~로서의 역할과 기능`, `~의 의미와 가치` | Keep one | ❌ |
 | **F-4** | S2 | Sino-Korean nominalizers `-성/-적/-화` plus literal English `-tion/-ment/-ness/-ity`, 12+ per document | Restore verb and adjective roots: "the implementation of the policy" → `정책 시행` | ✅ |
-| **F-5** | S2 | `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`), 3+ | Noun+noun compound or unfold: `전략 함의`, `실천의 기반` | ✅ |
+| **F-5** | S2 | `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`), 3+ | Unfold: `실천적 기반` → `실천의 기반`. Dropping `-적` is fine only for an established two-word compound (`학술 연구`); never leave three or more nouns chained without particles (conflicts with A-13) | ✅ |
 
 ## G. Hedging (G-1 ~ G-3) — S2
 

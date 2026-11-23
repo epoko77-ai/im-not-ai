@@ -67,7 +67,7 @@ Format: one line per pattern — `ID [severity] trigger → prescription`. No ex
 ## F. Excess modification and redundancy — S2
 
 - **F-4** Sino-Korean nominalizers `-성/-적/-화` plus literal English `-tion/-ment/-ness/-ity`, cumulative 12+ per document → restore verb or adjective roots ("the implementation of the policy" → `정책 시행`)
-- **F-5** `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`) 3+ → noun+noun compound or unfold (`전략 함의`, `실천의 기반`)
+- **F-5** `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`) 3+ → unfold (`실천적 기반` → `실천의 기반`); dropping `-적` is fine only when it yields an established two-word compound (`학술 연구`), never a bare chain of three or more nouns (A-13)
 
 ## G. Hedging pile-up — S2
 
