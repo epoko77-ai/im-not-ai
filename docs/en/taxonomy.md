@@ -118,7 +118,7 @@ Stock expressions Korean human writers rarely produce and LLMs emit repeatedly. 
 | **F-2** | — | Synonym doubling: `중요하고 핵심적인 역할`, `새롭고 혁신적인 접근`, `지속적이고 꾸준한 노력` | Keep one of the two modifiers | ❌ |
 | **F-3** | — | Function+role compounds: `~로서의 역할과 기능`, `~의 의미와 가치` | Keep one | ❌ |
 | **F-4** | S2 | Sino-Korean nominalizers `-성/-적/-화` plus literal English `-tion/-ment/-ness/-ity`, 12+ per document | Restore verb and adjective roots: "the implementation of the policy" → `정책 시행` | ✅ |
-| **F-5** | S2 | `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`), 3+ | Unfold: `실천적 기반` → `실천의 기반`. Do not just drop `-적` and stack nouns (`전략 함의` ✗, conflicts with A-13) | ✅ |
+| **F-5** | S2 | `~적 N` abstraction chains (`전략적 함의`, `실천적 기반`), 3+ | Unfold: `실천적 기반` → `실천의 기반`. Dropping `-적` is fine only for an established two-word compound (`학술 연구`); never leave three or more nouns chained without particles (conflicts with A-13) | ✅ |
 
 ## G. Hedging (G-1 ~ G-3) — S2
 
