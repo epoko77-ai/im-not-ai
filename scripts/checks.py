@@ -245,6 +245,27 @@ def extract_defs(text: str) -> dict[str, str]:
     return defs
 
 
+# Other marker styles a 「N) 」 definition may belong to: superscript
+# ("…다.³⁾", "…다³") and bracket ("…다[3]"). Used only to decide which
+# 「N) 」 lines are definitions; count/anchor checks stay on _INLINE_MARKER.
+# Superscripts right after a Latin letter or digit are units ("m²", "cm³").
+_SUP_DIGITS = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")
+_SUP_MARKER = re.compile(r"(?<![A-Za-z0-9])([⁰¹²³⁴⁵⁶⁷⁸⁹]{1,3})⁾?")
+_BRACKET_MARKER = re.compile(r"(?<=\S)\[(\d{1,3})\]")
+
+
+def _referenced_numbers(text: str) -> set[str]:
+    """Footnote numbers that have a marker somewhere outside 「N) 」 lines."""
+    nums = {n for n, _ in extract_inline_markers(text)}
+    for line in text.splitlines():
+        if _DEF_LINE.match(line):
+            continue
+        nums.update(m.group(1).translate(_SUP_DIGITS)
+                    for m in _SUP_MARKER.finditer(line))
+        nums.update(m.group(1) for m in _BRACKET_MARKER.finditer(line))
+    return nums
+
+
 def _nearest_num_before(text: str, pos: int) -> str | None:
     seg = text[max(0, pos - ANCHOR_WINDOW):pos]
     nums = _NUM_TOKEN.findall(seg)
@@ -255,7 +276,12 @@ def check_footnotes(original: str, output: str) -> list[Failure]:
     fails: list[Failure] = []
     in_markers = extract_inline_markers(original)
     out_markers = extract_inline_markers(output)
-    if not in_markers and not extract_defs(original):
+    # A 「N) 」 line is a footnote definition only if the body carries a
+    # marker with the same number; otherwise it is a numbered list item
+    # ("1) 2) 3)"), which a rewrite may legitimately touch.
+    refs = _referenced_numbers(original)
+    in_defs = {n: c for n, c in extract_defs(original).items() if n in refs}
+    if not in_markers and not in_defs:
         return fails  # original has no footnotes; nothing to protect
 
     if len(out_markers) < len(in_markers):
@@ -299,7 +325,6 @@ def check_footnotes(original: str, output: str) -> list[Failure]:
                 f"(인접 수치 앵커 '{anchor}' → '{out_anchor}'): 인용 출처 변조 위험",
             ))
 
-    in_defs = extract_defs(original)
     out_defs = extract_defs(output)
     for num, content in in_defs.items():
         if num not in out_defs:

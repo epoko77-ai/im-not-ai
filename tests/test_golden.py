@@ -253,6 +253,59 @@ class StructureCheckTests(unittest.TestCase):
         out = "성장률은 3.1%를 기록했다.1)\n1) 한국은행, 2024."
         self.assertEqual(checks.check_footnotes(orig, out), [])
 
+    # --- 「1) 2) 3)」 번호 목록은 각주 정의가 아니다 -------------------------
+    # 본문에 같은 번호의 각주 표지가 없는 「N) 」 줄은 목록 항목이다.
+    # 목록 안 쉼표 하나를 지운 정상 윤문이 footnote_def 로 FAIL 나던 오탐.
+
+    def test_numbered_list_edit_is_not_footnote_def(self) -> None:
+        orig = ("이런 걸 해 봅니다\n1) 작은 vault 만들기\n2) 규칙 쓰기\n"
+                "3) 내 자료 기준으로 질문하고, 답의 근거를 직접 확인하기\n")
+        out = ("이런 걸 해 봅니다\n1) 작은 vault 만들기\n2) 규칙 쓰기\n"
+               "3) 내 자료 기준으로 질문하고 답의 근거를 직접 확인하기\n")
+        self.assertEqual(checks.run_checks(orig, out), [])
+
+    def test_list_and_real_footnotes_list_edit_passes(self) -> None:
+        """목록과 진짜 각주가 같은 번호를 써도 목록 쪽 수정은 통과."""
+        orig = ("성장률은 3.1%였다.1) 물가는 2.4% 올랐다.2)\n"
+                "할 일은 이렇다.\n1) 자료 모으기\n2) 표 만들기\n3) 검토하고, 보내기\n\n"
+                "1) 한국은행, 2024.\n2) 통계청, 2024.\n")
+        out = orig.replace("검토하고, 보내기", "검토하고 보내기")
+        self.assertEqual(checks.check_footnotes(orig, out), [])
+
+    def test_list_and_real_footnotes_def_edit_still_fails(self) -> None:
+        orig = ("성장률은 3.1%였다.1) 물가는 2.4% 올랐다.2)\n"
+                "할 일은 이렇다.\n1) 자료 모으기\n2) 표 만들기\n3) 검토하고, 보내기\n\n"
+                "1) 한국은행, 2024.\n2) 통계청, 2024.\n")
+        out = orig.replace("2) 통계청, 2024.", "2) 통계청, 2023.")
+        codes = {x.code for x in checks.check_footnotes(orig, out)}
+        self.assertIn("footnote_def", codes)
+
+    def test_marked_footnote_def_dropped_still_fails(self) -> None:
+        orig = "본문이다.1) 다음 문장이다.2)\n1) 김철수, 2024.\n2) 이영희, 2023."
+        out = "본문이다.1) 다음 문장이다.2)\n1) 김철수, 2024."
+        codes = {x.code for x in checks.check_footnotes(orig, out)}
+        self.assertIn("footnote_def", codes)
+
+    def test_superscript_marker_def_edit_still_fails(self) -> None:
+        """³⁾ 꼴 표지에 딸린 「3) 」 정의는 계속 보호한다."""
+        orig = "본문이다.³⁾\n3) 김철수, 「연구」, 2024, 10쪽."
+        out = "본문이다.³⁾\n3) 김철수, 「연구」, 2023, 10쪽."
+        codes = {x.code for x in checks.check_footnotes(orig, out)}
+        self.assertIn("footnote_def", codes)
+
+    def test_unit_superscript_is_not_footnote_marker(self) -> None:
+        """「30m²」의 ² 는 단위라 목록 2) 를 각주 정의로 만들지 않는다."""
+        orig = "넓이는 30m²다.\n1) 바닥 재기\n2) 벽 재고, 적기\n"
+        out = "넓이는 30m²다.\n1) 바닥 재기\n2) 벽 재고 적기\n"
+        self.assertEqual(checks.check_footnotes(orig, out), [])
+
+    def test_bracket_marker_def_edit_still_fails(self) -> None:
+        """[3] 꼴 표지에 딸린 「3) 」 정의는 계속 보호한다."""
+        orig = "본문이다[3].\n3) 김철수, 「연구」, 2024, 10쪽."
+        out = "본문이다[3].\n3) 김철수, 「연구」, 2023, 10쪽."
+        codes = {x.code for x in checks.check_footnotes(orig, out)}
+        self.assertIn("footnote_def", codes)
+
     def test_quote_altered_detected(self) -> None:
         orig = '그는 "결과를 신중히 해석해야 한다"고 말했다.'
         out = '그는 "결과를 조심스럽게 해석해야 한다"고 말했다.'
