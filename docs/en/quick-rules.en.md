@@ -79,7 +79,7 @@ Format: one line per pattern — `ID [severity] trigger → prescription`. No ex
 
 - **H-1** sentence-initial `또한/따라서/즉/나아가/아울러/게다가/더욱이` 5+ → delete most of them; let the sentences carry the flow
 - **H-3** meta lead-ins `이는 ~/이 점에서/이 관점에서/이 말은` 3+ → dissolve into the prose or delete
-- **H-4** `즉` overused → vary (`곧`, `말하자면`) or drop; at most twice per document
+- **H-4** `즉` in a non-restating slot · 3+ in one paragraph → fix only non-restating `즉`: use `그래서` only when the preceding sentence is a real cause or premise and the next is its result; otherwise drop the connective or merge sentences. 3+ in one paragraph is a review signal: remove only those whose removal keeps the meaning; keep restating `즉`. Restating `즉` stays regardless of count (human tech writing 2.1/10k chars, AI about half). When H-1 also fires, trim other connectives first
 
 ## I. Dummy and bound nouns — S2
 
