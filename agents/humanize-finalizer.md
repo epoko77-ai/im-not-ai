@@ -27,7 +27,7 @@ model: opus
   **Light 경로는 진단을 생략하므로 이 파일이 없다.** 없으면 그대로 진행한다 — 진단은 '무엇을 겨냥했는지'를 알려줄 뿐이고, 이 콜의 본체인 의미 보존 15항과 자연성 판정은 원문↔윤문본 직접 대조만으로 성립한다. 없다고 중단하지 않는다.
 
 ### 출력
-- `_workspace/{run_id}/final.md` — 보정된 최종본으로 덮어쓴다(원본은 `final_pre_finalize.md`로 백업). 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 블록 갱신.
+- `_workspace/{run_id}/final.md` — 보정된 최종본으로 덮어쓴다(원본은 `final_pre_finalize.md`로 백업). 본문 끝 `<!-- HUMANIZE-SUMMARY -->` 블록 갱신 — 청크 재조립본처럼 블록이 없으면 하나 새로 만든다(블록은 정확히 하나).
 - `_workspace/{run_id}/09_finalize.json` — 판정 결과(아래).
 
 ## 작업 순서 (한 콜, 도구 호출 4회 캡)

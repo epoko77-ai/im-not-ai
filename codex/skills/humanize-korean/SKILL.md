@@ -49,7 +49,7 @@ Codex 협업 에이전트를 사용할 수 있으면 역할별로 별도 에이�
 ## Light
 
 1. 진단 없이 monolith 역할을 한 번 실행한다. 입력은 `01_input_with_metrics.txt`, 룰북은 `quick-rules.md`, 강도는 보수다.
-2. 공통 게이트를 실행한다.
+2. 결정적 복원 뒤 공통 게이트를 실행한다.
 3. 변경률 5% 미만이고 finding이 거의 없으면 “이미 좋은 글”로 보고한다.
 4. 게이트 exit 2면 결과를 채택하지 말고 보수 강도를 재강조해 monolith를 1회만 재실행한다.
 
@@ -63,7 +63,7 @@ python3 "${SKILL_ROOT}/scripts/prepare_monolith_input.py" --run-dir "$RUN_DIR" -
 ```
 
 3. monolith 역할로 결합 입력 전체를 한 번에 윤문해 `final.md`를 작성한다. 15,000자 이하는 임의로 청킹하지 않는다.
-4. 공통 게이트를 실행한다. exit 1 또는 자체검증 2항 이상 실패면 finalizer로 승급한다.
+4. 결정적 복원 뒤 공통 게이트를 실행한다. exit 1 또는 자체검증 2항 이상 실패면 finalizer로 승급한다.
 
 ## Heavy
 
@@ -81,8 +81,24 @@ python3 "${SKILL_ROOT}/scripts/prepare_monolith_input.py" --run-dir "$RUN_DIR" -
 python3 "${SKILL_ROOT}/scripts/reassemble_chunks.py" --run-dir "$RUN_DIR" --strict
 ```
 
-5. 공통 게이트 뒤 항상 finalizer 역할을 실행한다. 원문, 윤문본, 진단을 직접 대조해 문제 구간만 고치고 `09_finalize.json`을 쓴다. 청크 출력에는 summary가 없으므로 finalizer가 게이트 수치와 진단 결과로 `<!-- HUMANIZE-SUMMARY -->` 블록을 정확히 하나 생성해야 한다.
+5. 결정적 복원과 공통 게이트 뒤 항상 finalizer 역할을 실행한다. 원문, 윤문본, 진단을 직접 대조해 문제 구간만 고치고 `09_finalize.json`을 쓴다. 청크 출력에는 summary가 없으므로 finalizer가 게이트 수치와 진단 결과로 `<!-- HUMANIZE-SUMMARY -->` 블록을 정확히 하나 생성해야 한다.
 6. finalize 뒤 공통 게이트를 다시 실행한다. `hold_and_report`면 사람 검토가 필요하다고 보고한다.
+
+## 결정적 복원
+
+모든 경로에서 `final.md`가 나온 뒤 공통 게이트 **직전**에 다음 셋을 순서대로 실행한다. LLM 콜 0회의 결정적 변형이며, 애매한 문장은 고치지 않고 보류로 보고만 한다(보류 건은 게이트 P5가 잡는다). 순서가 바뀌면 게이트가 먼저 경고해 윤문본을 통째로 롤백하게 되므로, 문장 단위로 되돌린 뒤 판정한다.
+
+```bash
+python3 "${SKILL_ROOT}/scripts/restore_modality.py" --before "$RUN_DIR/01_input.txt" --after "$RUN_DIR/final.md" --out "$RUN_DIR/final.md"
+python3 "${SKILL_ROOT}/scripts/strip_injected_commas.py" --before "$RUN_DIR/01_input.txt" --after "$RUN_DIR/final.md" --out "$RUN_DIR/final.md"
+python3 "${SKILL_ROOT}/scripts/lexical_layer.py" restore --before "$RUN_DIR/01_input.txt" --after "$RUN_DIR/final.md" --out "$RUN_DIR/final.md"
+```
+
+1. 서법 복원: 유보·당위 표지가 사라진 문장만 원문 문장으로 되돌린다.
+2. C-11 역주입 제거: 윤문이 새로 쓴 문장에서만 연결어미 뒤 쉼표를 걷어낸다. standard·heavy에서 `02_diagnosis.md`가 C-11을 지목했을 때만 `--all`을 붙인다. 진단이 없는 light에서는 쓰지 않는다.
+3. 어휘 주입 복원: 원문 문서에 없던 '바꿈 우선' 낱말(`references/lexicon.json`의 `restore: true`)이 새로 생긴 문장만 원문 문장으로 되돌린다.
+
+되돌린 문장의 AI 티도 함께 돌아온다(의미 보존 우선). 복원·보류 건수는 summary 블록과 결과 보고에 적는다.
 
 ## 공통 게이트
 

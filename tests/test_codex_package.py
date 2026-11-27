@@ -145,6 +145,9 @@ class CodexPackageTests(unittest.TestCase):
             "scripts/reassemble_chunks.py",
             "scripts/verify_change_rate.py",
             "scripts/verify_gates.py",
+            "scripts/restore_modality.py",
+            "scripts/strip_injected_commas.py",
+            "scripts/lexical_layer.py",
             "references/quick-rules.md",
             "references/diagnosis-rules.md",
             "references/roles/diagnostician.md",
@@ -160,6 +163,67 @@ class CodexPackageTests(unittest.TestCase):
         self.assertIn('SKILL_ROOT="$(cd -P', contract)
         self.assertNotIn("$SKILL_DIR/scripts/", contract)
         self.assertGreaterEqual(contract.count("${SKILL_ROOT}/scripts/"), 5)
+
+    def test_codex_runs_phase24_restores_before_gate(self) -> None:
+        """Codex도 Claude Phase 2.4의 결정적 복원 3종을 공통 게이트 전에 실행한다.
+
+        회귀 방지: Codex 경로에는 서법 복원·쉼표 역주입 제거·어휘 주입 복원이 통째로
+        없어, 같은 원문이라도 Claude 경로만 서법·어휘 주입을 되돌렸다.
+        """
+        codex = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        claude = (ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(encoding="utf-8")
+        phase = codex.split("## 결정적 복원\n", 1)[1].split("\n## ", 1)[0]
+        calls = [
+            '"${SKILL_ROOT}/scripts/restore_modality.py"',
+            '"${SKILL_ROOT}/scripts/strip_injected_commas.py"',
+            '"${SKILL_ROOT}/scripts/lexical_layer.py" restore',
+        ]
+        positions = [phase.index(c) for c in calls]
+        self.assertEqual(positions, sorted(positions), "Claude Phase 2.4와 같은 순서여야 한다")
+        self.assertIn("`--all`", phase)
+        self.assertIn("C-11", phase)
+        self.assertIn("light", phase)
+        self.assertLess(codex.index("## 결정적 복원"), codex.index("## 공통 게이트"))
+        for script in ("restore_modality.py", "strip_injected_commas.py", "lexical_layer.py restore"):
+            self.assertIn(script, claude.split("## Phase 2.4", 1)[1].split("\n## ", 1)[0])
+
+    def test_heavy_single_chunk_still_reassembles_in_both_orchestrators(self) -> None:
+        """body 청크가 1개여도 재조립을 거쳐야 말미 각주(passthrough)가 final.md에 돌아온다."""
+        codex = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        claude = (ROOT / "skills" / "humanize-korean" / "SKILL.md").read_text(encoding="utf-8")
+        codex_heavy = codex.split("## Heavy\n", 1)[1].split("\n## ", 1)[0]
+        claude_heavy = claude.split("### Phase P2: 겨냥 윤문\n", 1)[1].split("\n### ", 1)[0]
+        self.assertIn("단일 청크에서도 이 단계를 생략하지 않는다", codex_heavy)
+        self.assertIn("단일 청크에서도 재조립을 생략하지 않는다", claude_heavy)
+        # 청크 경로에서 monolith 입력은 manifest 파일이다 — 01_input_with_metrics.txt 는
+        # --chunk 실행이 다시 쓰지 않아 진단이 실리지 않는다.
+        chunk_part = claude_heavy.split("`--chunk`를 썼으면", 1)[1]
+        self.assertIn("`input_file`", chunk_part)
+        self.assertNotIn("input_path=01_input_with_metrics.txt", chunk_part)
+
+    def test_phase24_wrappers_run_from_foreign_cwd(self) -> None:
+        """심링크 설치의 Codex 래퍼로 Phase 2.4 스크립트를 저장소 밖 cwd에서 부를 수 있다."""
+        with tempfile.TemporaryDirectory() as td:
+            before = Path(td) / "01_input.txt"
+            after = Path(td) / "final.md"
+            before.write_text("성장률이 반등할 수 있다. 기존 규제에 새 의무가 하나 추가된다.", encoding="utf-8")
+            after.write_text("성장률이 반등한다. 기존 규제 위에 새 의무를 하나 얹는다.", encoding="utf-8")
+            for script, extra in (
+                ("restore_modality.py", []),
+                ("strip_injected_commas.py", []),
+                ("lexical_layer.py", ["restore"]),
+            ):
+                with self.subTest(script=script):
+                    proc = subprocess.run(
+                        [sys.executable, str(SKILL / "scripts" / script), *extra,
+                         "--before", str(before), "--after", str(after), "--out", str(after)],
+                        cwd=td, capture_output=True, text=True, encoding="utf-8",
+                        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                    )
+                    self.assertEqual(proc.returncode, 0, proc.stderr)
+            out = after.read_text(encoding="utf-8")
+            self.assertIn("반등할 수 있다", out)
+            self.assertIn("추가된다", out)
 
     def test_source_wrapper_runs_from_foreign_cwd(self) -> None:
         with tempfile.TemporaryDirectory() as td:

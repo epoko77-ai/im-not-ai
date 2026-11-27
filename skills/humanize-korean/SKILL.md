@@ -147,18 +147,17 @@ SKILL_ROOT="$(d="$(cd -P "${CLAUDE_SKILL_DIR}" && pwd)"; \
 Standard의 1과 동일 — `humanize-diagnostician` 1콜 → `02_diagnosis.md`. 장문이라도 진단은 통짜 1콜(전 청크 공유)이다.
 
 ### Phase P2: 겨냥 윤문
-1. shim으로 진단 결합 (Bash). **heavy에서만** `--chunk`를 함께 줄 수 있다:
+1. shim으로 진단 결합 (Bash). 기본은 standard와 같은 `--diagnosis` 결합이고, 초장문(15,000자 초과)처럼 청킹이 필요할 때만 **heavy에서** `--chunk`를 더한다:
    ```
-   python3 ${SKILL_ROOT}/scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre {genre} --diagnosis _workspace/{run_id}/02_diagnosis.md --chunk
+   python3 ${SKILL_ROOT}/scripts/prepare_monolith_input.py --run-dir _workspace/{run_id} --genre {genre} --diagnosis _workspace/{run_id}/02_diagnosis.md [--chunk]
    ```
    - 분할 여부·경계는 100% shim(Python)이 정한다(문단·문장 경계, 헤딩 승격, 말미 각주 passthrough — 청킹 임계는 shim 관리).
-   - 산출: `01_chunk_{NN}_input_with_metrics.txt` N개 + `chunk_manifest.json`.
-2. **청크 경로 판정**: `chunk_manifest.json`의 body 청크(passthrough 제외)가 **2개 이상일 때만** 청크 경로. **1개면 단일 monolith 콜로 처리한다** — 청킹은 shim의 결정이지 오케스트레이터의 추측이 아니다. 단일 콜로 처리할 때의 입력 파일도 manifest가 있으면 그 청크의 `input_file` 값을, 없으면 `01_input_with_metrics.txt`를 쓴다.
-3. **단일 콜(기본)**: `humanize-monolith` 1회 호출(`input_path=01_input_with_metrics.txt`). monolith는 진단문을 앞머리에서 읽고 지배 패턴을 겨냥해 윤문한다. → `final.md`.
-4. **청크 병렬(shim이 실제로 쪼갠 경우만)**:
-   - 각 body 청크를 monolith로 **병렬 호출**(동시 최대 4). 입력·출력 파일명은 manifest의 **`input_file`·`rewritten_file` 필드를 그대로** 사용한다 — 파일명을 직접 조립하지 않는다(인덱싱 불일치 사고 방지).
+   - `--chunk` 산출: `01_chunk_{NN}_input_with_metrics.txt` N개 + `chunk_manifest.json`. **`--chunk` 실행은 `01_input_with_metrics.txt`를 다시 쓰지 않는다** — 그 파일은 Phase 1의 진단 없는 판으로 남는다.
+2. **`--chunk` 없이(기본)**: `humanize-monolith` 1회 호출(`input_path=01_input_with_metrics.txt` — 진단 결합본). monolith는 진단문을 앞머리에서 읽고 지배 패턴을 겨냥해 윤문한다. → `final.md`.
+3. **`--chunk`를 썼으면** 입력·출력 파일명은 청크 수와 관계없이 manifest의 **`input_file`·`rewritten_file` 필드를 그대로** 사용한다 — 파일명을 직접 조립하지 않는다(인덱싱 불일치 사고 방지).
+   - body 청크(passthrough 제외)가 **1개면** 그 청크로 monolith를 1회 호출한다. **2개 이상일 때만** 병렬 호출한다(동시 최대 4) — 청킹은 shim의 결정이지 오케스트레이터의 추측이 아니다.
    - 각 청크 콜은 같은 `quick_rules_path`(파일 참조)와 같은 `02_diagnosis.md`를 공유한다. **룰북·진단 전문을 청크 프롬프트에 복붙하지 않는다** — 재로드 비용이 청킹 토큰 폭발의 주범이었다(§설계 노트).
-   - 재조립: `python3 ${SKILL_ROOT}/scripts/reassemble_chunks.py --run-dir _workspace/{run_id}` → `03_reassembled.md`(passthrough 원문 삽입 + 문자수 대사). 이걸 `final.md`로 삼는다.
+   - 재조립: `python3 ${SKILL_ROOT}/scripts/reassemble_chunks.py --run-dir _workspace/{run_id} --strict` → `03_reassembled.md`. 이걸 `final.md`로 복사한다. **단일 청크에서도 재조립을 생략하지 않는다** — 말미 각주 passthrough 복원과 문자 수 대사가 여기서 이뤄진다. 재조립기는 청크 출력 끝의 `<!-- HUMANIZE-SUMMARY -->` 블록을 걷어낸다(최종 summary는 P3 finalize가 하나만 만든다). 경고는 숨기지 않는다.
    - 청크 경계 문체 이음매가 어색하면 경계 전후 2문단만 monolith로 국소 패치(전역 재작성 금지 — 의미 드리프트 유발).
    - **재청킹 주의**: `--chunk` 재실행 시 경계가 바뀌므로 기존 `02_chunk_*_rewritten.txt`는 shim이 자동 삭제한다(`stale_removed`). 청킹 후 입력을 수정하면 재청킹부터 다시 한다.
 
@@ -170,6 +169,7 @@ Phase 2.5(공통)와 동일 — `verify_gates.py --genre {genre}`. Bash 1회 —
 - 입력: `original_path=01_input.txt`, `rewritten_path=final.md`, `diagnosis_path=02_diagnosis.md`
 - 원문↔윤문본 **직접 대조**로 의미 보존 15항(각주·제목·없던 주장 주입 포함) + 자연성(잔존 + 과윤문 양방향)을 판정하고 **문제 구간만 국소 보정**(전체 재작성 금지).
 - 출력: 보정된 `final.md`(원본은 `final_pre_finalize.md` 백업) + `09_finalize.json`.
+- 청크 재조립본에는 summary 블록이 없으므로 finalizer가 게이트 수치와 진단으로 `<!-- HUMANIZE-SUMMARY -->` 블록을 정확히 하나 만든다.
 - `verdict=hold_and_report`면 사람 검토 안내. 그 외 finalize 후 `verify_gates.py`를 한 번 더 돌려 최종 변경률 확정.
 
 **콜 수: 3 (진단 1 + 윤문 1 + finalize 1). 청크 병렬 시 2 + N + 국소 패치.**
