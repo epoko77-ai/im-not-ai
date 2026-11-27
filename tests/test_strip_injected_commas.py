@@ -37,6 +37,18 @@ class StripInjectedCommasTests(unittest.TestCase):
         self.assertNotIn("말하면서,", out)
         self.assertEqual(rep["commas_removed"], 1)
 
+    def test_multi_sentence_quote_untouched(self) -> None:
+        # 인용 안에 '. '가 있으면 문장 조각 경계에서 따옴표 짝이 깨진다 —
+        # 따옴표 구간은 조각이 아니라 본문 전체에서 계산해야 한다.
+        before = "원문이다."
+        for q_open, q_close in (('"', '"'), ("“", "”"), ("「", "」")):
+            after = f"그가 {q_open}우리는 노력했고, 결과를 냈다. 그러나 부족했다{q_close}고 말하면서, 웃었다."
+            with self.subTest(quote=q_open):
+                out, rep = strip_injected(before, after)
+                self.assertIn("노력했고,", out)
+                self.assertNotIn("말하면서,", out)
+                self.assertEqual(rep["commas_removed"], 1)
+
     def test_multiple_endings(self) -> None:
         before = "짧은 원문."
         after = "비용이 낮아지며, 장벽이 사라지는데, 속도는 빨라져서, 모두 놀랐다."
