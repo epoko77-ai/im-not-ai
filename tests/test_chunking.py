@@ -314,6 +314,43 @@ class ChunkCliRoundTripTests(unittest.TestCase):
                 out = f.read()
             self.assertEqual(out, text, "공백 복원 실패 — 문단 구분이 훼손됨")
 
+    def test_reassemble_strips_chunk_summary_blocks(self) -> None:
+        """청크 출력 끝의 HUMANIZE-SUMMARY 블록은 재조립에서 걷어낸다.
+
+        회귀 방지: monolith 계약은 출력마다 summary 블록을 쓰게 하는데 재조립기가 그대로
+        이어 붙였다. 게이트는 첫 블록부터 파일 끝까지를 메타로 지우므로 두 번째 청크
+        이후가 비교에서 빠져, 본문이 같아도 문자율이 폭증했다.
+        """
+        text = LONG20K
+        summary = "\n\n<!-- HUMANIZE-SUMMARY v1.6.1\ngrade: B\n-->\n"
+        with tempfile.TemporaryDirectory() as td:
+            with open(os.path.join(td, "01_input.txt"), "w", encoding="utf-8") as f:
+                f.write(text)
+            PREP.main(["--chunk", "--run-dir", td])
+            with open(
+                os.path.join(td, "chunk_manifest.json"), encoding="utf-8"
+            ) as f:
+                manifest = json.load(f)
+            body = [e for e in manifest["chunks"] if not e["passthrough"]]
+            self.assertGreaterEqual(len(body), 2)
+            for entry in body:
+                chunk_text = text[entry["start"] : entry["end"]]
+                with open(
+                    os.path.join(td, entry["rewritten_file"]), "w", encoding="utf-8"
+                ) as f:
+                    f.write(chunk_text.strip() + summary)
+            rc = REASM.main(["--run-dir", td, "--strict"])
+            self.assertEqual(rc, 0)
+            with open(os.path.join(td, "03_reassembled.md"), encoding="utf-8") as f:
+                out = f.read()
+            self.assertNotIn("HUMANIZE-SUMMARY", out)
+            self.assertEqual(out, text)
+            with open(
+                os.path.join(td, "03_reassembly_report.json"), encoding="utf-8"
+            ) as f:
+                report = json.load(f)
+            self.assertEqual(report["summary_blocks_stripped"], len(body))
+
     def test_reassemble_detects_loss(self) -> None:
         """청크 하나가 절반 이하로 줄면 유실 의심 경고(strict 에서 exit 1)."""
         text = LONG20K

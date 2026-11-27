@@ -12,6 +12,9 @@
   - 청크별 문자 수 대사: 윤문 결과가 원문 절반 이하(유실 의심)거나 2배
     초과(증식 의심)면 경고. --strict 면 경고를 오류(exit 1)로 처리.
   - 윤문 결과가 비어 있으면 즉시 오류.
+  - 청크 출력 끝의 <!-- HUMANIZE-SUMMARY --> 블록은 걷어낸다. 게이트는 첫 블록부터
+    파일 끝까지를 메타로 지우므로, 청크마다 붙은 블록을 이어 붙이면 둘째 청크 이후가
+    비교에서 빠진다. 최종 summary 는 finalize 가 하나만 만든다.
 
 공백 복원: 청크 경계의 문단 구분 개행은 분할 시 앞 청크 꼬리에 붙어 있다.
 LLM 출력은 앞뒤 공백이 불안정하므로, 윤문 결과의 앞뒤 공백을 벗겨내고
@@ -91,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     pieces: list[str] = []
     report_chunks: list[dict] = []
     warnings: list[str] = []
+    summaries_stripped = 0
     for c in chunks:
         orig = text[c["start"] : c["end"]]
         idx = c["index"]
@@ -102,6 +106,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         rewritten = (run_dir / c["rewritten_file"]).read_text(encoding="utf-8")
+        rewritten, summary = _checks.split_summary_block(rewritten)
+        if summary:
+            summaries_stripped += 1
         core_orig = orig.strip()
         core_new = rewritten.strip()
         if core_orig and not core_new:
@@ -144,6 +151,7 @@ def main(argv: list[str] | None = None) -> int:
         "output_chars": len(out),
         "total_ratio": round(len(out) / len(text), 3) if text else None,
         "warnings": warnings,
+        "summary_blocks_stripped": summaries_stripped,
         "chunks": report_chunks,
     }
     (run_dir / args.report).write_text(
@@ -155,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         f"chunks={len(chunks)}\n"
         f"source_chars={len(text)}  output_chars={len(out)}  "
         f"total_ratio={report['total_ratio']}\n"
-        f"warnings={len(warnings)}"
+        f"warnings={len(warnings)}  summary_blocks_stripped={summaries_stripped}"
     )
     for w in warnings:
         print(f"WARNING: {w}")
@@ -171,6 +179,7 @@ import sys as _sys  # noqa: E402
 
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import console as _console  # noqa: E402
+import checks as _checks  # noqa: E402  (summary 블록 판정은 게이트와 단일 출처)
 
 if __name__ == "__main__":
     _console.force_utf8_console()
