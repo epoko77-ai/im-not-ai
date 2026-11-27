@@ -133,6 +133,16 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(fixed, after)
         self.assertTrue(any("분할" in s["reason"] for s in skipped), skipped)
 
+    def test_no_restore_when_split_changes_particles(self):
+        # 분할하며 조사까지 바꾸면 겹치는 어절이 1개뿐이어도 분할이다 — 되돌리면
+        # "조직 성과도 덩달아 높아진다"가 원문 문장 뒤에 중복으로 남는다 → 보류
+        before = "이 교육 과정은 직원의 숨은 능력을 끌어내고 조직의 성과도 함께 높인다."
+        after = "이 교육 과정은 직원의 숨은 잠재력을 잠금 해제한다. 조직 성과도 덩달아 높아진다."
+        fixed, restored, skipped = ll.restore(before, after)
+        self.assertEqual(restored, [])
+        self.assertEqual(fixed, after)
+        self.assertTrue(any("분할" in s["reason"] for s in skipped), skipped)
+
     def test_summary_block_preserved(self):
         after = ("기존 규제 위에 새 의무를 하나 얹는다. 기업은 내년부터 보고서를 내야 한다.\n\n"
                  "<!-- HUMANIZE-SUMMARY\n원본: 얹는다\n-->\n")

@@ -78,6 +78,38 @@ class RestoreModalityTests(unittest.TestCase):
         self.assertEqual(out, after)
         self.assertIn("분할", skipped[0]["reason"])
 
+    def test_skips_split_even_when_particles_change(self) -> None:
+        """분할하며 조사·어미까지 바꾸면 겹치는 어절이 없어도 분할이다.
+
+        회귀 방지: 어절 완전 일치 2개 이상만 보던 판정이 "서민 부담도 키운다" →
+        "서민의 부담도 커진다"(겹치는 어절 1개)를 놓쳐, 복원 결과에 같은 명제가
+        두 번 남았고 게이트는 OK를 냈다.
+        """
+        before = ("정부의 이번 조치는 단기적으로 소비자 물가를 자극할 것으로 추정되며 "
+                  "서민 부담도 키운다. 다른 대책도 검토 중이다.")
+        after = ("정부의 이번 조치는 단기적으로 소비자 물가를 자극한다. "
+                 "서민의 부담도 커진다. 다른 대책도 검토 중이다.")
+        out, restored, skipped = rm.restore(before, after)
+        self.assertEqual(restored, [])
+        self.assertEqual(out, after)
+        self.assertIn("분할", skipped[0]["reason"])
+
+    def test_restores_when_unrelated_sentence_inserted(self) -> None:
+        """원문 문장과 내용을 나누지 않은 삽입 문장은 분할이 아니다 — 복원은 그대로 한다."""
+        before = "올해 수출은 감소할 것으로 보인다."
+        after = "올해 수출은 감소한다. 날씨가 맑았다."
+        out, restored, _ = rm.restore(before, after)
+        self.assertEqual(len(restored), 1)
+        self.assertIn("감소할 것으로 보인다", out)
+
+    def test_keeps_hedge_in_adnominal_form(self) -> None:
+        """'수 있다' → '수 있는'은 완곡이 살아 있다 — 되돌리면 정상 윤문을 잃는다."""
+        before = "정부의 이번 조치는 물가를 자극할 수 있다."
+        after = "정부의 이번 조치는 물가를 자극할 수 있는 결정이다."
+        out, restored, _ = rm.restore(before, after)
+        self.assertEqual(restored, [])
+        self.assertEqual(out, after)
+
     def test_summary_block_does_not_hide_loss(self) -> None:
         """요약 블록 안의 원문 인용이 정렬 짝을 훔쳐 손실을 가리면 안 된다."""
         before = "성장세는 꺾일 수 있다."

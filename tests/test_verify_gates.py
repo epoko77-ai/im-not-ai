@@ -350,6 +350,49 @@ class ModalityGateTests(unittest.TestCase):
                     verify_gates.count_modality(marker)[0], 1, f"당위 미검출: {marker}"
                 )
 
+    def test_connective_forms_keep_markers(self) -> None:
+        """문장 병합으로 표지가 연결형·관형형이 돼도 서법은 살아 있다.
+
+        회귀 방지: 사전이 '수 있다/있습니다/있을'과 '-야 한다' 계열 일부만 알아,
+        "낳을 수 있으며", "지켜야 하므로"를 서법 소실로 판정해 P5가 거짓 FAIL을 냈다.
+        """
+        for marker, kind in (
+            ("부작용을 낳을 수 있으며, 정부는 이를 점검한다", 1),
+            ("물가를 자극할 수 있는 결정이다", 1),
+            ("효과가 나타날 수 있지만 시간이 걸린다", 1),
+            ("규정을 지켜야 하므로 교육을 서두른다", 0),
+            ("규정을 지켜야 하지만 준비 기간이 짧다", 0),
+            ("규정을 지켜야 하면 비용이 늘어난다", 0),
+            ("규정을 지켜야 하였다", 0),
+        ):
+            with self.subTest(marker=marker):
+                self.assertGreaterEqual(
+                    verify_gates.count_modality(marker)[kind], 1, f"서법 미검출: {marker}"
+                )
+
+    def test_merge_into_connective_is_not_a_loss(self) -> None:
+        """두 문장을 연결형으로 합쳐도 서법이 보존됐으면 P5 손실이 아니다."""
+        from restore_modality import find_losses
+
+        for before, after in (
+            ("이 정책은 고용 시장에 부작용을 낳을 수 있다. 정부는 이를 점검한다.",
+             "이 정책은 고용 시장에 부작용을 낳을 수 있으며, 정부는 이를 점검한다."),
+            ("기업은 개정된 규정을 반드시 지켜야 한다. 그래서 내부 교육을 서두른다.",
+             "기업은 개정된 규정을 반드시 지켜야 하므로 내부 교육을 서두른다."),
+            ("기업은 개정된 규정을 반드시 지켜야 한다. 준비 기간은 짧다.",
+             "기업은 개정된 규정을 반드시 지켜야 하지만 준비 기간이 짧다."),
+        ):
+            with self.subTest(after=after):
+                self.assertEqual(find_losses(before, after), [])
+
+    def test_deontic_inventory_excludes_noun_after_conditional(self) -> None:
+        """'-아야' 조건 뒤에 '하'로 시작하는 명사가 오면 당위가 아니다."""
+        for text in ("직접 가봐야 하늘이 보인다", "끝까지 봐야 한국의 미래가 보인다"):
+            with self.subTest(text=text):
+                self.assertEqual(
+                    verify_gates.count_modality(text)[0], 0, f"당위 과탐: {text}"
+                )
+
     def test_deontic_inventory_excludes_copula_and_demonstratives(self) -> None:
         """계사 -이야와 지시어 그때·이때는 당위가 아니다."""
         for text in (

@@ -73,6 +73,12 @@ MIN_PAIR_SIM = 0.35
 # 병합되면 이웃 원문 문장이 짝을 잃고 gap(삭제)으로 남는다. 그쪽을 1차 기준으로 쓴다.
 MERGE_FOREIGN_TOKENS = 3
 MERGE_LEN_RATIO = 1.6
+# 분할 판정 — 짝 없는 삽입 문장이 "원문 문장에서 짝 문장이 잃은 부분"을 나눠 가졌는가.
+# 어절 완전 일치만 보면 분할하며 조사·어미를 바꾼 경우("서민 부담도 키운다" →
+# "서민의 부담도 커진다", 겹치는 어절 1개)를 놓쳐 복원 뒤 명제가 중복됐다. 그래서
+# 문자 바이그램으로 본다. 실측: 분할 조각 0.27~0.89, 무관한 삽입 문장 0.00.
+SPLIT_MIN_SHARED_BIGRAMS = 2
+SPLIT_MIN_SHARED_RATIO = 0.2
 
 _WORD_RE = re.compile(r"[^\w]", re.UNICODE)
 
@@ -93,6 +99,38 @@ def _sim(a: str, b: str) -> float:
         return 0.0
     inter = sum((A & B).values())
     return 2 * inter / (sum(A.values()) + sum(B.values()))
+
+
+def is_split_piece(b: str, a: str, piece: str) -> bool:
+    """짝 없는 삽입 문장 piece가 원문 문장 b에서 쪼개져 나온 조각인가(a는 b의 짝 문장).
+
+    둘 중 하나면 분할로 본다 — ① b와 내용어 2개 이상을 공유(어절 완전 일치)
+    ② b에서 a가 잃은 문자 바이그램을 piece가 일정 몫 이상 가져감. ②는 무관한 새 문장
+    삽입까지 막지 않도록 'a가 잃은 부분'만 센다(공통 어미 바이그램은 a에도 남아 빠진다).
+    """
+    if len([t for t in _tokens(piece) & _tokens(b) if len(t) > 1]) >= 2:
+        return True
+    lost = _bigrams(b) - _bigrams(a)
+    pb = _bigrams(piece)
+    total = sum(pb.values())
+    shared = sum((pb & lost).values())
+    return (
+        total > 0
+        and shared >= SPLIT_MIN_SHARED_BIGRAMS
+        and shared / total >= SPLIT_MIN_SHARED_RATIO
+    )
+
+
+def has_split_neighbor(pairs: list[tuple[str, str]], idx: int) -> bool:
+    """정렬 결과 pairs의 idx번 짝 옆에 그 원문 문장의 분할 조각(짝 없는 삽입)이 있는가."""
+    b, a = pairs[idx][0].strip(), pairs[idx][1].strip()
+    return any(
+        not pairs[j][0].strip()
+        and pairs[j][1].strip()
+        and is_split_piece(b, a, pairs[j][1].strip())
+        for j in (idx - 1, idx + 1)
+        if 0 <= j < len(pairs)
+    )
 
 
 def align(before: list[str], after: list[str]) -> list[tuple[str, str]]:
@@ -184,16 +222,9 @@ def find_losses(before: str, after: str) -> list[dict]:
         # 반대 방향도 봐야 한다. 한 원문 문장이 **둘로 쪼개지면** after 쪽에 짝 없는 문장이
         # 삽입된다. 이때 되돌리면 쪼개진 나머지 조각이 남아 명제가 중복된다 — 실측:
         # "…왜곡할 수 있다는 지적도 나온다." → "…왜곡한다. 그런 지적도 나온다." 를 복원하면
-        # "지적도 나온다"가 두 번 나온다. 삽입 이웃이 원문 문장의 내용어를 나눠 가졌을 때만
-        # 분할로 본다(무관한 새 문장 삽입까지 막지 않도록).
-        b_tokens = _tokens(b)
-        split_gap = any(
-            (not pairs[j][0].strip())
-            and pairs[j][1].strip()
-            and len([t for t in _tokens(pairs[j][1]) & b_tokens if len(t) > 1]) >= 2
-            for j in (idx - 1, idx + 1)
-            if 0 <= j < len(pairs)
-        )
+        # "지적도 나온다"가 두 번 나온다. 삽입 이웃이 원문 문장의 내용을 나눠 가졌을 때만
+        # 분할로 본다(무관한 새 문장 삽입까지 막지 않도록) — 판정은 is_split_piece.
+        split_gap = has_split_neighbor(pairs, idx)
         for kind, rx in MODAL.items():
             if rx.search(b) and not rx.search(a):
                 out.append(
