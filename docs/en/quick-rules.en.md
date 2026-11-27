@@ -61,7 +61,7 @@ Format: one line per pattern — `ID [severity] trigger → prescription`. No ex
 ## E. Rhythm and sentence-length uniformity — S2
 
 - **E-1** uniform sentence length, no 100+ character sentence → per paragraph, add 1–2 short sentences and one long sentence built by joining adjacent ones (**adding content is forbidden**)
-- **E-2** same sentence ending 4+ in a row; automatic progressive `~고 있다` → vary the endings; reduce `~고 있다` to simple tense where possible (`읽고 있다` → `읽는다`)
+- **E-2** same sentence ending 4+ in a row; automatic progressive `~고 있다` → vary the endings; reduce some `~고 있다` to simple tense only under the A-20 condition (3+ in one paragraph) (`읽고 있다` → `읽는다`) — keep isolated uses
 - **E-7** addressee honorific levels (해라/하게/하오/해요/합쇼) mixed within one document (dialogue and speech only) → hold one formality grade throughout
 
 ## F. Excess modification and redundancy — S2

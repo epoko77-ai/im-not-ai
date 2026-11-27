@@ -50,6 +50,28 @@ class QuickRulesBuildTests(unittest.TestCase):
             "`python3 scripts/build_quick_rules.py` 로 재생성하라.",
         )
 
+    def _by_id(self) -> dict:
+        with open(self.builder._TAXONOMY, encoding="utf-8") as f:
+            return {p["id"]: p for p in self.builder.parse_taxonomy(f.read())}
+
+    def test_a21_prescription_does_not_create_antithesis(self) -> None:
+        """A-21 처방이 C-8 대구("X만이 아니라 Y다")를 새로 만들지 않는다 (철칙 #6).
+
+        구 처방은 "X만이 아니라 Y다"로 풀기를 권해, antithesis_count 가 0 → 1 로 늘었다.
+        """
+        fix = self._by_id()["A-21"]["fix"]
+        self.assertNotIn("아니라", fix)
+
+    def test_e2_progressive_follows_a20_density_rule(self) -> None:
+        """E-2 의 진행형 환원은 A-20 과 같은 밀집 조건을 따른다(고립 사용 보존).
+
+        구 처방은 "~고 있다"를 조건 없이 환원하라 해, 같은 룰북의 A-20 "고립 사용은
+        보존"과 반대로 지시했다.
+        """
+        fix = self._by_id()["E-2"]["fix"]
+        self.assertIn("A-20", fix)
+        self.assertIn("고립", fix)
+
     def test_generated_ids_are_subset_of_taxonomy(self) -> None:
         """생성물의 모든 ID가 taxonomy에 실재해야 한다(1:1 매칭)."""
         with open(self.builder._TAXONOMY, encoding="utf-8") as f:

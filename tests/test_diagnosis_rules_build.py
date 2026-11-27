@@ -88,6 +88,29 @@ class DiagnosisRulesBuildTests(unittest.TestCase):
         self.assertIsNotNone(m)
         self.assertIn("지목 금지", m.group(0))
 
+    def test_demoted_patterns_carry_prescription(self) -> None:
+        """quick 룰북에서 강등된 패턴(quick:false + quick_fix)은 처방 1줄을 싣는다.
+
+        회귀 방지: 강등 전에는 quick_fix 가 quick-rules 를 거쳐 monolith 에 갔는데,
+        강등 뒤에는 진단 인덱스에도 처방이 없어 diagnostician 이 "진단문에 처방을
+        인라인으로 적어" 넘길 원천이 사라졌다. 보수 가드가 잘리지 않아야 한다.
+        """
+        demoted = [p for p in self.patterns if p["quick"] is False and p["fix"]]
+        self.assertGreaterEqual(len(demoted), 1)
+        for p in demoted:
+            with self.subTest(pid=p["id"]):
+                block = re.search(
+                    rf"^- \*\*{re.escape(p['id'])}\*\*.*?(?=^- \*\*|^## |\Z)",
+                    self.rendered, re.M | re.S,
+                ).group(0)
+                self.assertIn("  처방: ", block)
+        a16 = re.search(r"^- \*\*A-16\*\*.*?(?=^- \*\*)", self.rendered, re.M | re.S).group(0)
+        self.assertIn("불확실하면 유지", a16)
+
+    def test_bare_example_heading_is_not_an_example(self) -> None:
+        """'- 예:' 만 있고 예문이 다음 줄들에 오는 블록에서 ':' 를 예문으로 잡지 않는다."""
+        self.assertNotRegex(self.rendered, r"(?m)· 예: [:：]?[ \t]*$")
+
     def test_taxonomy_not_modified_by_build(self) -> None:
         """빌드는 SSOT를 절대 쓰지 않는다 (read-only 불가침)."""
         with open(self.builder._TAXONOMY, encoding="utf-8") as f:
