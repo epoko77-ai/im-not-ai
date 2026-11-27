@@ -140,6 +140,23 @@ class RegisterCheckTests(unittest.TestCase):
         codes = {x.code for x in checks.check_register(orig, out)}
         self.assertIn("hayeot_injection", codes)
 
+    def test_hayeot_split_at_hayeot_connective_does_not_fund_tense_change(self) -> None:
+        """이미 '하였'을 단 연결어미("실시하였고,")를 자른 분절은 새 표지를 요구하지 않는다.
+
+        회귀 방지: 허용량을 늘어난 문장 수로만 셌더니, 이 분절이 만든 몫이
+        "제시한다" → "제시하였다" 시제 변경에 쓰여 FAIL이어야 할 출력이 통과했다.
+        """
+        orig = "본 연구는 설문을 실시하였고, 결과를 분석하였다. 마지막으로 향후 과제를 제시한다."
+        out = "본 연구는 설문을 실시하였다. 결과를 분석하였다. 마지막으로 향후 과제를 제시하였다."
+        codes = {x.code for x in checks.check_register(orig, out)}
+        self.assertIn("hayeot_injection", codes)
+
+    def test_hayeot_split_at_hayeot_connective_alone_passes(self) -> None:
+        """같은 분절만 하고 시제를 바꾸지 않으면 '하였' 이 늘지 않으므로 통과한다."""
+        orig = "본 연구는 설문을 실시하였고, 결과를 분석하였다. 마지막으로 향후 과제를 제시한다."
+        out = "본 연구는 설문을 실시하였다. 결과를 분석하였다. 마지막으로 향후 과제를 제시한다."
+        self.assertEqual(checks.check_register(orig, out), [])
+
     def test_hayeot_split_in_haess_text_is_injection(self) -> None:
         """'했'체 원문에서 분절이 '하였' 을 쓰면 격식 혼입이다 — 계속 잡는다.
 

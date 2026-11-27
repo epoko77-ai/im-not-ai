@@ -78,6 +78,11 @@ HAESS_RE = re.compile(r"했")
 # 시제 변경이 P0~P5 전부를 통과한다. 문장 경계는 종결 부호 + 공백·끝으로 센다
 # — "3.5%" 같은 소수점은 뒤에 공백이 없어 세지 않는다.
 SENT_END_RE = re.compile(r"[.?!…]+(?=\s|$)")
+# 단, 이미 '하였'을 단 연결어미("실시하였고,")를 자른 분절은 새 표지를 요구하지 않는다
+# ("실시하였다."로 끝맺을 뿐 '하였' 수는 그대로). 그 분절까지 허용량에 넣으면 남는 몫이
+# 다른 문장의 시제 변경("제시한다" → "제시하였다")을 통과시켰다. 그래서 이런 연결어미가
+# 줄어든 만큼은 허용량에서 뺀다.
+HAYEOT_CONN_RE = re.compile(r"하였(?:고|으며|으나|으니|으므로|는데|지만)")
 
 # Boilerplate phrases the rewriter must never ADD. Increase-only gate:
 # if the original already contains one, keeping it is not a failure.
@@ -120,7 +125,10 @@ def check_register(original: str, output: str) -> list[Failure]:
     b = len(HAYEOT_RE.findall(output))
     pure_hayeot = a > 0 and not HAESS_RE.search(original)
     new_sents = len(SENT_END_RE.findall(output)) - len(SENT_END_RE.findall(original))
-    allowed = max(0, new_sents) if pure_hayeot else 0
+    hayeot_conn_split = max(
+        0, len(HAYEOT_CONN_RE.findall(original)) - len(HAYEOT_CONN_RE.findall(output))
+    )
+    allowed = max(0, new_sents - hayeot_conn_split) if pure_hayeot else 0
     if b - a > allowed:
         fails.append(Failure(
             "hayeot_injection",

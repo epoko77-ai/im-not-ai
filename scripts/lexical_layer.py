@@ -221,14 +221,8 @@ def restore(before: str, after: str, lexicon: dict | None = None) -> tuple[str, 
             skipped.append({**rec, "reason": "결과에서 유일하게 특정되지 않음"})
             continue
         # 분할 — 원문 한 문장이 둘로 쪼개지면 짝 없는 출력 문장이 이웃에 끼어든다. 되돌리면
-        # 쪼개진 나머지 조각이 남아 명제가 중복된다. restore_modality의 split_gap과 같은 판정
-        # (삽입 이웃이 원문 문장의 내용어 2개 이상을 나눠 가졌을 때만).
-        b_tokens = rm._tokens(b)
-        split_gap = any(
-            not pairs[j][0].strip() and pairs[j][1].strip()
-            and len([t for t in rm._tokens(pairs[j][1]) & b_tokens if len(t) > 1]) >= 2
-            for j in (idx - 1, idx + 1) if 0 <= j < len(pairs))
-        if split_gap:
+        # 쪼개진 나머지 조각이 남아 명제가 중복된다. 판정은 restore_modality와 단일 출처.
+        if rm.has_split_neighbor(pairs, idx):
             skipped.append({**rec, "reason": "문장 분할 의심 — 되돌리면 명제가 중복된다"})
             continue
         neighbor_gap = (idx > 0 and not pairs[idx - 1][1].strip()) or (
