@@ -53,7 +53,9 @@ _OUT = os.path.join(_REFS, "diagnosis-rules.md")
 # 콘텐츠가 아닌 불릿 프리픽스 — 정의 추출에서 제외.
 _NON_DEF_BULLET = re.compile(r"^- (?:예[:：\s]|처방[:：]|주의[:：]|예외[:：]|_)")
 _DEF_LINE = re.compile(r"^- (?:패턴|정의)[:：]\s*(.+)$")
-_EXAMPLE_LINE = re.compile(r"^- 예[:：]?\s*(.+)$")
+# '예' 뒤에 콜론이나 공백이 와야 한다. 콜론을 선택으로 두면 예문이 다음 줄들에 오는
+# 맨 "- 예:" 줄에서 ':' 자체가 예문으로 잡혔다(A-16 이 "· 예: :" 로 생성).
+_EXAMPLE_LINE = re.compile(r"^- 예(?:[:：]\s*|\s+)(.+)$")
 _BOLD = re.compile(r"\*\*")
 
 # 진단 인덱스 길이 상한(문자 수) — 부피 게이트용.
@@ -136,8 +138,10 @@ def render(patterns: list[dict], details: dict[str, dict[str, str | None]]) -> s
         "",
         "> **자동 생성 — 직접 편집 금지.** `scripts/build_diagnosis_rules.py`가",
         "> SSOT `ai-tell-taxonomy.md`에서 생성한다. 진단 콜 전용 — 예문 전수·",
-        f"> 처방·학술 인용·버전주석은 SSOT 참조. **{len(patterns)}패턴 전수** 수록",
+        f"> 학술 인용·버전주석은 SSOT 참조. **{len(patterns)}패턴 전수** 수록",
         "> (문서 레벨 quick:false 패턴 포함 — quick-rules로 대체 불가).",
+        "> `처방:` 줄은 quick 룰북에서 강등된 패턴에만 있다 — 그 ID를 지목하면",
+        "> 진단문에 이 처방을 인라인으로 옮긴다(monolith 룰북에는 없다).",
         "",
         "심각도: **S1** 결정적(1회로 확신) / **S2** 강함(3회+ 반복 시 티) / "
         "**S3** 약함(중첩 시 강화) / 미표기 = SSOT의 카테고리 서술 참조.",
@@ -195,6 +199,13 @@ def render(patterns: list[dict], details: dict[str, dict[str, str | None]]) -> s
         if "S1" in sev and example:
             line2 += f" · 예: {_cut(example, _EX_MAX)}"
         out.append(line2)
+
+        # quick 룰북에서 강등된 패턴은 처방을 함께 싣는다. 강등 전에는 quick_fix 가
+        # quick-rules 를 거쳐 monolith 에 갔지만, 강등 뒤에는 진단이 "처방을 진단문에
+        # 인라인으로 적어" 넘겨야 하는데 그 원천이 런타임 어디에도 없었다. 보수 가드
+        # (A-16 "불확실하면 유지" 등)가 잘리지 않도록 길이 컷을 하지 않는다.
+        if p["quick"] is False and p.get("fix"):
+            out.append(f"  처방: {_clean(p['fix'])}")
     out.append("")
     return "\n".join(out)
 

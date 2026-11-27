@@ -55,6 +55,89 @@ class LexiconTests(unittest.TestCase):
             with self.subTest(id=e["id"]):
                 self.assertFalse(ll._matches(e, e["test_negative"]), e["headword"])
 
+    @staticmethod
+    def _how_pairs(how: str) -> list[tuple[str | None, str]]:
+        """'방식' 문구의 (바꾸기 전, 예문) 쌍 — "A" → "B" 면 (A, B), 아니면 (None, 예문)."""
+        import re
+
+        seg = how.split("예)", 1)[1] if "예)" in how else ""
+        out: list[tuple[str | None, str]] = []
+        for part in seg.split(","):
+            if "→" in part:
+                left, right = part.split("→", 1)
+                src = re.findall(r'"([^"]+)"', left)
+                out += [(src[0] if src else None, t) for t in re.findall(r'"([^"]+)"', right)]
+            else:
+                out += [(None, t) for t in re.findall(r'"([^"]+)"', part)]
+        return out
+
+    @classmethod
+    def _how_targets(cls, how: str) -> list[str]:
+        return [t for _, t in cls._how_pairs(how)]
+
+    def test_how_examples_do_not_inject_other_tells(self):
+        """'방식' 예문이 AI 원문(test_positive)에 없던 다른 AI 티를 만들지 않는다.
+
+        [어휘 점검] 블록은 전 경로 윤문 입력에 실리므로 예문이 곧 실행 지시다. 회귀 방지:
+        L-53 예문 "규제는 더는 선택이 아니라는 뜻이다"가 C-8 대구와 I-3 결말을 새로 만들었다.
+        AI 원문에 이미 있던 구조(예: INJ-14의 "자료가 아니라 직관에")는 물려받은 것이라 세지 않는다.
+        """
+        import re
+
+        sys.path.insert(0, os.path.join(_ROOT, "skills", "humanize-korean", "references"))
+        import metrics_v2 as m
+
+        i3 = re.compile(r"[다라]는\s*(?:뜻|것)이다")
+
+        def tells(t: str) -> tuple[set, int, int, int]:
+            return ({h["id"] for h in ll.find_hits(t)}, m.antithesis_count(t),
+                    t.count("결국"), len(i3.findall(t)))
+
+        from verify_gates import count_modality
+
+        for e in self.lex["entries"]:
+            words0, anti0, gyeol0, i30 = tells(e["test_positive"])
+            for genre, how in e["how"].items():
+                for src, t in self._how_pairs(how):
+                    with self.subTest(id=e["id"], genre=genre, example=t):
+                        words, anti, gyeol, i3n = tells(t)
+                        self.assertEqual(words - words0 - {e["id"]}, set(), "다른 사전 낱말")
+                        self.assertLessEqual(anti, anti0, "C-8 대구 주입")
+                        self.assertLessEqual(gyeol, gyeol0, "'결국' 주입(D-9)")
+                        self.assertLessEqual(i3n, i30, "I-3 '~다는 뜻이다' 주입")
+                        # 주장 강도 — 당위·완곡 표지 수가 바뀌면 서법이 바뀐 것이다(철칙: 강도 보존).
+                        # P5 는 감소만 잡으므로 증가(강도 상향)는 여기서 막는다.
+                        if e["id"] in self.MODALITY_DIFF_UNDER_REVIEW:
+                            continue
+                        base = src if src is not None else e["test_positive"]
+                        self.assertEqual(count_modality(t), count_modality(base), "서법 표지 수 변경")
+
+    # 예문이 AI 원문과 서법 표지 수가 다른 기존 항목 — 메인테이너 검토 대기(2026-11-27 정밀 검토).
+    # 일부는 실제 강도 변경(L-04·L-06 '해야 한다' 추가, L-33 '수 있다' 추가)이고, 일부는 사전
+    # 판정의 한계('알 수 있다'를 완곡으로 셈, 명사구 조각 예문)다. 새 항목은 이 목록에 넣지 않는다.
+    MODALITY_DIFF_UNDER_REVIEW = frozenset({
+        "AST-36", "AST-37", "AST-44", "AST-61",
+        "L-04", "L-06", "L-13", "L-33", "L-51", "X-09",
+    })
+
+    def test_how_keeps_strength_and_conclusion_markers(self):
+        """'방식'이 권고를 명령·청유로 올리거나 다른 귀결 표지로 바꿔 끼우라고 하지 않는다.
+
+        회귀 방지: X-16 이 "~하는 편이 좋습니다" → "~하십시오"/"~하세요·~하자"(강도·register
+        상향, 철칙 #5)를, L-78 이 "궁극적으로" → "결국"(D-9 주입 금지 위반)을 지시했다.
+        """
+        import re
+
+        by_id = {e["id"]: e for e in self.lex["entries"]}
+        for genre, how in by_id["X-16"]["how"].items():
+            for t in self._how_targets(how):
+                with self.subTest(genre=genre, example=t):
+                    self.assertNotRegex(t, r"(?:하십시오|하세요|하자)$")
+            self.assertNotIn('"~하세요", "~하자"처럼 직접 말한다', how)
+        for genre, how in by_id["L-78"]["how"].items():
+            with self.subTest(genre=genre):
+                self.assertNotIn('"결국"으로', how)
+
 
 class HintTests(unittest.TestCase):
     def test_no_hits_no_block(self):
