@@ -31,7 +31,10 @@ import sys
 _CONN_COMMA_RE = re.compile(r"(고|며|지만|면서|는데|아서|어서|여서|해서|져서),(\s)")
 
 # 따옴표 스팬 — 이 안의 쉼표는 발화 원문이므로 불가침.
-_QUOTE_RE = re.compile(r"“[^”]*”|‘[^’]*’|\"[^\"]*\"|「[^」]*」|『[^』]*』")
+# 문장 조각이 아니라 본문 전체에서 계산한다: 인용 안에 '. '가 있으면 조각 경계에서
+# 짝이 깨져 인용 안 쉼표가 지워졌다. 줄바꿈은 넘지 않는다 — 짝 없는 따옴표 하나가
+# 문서 끝까지 짝을 밀어내는 피해를 한 줄 안으로 가둔다.
+_QUOTE_RE = re.compile(r"“[^”\n]*”|‘[^’\n]*’|\"[^\"\n]*\"|「[^」\n]*」|『[^』\n]*』")
 
 _SENT_SPLIT = re.compile(r"(?<=[.!?…])\s+")
 
@@ -44,12 +47,13 @@ def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.strip())
 
 
-def _strip_in_sentence(sent: str) -> tuple[str, int]:
-    """한 문장에서 따옴표 밖 연결어미 쉼표를 제거. (결과, 제거 수) 반환."""
-    spans = [m.span() for m in _QUOTE_RE.finditer(sent)]
+def _strip_in_sentence(sent: str, offset: int, spans: list[tuple[int, int]]) -> tuple[str, int]:
+    """한 문장에서 따옴표 밖 연결어미 쉼표를 제거. (결과, 제거 수) 반환.
+
+    spans는 본문 전체 기준 따옴표 구간, offset은 이 문장의 본문 내 시작 위치."""
 
     def in_quote(pos: int) -> bool:
-        return any(a <= pos < b for a, b in spans)
+        return any(a <= offset + pos < b for a, b in spans)
 
     removed = 0
     out = []
@@ -78,17 +82,21 @@ def strip_injected(before: str, after: str, all_sentences: bool = False) -> tupl
     # 문장 단위로 처리하되 원문 화이트스페이스를 보존하기 위해 split 지점을 기억한다.
     pieces = _SENT_SPLIT.split(after)
     seps = _SENT_SPLIT.findall(after)
+    spans = [m.span() for m in _QUOTE_RE.finditer(after)]
+    pos = 0
     for i, piece in enumerate(pieces):
         if piece.strip() and _norm(piece) not in originals:
-            fixed, n = _strip_in_sentence(piece)
+            fixed, n = _strip_in_sentence(piece, pos, spans)
             if n:
                 total_removed += n
                 touched += 1
             parts.append(fixed)
         else:
             parts.append(piece)
+        pos += len(piece)
         if i < len(seps):
             parts.append(seps[i])
+            pos += len(seps[i])
     report = {"commas_removed": total_removed, "sentences_touched": touched}
     return "".join(parts), report
 

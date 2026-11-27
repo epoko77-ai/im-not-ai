@@ -287,6 +287,36 @@ class StructureCheckTests(unittest.TestCase):
         out = '질문은 "무엇을 지킬 것인가"다. 김 교수는 "판단이 이르다"고 말했다.'
         self.assertEqual(checks.check_quotes(orig, out), [])
 
+    def test_attribution_after_curly_and_corner_quotes(self) -> None:
+        """닫는 따옴표가 ”·」여도 귀속 구문("…"라고 보고하였다)은 보호된다.
+
+        구 정규식의 문자 클래스 [""\\"]는 세 글자 모두 ASCII 0x22라, 둥근 따옴표·홑낫표
+        뒤에서는 구조 신호가 한 번도 매칭되지 않았다.
+        """
+        cases = [
+            ("연구진은 “이 현상은 구조적 요인에서 비롯된다”라고 보고하였다.",
+             "연구진은 “이 현상은 구조적 원인에서 비롯된다”라고 보고하였다."),
+            ("법은 「학교폭력은 학생을 대상으로 발생한 상해·폭행이다」라고 정의한다.",
+             "법은 「학교폭력은 학생에게 발생한 상해·폭행이다」라고 정의한다."),
+        ]
+        for orig, out in cases:
+            with self.subTest(orig=orig):
+                codes = {x.code for x in checks.check_quotes(orig, out)}
+                self.assertIn("quote_altered", codes)
+
+    def test_bare_hada_attribution_protected(self) -> None:
+        """'"…"고 했다', '"…"라고 한다'처럼 용언이 맨 '하다' 활용이어도 귀속 구문이다."""
+        cases = [
+            ('그는 "다음 주까지 모든 자료를 제출하겠다"고 했다.',
+             '그는 "다음 주까지 자료를 모두 제출하겠다"고 했다.'),
+            ('관계자는 "예산 집행률이 목표에 크게 못 미친다"라고 한다.',
+             '관계자는 "예산 집행률이 목표에 한참 못 미친다"라고 한다.'),
+        ]
+        for orig, out in cases:
+            with self.subTest(orig=orig):
+                codes = {x.code for x in checks.check_quotes(orig, out)}
+                self.assertIn("quote_altered", codes)
+
 
 class NumberCheckTests(unittest.TestCase):
     """수치 주입/삭제 방향성 게이트 — check_numbers."""
